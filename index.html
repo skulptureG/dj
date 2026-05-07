@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DJ Requests</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #090b10;
+    --surface: #111420;
+    --surface2: #181c2a;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.14);
+    --accent: #c6ff00;
+    --accent-dim: rgba(198,255,0,0.12);
+    --accent-glow: rgba(198,255,0,0.35);
+    --pink: #ff3e7f;
+    --pink-dim: rgba(255,62,127,0.12);
+    --text: #f0f0f8;
+    --muted: rgba(240,240,248,0.45);
+    --font-display: 'Bebas Neue', Impact, sans-serif;
+    --font-mono: 'DM Mono', 'Courier New', monospace;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── noise overlay ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ─── PANELS ─── */
+  .panel {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* ─── HEADER STRIP ─── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 0;
+    margin-bottom: 36px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 22px;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .logo span { color: var(--pink); }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border-bright);
+    padding: 5px 10px;
+    border-radius: 100px;
+  }
+
+  /* ─── SECTION LABEL ─── */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* ─── INPUTS ─── */
+  .input-group {
+    position: relative;
+    margin-bottom: 14px;
+  }
+
+  .input-group label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-wrap .input-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  input[type="text"], textarea.text-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: 500;
+    padding: 20px 22px 20px 52px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    -webkit-appearance: none;
+  }
+
+  textarea.text-input {
+    resize: none;
+    height: 90px;
+    line-height: 1.5;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  input[type="text"].active-field, textarea.text-input.active-field {
+    border-color: var(--accent);
+    background: var(--surface2);
+    box-shadow: 0 0 0 3px var(--accent-dim), 0 0 20px var(--accent-glow);
+  }
+
+  input[type="text"]::placeholder, textarea.text-input::placeholder { color: var(--muted); font-weight: 400; }
+
+  /* ─── SUBMIT BUTTON ─── */
+  .btn-submit {
+    width: 100%;
+    margin-top: 6px;
+    margin-bottom: 30px;
+    padding: 22px;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 0 30px var(--accent-glow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-submit:hover {
+    box-shadow: 0 0 50px rgba(198,255,0,0.55);
+    transform: translateY(-1px);
+  }
+
+  .btn-submit:active { transform: scale(0.98); }
+
+  .btn-submit::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.15);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .btn-submit:hover::after { opacity: 1; }
+
+  /* ─── KEYBOARD ─── */
+  .keyboard-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+  }
+
+  .kb-field-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .kb-toggle {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .kb-toggle.active {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .keyboard {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
+  }
+
+  .key {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-bottom: 3px solid rgba(0,0,0,0.4);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 500;
+    padding: 18px 0;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.08s, transform 0.06s, border-color 0.08s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .key:active, .key.pressed {
+    background: var(--surface);
+    transform: translateY(2px);
+    border-bottom-width: 1px;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .key.span-2 { grid-column: span 2; }
+  .key.span-3 { grid-column: span 3; }
+  .key.span-4 { grid-column: span 4; }
+  .key.span-5 { grid-column: span 5; }
+  .key.span-6 { grid-column: span 6; }
+  .key.span-10 { grid-column: span 10; }
+
+  .key.mod {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .key.special {
+    background: rgba(198,255,0,0.07);
+    border-color: rgba(198,255,0,0.2);
+    color: var(--accent);
+  }
+
+  /* ─── THANK YOU ─── */
+  #thankYou {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,11,16,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 100;
+    backdrop-filter: blur(6px);
+  }
+
+  #thankYou.show { opacity: 1; }
+
+  #thankYou .ty-icon {
+    font-size: 4rem;
+    line-height: 1;
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  #thankYou .ty-text {
+    font-family: var(--font-display);
+    font-size: 3.2rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    animation: popIn 0.4s 0.06s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  #thankYou .ty-sub {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    animation: popIn 0.4s 0.12s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.7); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* ─── DJ VIEW ─── */
+  .dj-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+
+  .stat-card .val {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .stat-card .lbl {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ─── REQUEST CARD ─── */
+  .request {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s, background 0.2s, opacity 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .request::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 3px 0 0 3px;
+    transition: background 0.2s;
+  }
+
+  .request.rejecting {
+    opacity: 0;
+    transform: translateX(40px);
+    pointer-events: none;
+  }
+
+  .request.played {
+    border-color: rgba(198,255,0,0.25);
+    background: rgba(198,255,0,0.04);
+  }
+
+  .request.rejected {
+    border-color: rgba(255,62,127,0.25);
+    background: rgba(255,62,127,0.04);
+  }
+
+  .request.rejected::before { background: var(--pink); }
+
+  .request-num {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    font-family: var(--font-display);
+    font-size: 4rem;
+    color: rgba(255,255,255,0.04);
+    line-height: 1;
+    pointer-events: none;
+    letter-spacing: 0;
+  }
+
+  .song-name {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    margin-bottom: 6px;
+    padding-right: 60px;
+  }
+
+  .req-meta {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .req-meta .sep { opacity: 0.3; }
+
+  .dj-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .btn-played, .btn-reject {
+    flex: 1;
+    padding: 13px 20px;
+    border: 1px solid;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-played {
+    background: var(--accent-dim);
+    border-color: rgba(198,255,0,0.3);
+    color: var(--accent);
+  }
+
+  .btn-played:hover {
+    background: var(--accent);
+    color: #0a0a0f;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .btn-reject {
+    background: var(--pink-dim);
+    border-color: rgba(255,62,127,0.3);
+    color: var(--pink);
+  }
+
+  .btn-reject:hover {
+    background: var(--pink);
+    color: #fff;
+  }
+
+  .req-note {
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    color: rgba(240,240,248,0.7);
+    background: rgba(255,255,255,0.04);
+    border-left: 2px solid rgba(198,255,0,0.35);
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+    margin-top: 10px;
+    font-style: italic;
+  }
+
+
+  .dj-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+
+  .btn-clear {
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-clear:hover { border-color: var(--pink); color: var(--pink); }
+
+  .btn-export {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid rgba(198,255,0,0.3);
+    background: rgba(198,255,0,0.06);
+    color: var(--accent);
+  }
+
+  .btn-export:hover { background: rgba(198,255,0,0.15); border-color: var(--accent); }
+
+  /* ─── LOCK BUTTON ─── */
+  .btn-lock {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,62,127,0.4);
+    background: rgba(255,62,127,0.08);
+    color: var(--pink);
+  }
+
+  .btn-lock:hover {
+    background: rgba(255,62,127,0.18);
+    border-color: var(--pink);
+  }
+
+  .btn-lock.locked {
+    background: var(--pink);
+    border-color: var(--pink);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(255,62,127,0.45);
+    animation: lockPulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes lockPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,62,127,0.45); }
+    50%       { box-shadow: 0 0 36px rgba(255,62,127,0.8); }
+  }
+
+  /* ─── LOCKED OVERLAY (request page) ─── */
+  #lockedOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,11,16,0.96);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    z-index: 200;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+    padding: 40px;
+    text-align: center;
+  }
+
+  #lockedOverlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  #lockedOverlay .lock-icon {
+    font-size: 4rem;
+    line-height: 1;
+    animation: floatIcon 3s ease-in-out infinite;
+  }
+
+  @keyframes floatIcon {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-10px); }
+  }
+
+  #lockedOverlay .lock-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+
+  #lockedOverlay .lock-msg {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: rgba(240,240,248,0.7);
+    max-width: 520px;
+    line-height: 1.6;
+  }
+
+  #lockedOverlay .lock-rule {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  /* ─── EMPTY STATE ─── */
+  .empty {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--muted);
+  }
+
+  .empty .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+
+  .empty p {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* ─── PULSE DOT ─── */
+  .live-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: var(--pink);
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ─── CAPS indicator ─── */
+  .caps-indicator {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.15s;
+    text-align: right;
+    margin-bottom: 4px;
+    height: 14px;
+  }
+
+  .caps-indicator.on { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- ═══ REQUEST VIEW ═══ -->
+<div id="requestView" class="panel hidden">
+  <div class="header">
+    <div class="logo">DJ<span>:</span>Request</div>
+    <div class="badge">Send a song to the DJ</div>
+  </div>
+
+  <div class="input-group">
+    <label>Song / Artist</label>
+    <div class="input-wrap">
+      <span class="input-icon">♪</span>
+      <input id="songInput" type="text" placeholder="Type a song name…" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label>Your Name <span style="opacity:0.4;font-size:0.6rem">(optional)</span></label>
+    <div class="input-wrap">
+      <span class="input-icon">✦</span>
+      <input id="nameInput" type="text" placeholder="Who's asking?" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label>Note to DJ <span style="opacity:0.4;font-size:0.6rem">(optional)</span></label>
+    <div class="input-wrap">
+      <span class="input-icon" style="top:22px;transform:none;">✉</span>
+      <textarea id="noteInput" class="text-input" placeholder="Dedication, occasion, anything…"></textarea>
+    </div>
+  </div>
+
+  <button class="btn-submit" onclick="submitRequest()">Send Request →</button>
+
+  <!-- KEYBOARD -->
+  <div class="keyboard-wrap">
+    <div class="kb-field-toggle">
+      <button class="kb-toggle active" id="toggleSong" onclick="switchField('song')">Song</button>
+      <button class="kb-toggle" id="toggleName" onclick="switchField('name')">Name</button>
+      <button class="kb-toggle" id="toggleNote" onclick="switchField('note')">Note to DJ</button>
+    </div>
+    <div class="caps-indicator" id="capsIndicator">CAPS ON</div>
+    <div class="keyboard" id="keyboard">
+      <!-- Row 0: numbers -->
+      <div class="key" data-char="1">1</div>
+      <div class="key" data-char="2">2</div>
+      <div class="key" data-char="3">3</div>
+      <div class="key" data-char="4">4</div>
+      <div class="key" data-char="5">5</div>
+      <div class="key" data-char="6">6</div>
+      <div class="key" data-char="7">7</div>
+      <div class="key" data-char="8">8</div>
+      <div class="key" data-char="9">9</div>
+      <div class="key" data-char="0">0</div>
+      <!-- Row 1 -->
+      <div class="key" data-char="Q">Q</div>
+      <div class="key" data-char="W">W</div>
+      <div class="key" data-char="E">E</div>
+      <div class="key" data-char="R">R</div>
+      <div class="key" data-char="T">T</div>
+      <div class="key" data-char="Y">Y</div>
+      <div class="key" data-char="U">U</div>
+      <div class="key" data-char="I">I</div>
+      <div class="key" data-char="O">O</div>
+      <div class="key" data-char="P">P</div>
+      <!-- Row 2 -->
+      <div class="key" data-char="A">A</div>
+      <div class="key" data-char="S">S</div>
+      <div class="key" data-char="D">D</div>
+      <div class="key" data-char="F">F</div>
+      <div class="key" data-char="G">G</div>
+      <div class="key" data-char="H">H</div>
+      <div class="key" data-char="J">J</div>
+      <div class="key" data-char="K">K</div>
+      <div class="key" data-char="L">L</div>
+      <div class="key mod" data-action="back">⌫</div>
+      <!-- Row 3 -->
+      <div class="key mod span-2" data-action="caps">⇧ Caps</div>
+      <div class="key" data-char="Z">Z</div>
+      <div class="key" data-char="X">X</div>
+      <div class="key" data-char="C">C</div>
+      <div class="key" data-char="V">V</div>
+      <div class="key" data-char="B">B</div>
+      <div class="key" data-char="N">N</div>
+      <div class="key" data-char="M">M</div>
+      <div class="key mod" data-char="'">'</div>
+      <!-- Row 4 -->
+      <div class="key span-2 mod" data-action="clear">Clear</div>
+      <div class="key span-6" data-char=" ">Space</div>
+      <div class="key span-2 special" data-action="submit">Send →</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DJ VIEW ═══ -->
+<div id="djView" class="panel hidden">
+  <div class="header">
+    <div class="logo">DJ<span>:</span>Booth</div>
+    <div class="badge"><span class="live-dot"></span>Live Queue</div>
+  </div>
+
+  <div class="dj-stats">
+    <div class="stat-card">
+      <div class="val" id="statTotal">0</div>
+      <div class="lbl">Pending</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" id="statPlayed">0</div>
+      <div class="lbl">Played tonight</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" id="statRejected">0</div>
+      <div class="lbl">Rejected</div>
+    </div>
+  </div>
+
+  <div class="dj-toolbar">
+    <div class="section-label">Request queue</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+      <button class="btn-lock" id="lockBtn" onclick="toggleLock()">⛔ Lock Requests</button>
+      <button class="btn-clear" onclick="clearAll()">Clear All</button>
+    </div>
+  </div>
+
+  <div id="requestList"></div>
+</div>
+
+<!-- LOCKED OVERLAY (request page) -->
+<div id="lockedOverlay">
+  <div class="lock-icon">🎧</div>
+  <div class="lock-title">No More Requests Right Now</div>
+  <div class="lock-msg">The DJ has a backlog of amazing tunes to play — please come back in a little while!</div>
+  <div class="lock-rule">Requests will reopen soon</div>
+</div>
+
+<!-- THANK YOU OVERLAY -->
+<div id="thankYou">
+  <div class="ty-icon" id="tyIcon">🎶</div>
+  <div class="ty-text" id="tyText">Nice one!</div>
+  <div class="ty-sub">Your request is with the DJ</div>
+</div>
+
+<script>
+  // ─── STATE
+  let capsOn = false;
+  let activeField = 'song';
+
+  const mode = new URLSearchParams(window.location.search).get('mode');
+  const requestView = document.getElementById('requestView');
+  const djView = document.getElementById('djView');
+  const songInput = document.getElementById('songInput');
+  const nameInput = document.getElementById('nameInput');
+  const noteInput = document.getElementById('noteInput');
+  const thankYou = document.getElementById('thankYou');
+  const requestList = document.getElementById('requestList');
+
+  // ─── ROUTING
+  if (mode === 'dj') {
+    djView.classList.remove('hidden');
+    renderDJ();
+    updateLockBtn();
+    window.addEventListener('storage', e => { if (e.key === 'djRequests') renderDJ(); });
+    setInterval(renderDJ, 5000);
+  } else {
+    requestView.classList.remove('hidden');
+    songInput.classList.add('active-field');
+    applyLockState();
+
+    // React to lock toggled from another tab
+    window.addEventListener('storage', e => { if (e.key === 'djLocked') applyLockState(); });
+
+    // Sync active field when user physically focuses an input
+    [songInput, nameInput, noteInput].forEach(el => {
+      el.addEventListener('focus', () => {
+        const f = el === songInput ? 'song' : el === nameInput ? 'name' : 'note';
+        setActiveField(f);
+      });
+    });
+
+    // Enter key on song/name moves to next field; on note submits
+    songInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameInput.focus(); } });
+    nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); noteInput.focus(); } });
+    noteInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitRequest(); } });
+  }
+
+  // ─── DATA
+  function getRequests() {
+    return JSON.parse(localStorage.getItem('djRequests') || '[]');
+  }
+
+  // ─── SUBMIT
+  function submitRequest() {
+    const song = songInput.value.trim();
+    if (!song) {
+      songInput.classList.remove('active-field');
+      void songInput.offsetWidth;
+      songInput.style.borderColor = 'var(--pink)';
+      songInput.style.boxShadow = '0 0 0 3px var(--pink-dim)';
+      setTimeout(() => {
+        songInput.style.borderColor = '';
+        songInput.style.boxShadow = '';
+        songInput.classList.add('active-field');
+      }, 600);
+      songInput.focus();
+      return;
+    }
+
+    const list = getRequests();
+    list.unshift({
+      song,
+      name: nameInput.value.trim() || 'Anonymous',
+      note: noteInput.value.trim(),
+      time: Date.now()
+    });
+    localStorage.setItem('djRequests', JSON.stringify(list));
+
+    songInput.value = '';
+    nameInput.value = '';
+    noteInput.value = '';
+    setActiveField('song');
+    songInput.focus();
+
+    const msgs = [
+      ['🎶', 'Request sent!'],
+      ['🔥', 'Great choice!'],
+      ['🙌', 'Nice one!'],
+      ['✅', 'On the list!'],
+    ];
+    const m = msgs[Math.floor(Math.random() * msgs.length)];
+    document.getElementById('tyIcon').textContent = m[0];
+    document.getElementById('tyText').textContent = m[1];
+    thankYou.classList.add('show');
+    setTimeout(() => thankYou.classList.remove('show'), 2800);
+  }
+
+  // ─── FIELD SWITCHING (on-screen keyboard tabs)
+  function switchField(f) {
+    setActiveField(f);
+    currentInput().focus();
+  }
+
+  function setActiveField(f) {
+    activeField = f;
+    document.getElementById('toggleSong').classList.toggle('active', f === 'song');
+    document.getElementById('toggleName').classList.toggle('active', f === 'name');
+    document.getElementById('toggleNote').classList.toggle('active', f === 'note');
+    [songInput, nameInput, noteInput].forEach(el => el.classList.remove('active-field'));
+    currentInput().classList.add('active-field');
+  }
+
+  function currentInput() {
+    if (activeField === 'song') return songInput;
+    if (activeField === 'name') return nameInput;
+    return noteInput;
+  }
+
+  function typeChar(ch) {
+    const inp = currentInput();
+    const c = (!isNaN(ch) || ch === ' ' || ch === "'") ? ch
+              : capsOn ? ch.toUpperCase() : ch.toLowerCase();
+    inp.value += c;
+  }
+
+  document.getElementById('keyboard').addEventListener('click', e => {
+    const key = e.target.closest('.key');
+    if (!key) return;
+
+    key.classList.add('pressed');
+    setTimeout(() => key.classList.remove('pressed'), 120);
+
+    const ch = key.dataset.char;
+    const action = key.dataset.action;
+
+    if (ch !== undefined) {
+      typeChar(ch);
+    } else if (action === 'back') {
+      const inp = currentInput();
+      inp.value = inp.value.slice(0, -1);
+    } else if (action === 'caps') {
+      capsOn = !capsOn;
+      document.getElementById('capsIndicator').classList.toggle('on', capsOn);
+      key.style.borderColor = capsOn ? 'var(--accent)' : '';
+      key.style.color = capsOn ? 'var(--accent)' : '';
+    } else if (action === 'clear') {
+      currentInput().value = '';
+    } else if (action === 'submit') {
+      submitRequest();
+    }
+  });
+
+  // ─── TIME
+  function relativeTime(ts) {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return 'Just now';
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    return `${Math.floor(m / 60)}h ago`;
+  }
+
+  // ─── RENDER DJ
+  function renderDJ() {
+    if (!requestList) return;
+    const requests = getRequests();
+
+    document.getElementById('statTotal').textContent = requests.length;
+    document.getElementById('statPlayed').textContent = parseInt(localStorage.getItem('djPlayed') || '0');
+    document.getElementById('statRejected').textContent = parseInt(localStorage.getItem('djRejected') || '0');
+
+    requestList.innerHTML = '';
+
+    if (requests.length === 0) {
+      requestList.innerHTML = `<div class="empty">
+        <div class="empty-icon">♫</div>
+        <p>No requests yet</p>
+      </div>`;
+      return;
+    }
+
+    requests.forEach((r, i) => {
+      const div = document.createElement('div');
+      div.className = 'request';
+      div.dataset.index = i;
+      div.innerHTML = `
+        <div class="request-num">${String(i + 1).padStart(2,'0')}</div>
+        <div class="song-name">${escapeHtml(r.song)}</div>
+        <div class="req-meta">
+          <span>${escapeHtml(r.name)}</span>
+          <span class="sep">·</span>
+          <span>${relativeTime(r.time)}</span>
+        </div>
+        ${r.note ? `<div class="req-note">${escapeHtml(r.note)}</div>` : ''}
+        <div class="dj-actions">
+          <button class="btn-played" onclick="markPlayed(${i})">✓ Played</button>
+          <button class="btn-reject" onclick="markRejected(${i})">✕ Reject</button>
+        </div>`;
+      requestList.appendChild(div);
+    });
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─── HISTORY
+  function getHistory() {
+    return JSON.parse(localStorage.getItem('djHistory') || '[]');
+  }
+
+  function logToHistory(request, status) {
+    const history = getHistory();
+    history.push({ ...request, status, resolvedAt: Date.now() });
+    localStorage.setItem('djHistory', JSON.stringify(history));
+  }
+
+  function removeRequest(i, cb) {
+    const cards = requestList.querySelectorAll('.request');
+    const card = cards[i];
+    if (!card) return;
+    card.classList.add('rejecting');
+    setTimeout(() => {
+      const list = getRequests();
+      list.splice(i, 1);
+      localStorage.setItem('djRequests', JSON.stringify(list));
+      if (cb) cb();
+      renderDJ();
+    }, 300);
+  }
+
+  function markPlayed(i) {
+    const r = getRequests()[i];
+    if (r) logToHistory(r, 'Played');
+    const n = parseInt(localStorage.getItem('djPlayed') || '0') + 1;
+    localStorage.setItem('djPlayed', n);
+    removeRequest(i);
+  }
+
+  function markRejected(i) {
+    const r = getRequests()[i];
+    if (r) logToHistory(r, 'Rejected');
+    const n = parseInt(localStorage.getItem('djRejected') || '0') + 1;
+    localStorage.setItem('djRejected', n);
+    removeRequest(i);
+  }
+
+  // ─── EXPORT CSV
+  function exportCSV() {
+    const history = getHistory();
+    const pending = getRequests().map(r => ({ ...r, status: 'Pending' }));
+    const all = [...history, ...pending];
+
+    if (all.length === 0) {
+      alert('No requests to export yet.');
+      return;
+    }
+
+    const fmtTime = ts => {
+      const d = new Date(ts);
+      return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    };
+
+    const escape = v => `"${String(v || '').replace(/"/g, '""')}"`;
+
+    const rows = [
+      ['Song', 'Requested By', 'Note to DJ', 'Requested At', 'Status'].map(escape).join(','),
+      ...all.map(r => [
+        escape(r.song),
+        escape(r.name),
+        escape(r.note || ''),
+        escape(fmtTime(r.time)),
+        escape(r.status),
+      ].join(','))
+    ];
+
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `dj-requests-${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ─── LOCK
+  function isLocked() {
+    return localStorage.getItem('djLocked') === 'true';
+  }
+
+  function toggleLock() {
+    localStorage.setItem('djLocked', isLocked() ? 'false' : 'true');
+    updateLockBtn();
+  }
+
+  function updateLockBtn() {
+    const btn = document.getElementById('lockBtn');
+    if (!btn) return;
+    const locked = isLocked();
+    btn.classList.toggle('locked', locked);
+    btn.textContent = locked ? '✅ Unlock Requests' : '⛔ Lock Requests';
+  }
+
+  function applyLockState() {
+    const overlay = document.getElementById('lockedOverlay');
+    if (!overlay) return;
+    overlay.classList.toggle('show', isLocked());
+  }
+
+  function clearAll() {
+    if (!confirm('Clear all pending requests?\n\nTip: export the CSV first if you want a record of tonight.')) return;
+    localStorage.setItem('djRequests', '[]');
+    if (confirm('Also clear the full history log? (This cannot be undone.)')) {
+      localStorage.setItem('djHistory', '[]');
+    }
+    renderDJ();
+  }
+</script>
+</body>
+</html>
