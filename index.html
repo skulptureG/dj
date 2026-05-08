@@ -8,6 +8,8 @@
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- QR Code -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -679,16 +681,293 @@
     height: 14px;
   }
 
+  /* ─── EVENT NAME (request page) ─── */
+  .event-name-display {
+    text-align: center;
+    margin-bottom: 28px;
+    margin-top: -10px;
+  }
+
+  .event-name-display .event-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .event-name-display .event-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 7vw, 3.6rem);
+    letter-spacing: 0.04em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  /* ─── EVENT SETUP OVERLAY ─── */
+  #eventSetup {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+  }
+
+  .event-setup-box {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .event-setup-box .setup-logo {
+    font-family: var(--font-display);
+    font-size: 2.8rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .event-setup-box .setup-logo span { color: var(--pink); }
+
+  .event-setup-box .setup-sub {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .setup-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .setup-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.4rem;
+    font-weight: 600;
+    padding: 20px 24px;
+    outline: none;
+    margin-bottom: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .setup-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .setup-input::placeholder { color: var(--muted); font-weight: 400; }
+
+  .btn-create-event {
+    width: 100%;
+    padding: 20px;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    box-shadow: 0 0 30px var(--accent-glow);
+    transition: box-shadow 0.2s, transform 0.1s;
+    margin-bottom: 20px;
+  }
+
+  .btn-create-event:hover { box-shadow: 0 0 50px rgba(198,255,0,0.55); transform: translateY(-1px); }
+  .btn-create-event:active { transform: scale(0.98); }
+
+  .setup-divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    color: var(--muted);
+  }
+
+  .setup-divider::before, .setup-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-bright);
+  }
+
+  .setup-divider span {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .setup-load-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .setup-code-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 16px 20px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .setup-code-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .setup-code-input::placeholder { text-transform: none; letter-spacing: 0; color: var(--muted); }
+
+  .btn-load-event {
+    padding: 16px 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-load-event:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── QR PANEL (DJ booth) ─── */
+  .qr-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 28px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .qr-canvas-wrap {
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px;
+    flex-shrink: 0;
+    line-height: 0;
+  }
+
+  .qr-canvas-wrap canvas, .qr-canvas-wrap img { display: block; }
+
+  .qr-info { flex: 1; min-width: 180px; }
+
+  .qr-event-name {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  .qr-url {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    word-break: break-all;
+    margin-bottom: 14px;
+  }
+
+  .qr-code-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.25);
+    border-radius: 6px;
+    padding: 5px 10px;
+    margin-bottom: 14px;
+  }
+
+  .btn-new-event {
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: block;
+  }
+
+  .btn-new-event:hover { border-color: var(--pink); color: var(--pink); }
+
   .caps-indicator.on { opacity: 1; }
 </style>
 </head>
 <body>
+
+<!-- ═══ EVENT SETUP (DJ only, shown when no event loaded) ═══ -->
+<div id="eventSetup" class="hidden">
+  <div class="event-setup-box">
+    <div class="setup-logo">DJ<span>:</span>Events</div>
+    <div class="setup-sub">Create or load an event to begin</div>
+
+    <label class="setup-label">New event name</label>
+    <input id="setupNameInput" class="setup-input" type="text" placeholder="e.g. Dave's Wedding" maxlength="60" autocomplete="off">
+    <button class="btn-create-event" onclick="createEvent()">Create Event →</button>
+
+    <div class="setup-divider"><span>or load existing</span></div>
+
+    <div class="setup-load-row">
+      <input id="setupCodeInput" class="setup-code-input" type="text" placeholder="Paste event code…" maxlength="20" autocomplete="off">
+      <button class="btn-load-event" onclick="loadEventByCode()">Load →</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ REQUEST VIEW ═══ -->
 <div id="requestView" class="panel hidden">
   <div class="header">
     <div class="logo">DJ<span>:</span>Request</div>
     <div class="badge">Send a song to the DJ</div>
+  </div>
+
+  <div class="event-name-display" id="eventNameDisplay" style="display:none">
+    <div class="event-label">Tonight's event</div>
+    <div class="event-title" id="eventNameTitle"></div>
   </div>
 
   <div class="input-group">
@@ -784,6 +1063,17 @@
     <div class="badge"><span class="live-dot" id="connDot" title="Connecting…"></span>Live Queue</div>
   </div>
 
+  <!-- QR / Event panel -->
+  <div class="qr-panel" id="qrPanel">
+    <div class="qr-canvas-wrap" id="qrCode"></div>
+    <div class="qr-info">
+      <div class="qr-event-name" id="qrEventName">—</div>
+      <div class="qr-code-badge" id="qrCodeBadge">CODE: —</div>
+      <div class="qr-url" id="qrUrl"></div>
+      <button class="btn-new-event" onclick="startNewEvent()">⟳ New Event</button>
+    </div>
+  </div>
+
   <div class="dj-stats">
     <div class="stat-card">
       <div class="val" id="statTotal">0</div>
@@ -829,14 +1119,6 @@
 <script>
 // ═══════════════════════════════════════════════════════════════
 //  FIREBASE CONFIG
-//  Setup steps (one-time, ~3 minutes):
-//  1. Go to https://console.firebase.google.com
-//  2. Click "Add project" → give it a name → Create
-//  3. In the project, click "Add app" → choose Web (</>)
-//  4. Register the app, then copy the firebaseConfig values below
-//  5. In the left sidebar go to Build → Realtime Database
-//  6. Click "Create database" → choose a region → Start in TEST MODE
-//  7. Paste your values into the object below and push to GitHub
 // ═══════════════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyBOdgG_AE1Rng88eoH5bLue1eY9VMwAsOc",
@@ -847,43 +1129,210 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "793216376391",
   appId:             "1:793216376391:web:6cf9f0b7cfa0fbc5ec9b62"
 };
-// ═══════════════════════════════════════════════════════════════
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-const requestsRef = db.ref('requests');
-const historyRef  = db.ref('history');
-const lockedRef   = db.ref('locked');
-const statsRef    = db.ref('stats');
 
-// ─── LOCAL STATE
-let capsOn = false;
-let activeField = 'song';
-let currentRequests = []; // mirror of Firebase requests, kept live by onValue
+// ─── HELPERS
+function genEventId() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusable chars
+  let id = '';
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
 
-const mode        = new URLSearchParams(window.location.search).get('mode');
-const requestView = document.getElementById('requestView');
-const djView      = document.getElementById('djView');
-const songInput   = document.getElementById('songInput');
-const nameInput   = document.getElementById('nameInput');
-const noteInput   = document.getElementById('noteInput');
-const thankYou    = document.getElementById('thankYou');
-const requestList = document.getElementById('requestList');
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function relativeTime(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'Just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  return `${Math.floor(m / 60)}h ago`;
+}
+
+// ─── FIREBASE REFS (set once event is known)
+let requestsRef, historyRef, lockedRef, statsRef, eventNameRef;
+let currentRequests = [];
+let qrInstance = null;
+
+function initRefs(eventId) {
+  const base = db.ref('events/' + eventId);
+  requestsRef  = base.child('requests');
+  historyRef   = base.child('history');
+  lockedRef    = base.child('locked');
+  statsRef     = base.child('stats');
+  eventNameRef = base.child('name');
+}
+
+// ─── DOM REFS
+const mode         = new URLSearchParams(window.location.search).get('mode');
+const eventParam   = new URLSearchParams(window.location.search).get('event');
+const requestView  = document.getElementById('requestView');
+const djView       = document.getElementById('djView');
+const eventSetup   = document.getElementById('eventSetup');
+const songInput    = document.getElementById('songInput');
+const nameInput    = document.getElementById('nameInput');
+const noteInput    = document.getElementById('noteInput');
+const thankYou     = document.getElementById('thankYou');
+const requestList  = document.getElementById('requestList');
 
 // ─── ROUTING
 if (mode === 'dj') {
+  const savedEvent = localStorage.getItem('djCurrentEvent');
+  const eventId    = savedEvent || null;
+
+  if (eventId) {
+    openDJBooth(eventId);
+  } else {
+    // Show event setup screen
+    eventSetup.classList.remove('hidden');
+    document.getElementById('setupNameInput').focus();
+  }
+
+} else {
+  // ─── GUEST PAGE
+  if (eventParam) {
+    requestView.classList.remove('hidden');
+    initRefs(eventParam);
+    songInput.classList.add('active-field');
+
+    // Show event name
+    eventNameRef.get().then(snap => {
+      const name = snap.val();
+      if (name) {
+        document.getElementById('eventNameTitle').textContent = name;
+        document.getElementById('eventNameDisplay').style.display = 'block';
+        document.title = name + ' — Song Requests';
+      }
+    });
+
+    // Live lock state
+    lockedRef.on('value', snap => applyLockState(snap.val() === true));
+
+    // Physical keyboard field sync
+    [songInput, nameInput, noteInput].forEach(el => {
+      el.addEventListener('focus', () => {
+        const f = el === songInput ? 'song' : el === nameInput ? 'name' : 'note';
+        setActiveField(f);
+      });
+    });
+
+    songInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameInput.focus(); } });
+    nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); noteInput.focus(); } });
+    noteInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitRequest(); } });
+
+  } else {
+    // No event code in URL — show a friendly holding message
+    document.body.innerHTML = `
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px;text-align:center;font-family:'DM Sans',system-ui,sans-serif;background:#090b10;color:#f0f0f8;">
+        <div>
+          <div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:3rem;color:#c6ff00;letter-spacing:.05em;margin-bottom:12px;">DJ<span style="color:#ff3e7f">:</span>Request</div>
+          <div style="color:rgba(240,240,248,.5);font-size:1rem;">Scan the QR code at the event to request a song.</div>
+        </div>
+      </div>`;
+  }
+}
+
+// ─── EVENT SETUP (DJ side)
+function createEvent() {
+  const name = document.getElementById('setupNameInput').value.trim();
+  if (!name) {
+    document.getElementById('setupNameInput').focus();
+    return;
+  }
+  const eventId = genEventId();
+  db.ref('events/' + eventId + '/name').set(name).then(() => {
+    localStorage.setItem('djCurrentEvent', eventId);
+    eventSetup.classList.add('hidden');
+    openDJBooth(eventId);
+  });
+}
+
+document.getElementById('setupNameInput')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') createEvent();
+});
+
+document.getElementById('setupCodeInput')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') loadEventByCode();
+});
+
+function loadEventByCode() {
+  const code = document.getElementById('setupCodeInput').value.trim().toUpperCase();
+  if (!code) return;
+  db.ref('events/' + code + '/name').get().then(snap => {
+    if (!snap.exists()) {
+      alert('Event code not found. Check the code and try again.');
+      return;
+    }
+    localStorage.setItem('djCurrentEvent', code);
+    eventSetup.classList.add('hidden');
+    openDJBooth(code);
+  });
+}
+
+function startNewEvent() {
+  if (!confirm('Start a new event? This won\'t delete the current one — you can reload it with its code anytime.')) return;
+  localStorage.removeItem('djCurrentEvent');
+
+  // Detach all listeners
+  if (requestsRef)  requestsRef.off();
+  if (lockedRef)    lockedRef.off();
+  if (statsRef)     statsRef.off();
+
+  djView.classList.add('hidden');
+  document.getElementById('qrCode').innerHTML = '';
+  qrInstance = null;
+  document.getElementById('setupNameInput').value = '';
+  document.getElementById('setupCodeInput').value = '';
+  eventSetup.classList.remove('hidden');
+  document.getElementById('setupNameInput').focus();
+}
+
+// ─── OPEN DJ BOOTH
+function openDJBooth(eventId) {
+  initRefs(eventId);
   djView.classList.remove('hidden');
+
+  // Build request page URL
+  const base = window.location.href.split('?')[0];
+  const guestUrl = base + '?event=' + eventId;
+
+  // Event name
+  eventNameRef.get().then(snap => {
+    const name = snap.val() || 'Unnamed Event';
+
+    document.getElementById('qrEventName').textContent = name;
+    document.getElementById('qrCodeBadge').textContent = 'CODE: ' + eventId;
+    document.getElementById('qrUrl').textContent = guestUrl;
+    document.title = name + ' — DJ Booth';
+
+    // Generate QR
+    document.getElementById('qrCode').innerHTML = '';
+    qrInstance = new QRCode(document.getElementById('qrCode'), {
+      text: guestUrl,
+      width: 140,
+      height: 140,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  });
 
   // Live request queue
   requestsRef.on('value', snapshot => {
     const data = snapshot.val() || {};
     currentRequests = Object.entries(data)
       .map(([key, val]) => ({ ...val, key }))
-      .sort((a, b) => b.time - a.time); // newest first
+      .sort((a, b) => b.time - a.time);
     renderDJ();
   });
 
-  // Live stats (played / rejected counters)
+  // Live stats
   statsRef.on('value', snap => {
     const s = snap.val() || {};
     document.getElementById('statPlayed').textContent   = s.played   || 0;
@@ -893,42 +1342,16 @@ if (mode === 'dj') {
   // Lock state
   lockedRef.on('value', snap => updateLockBtn(snap.val() === true));
 
-  // Connection indicator — dot goes pink when offline
+  // Connection indicator
   db.ref('.info/connected').on('value', snap => {
     const dot = document.getElementById('connDot');
     if (!dot) return;
-    if (snap.val()) {
-      dot.style.background = 'var(--accent)';
-      dot.title = 'Connected';
-    } else {
-      dot.style.background = 'var(--pink)';
-      dot.title = 'Disconnected — check internet';
-    }
+    dot.style.background = snap.val() ? 'var(--accent)' : 'var(--pink)';
+    dot.title = snap.val() ? 'Connected' : 'Disconnected';
   });
-
-} else {
-  // ─── GUEST REQUEST PAGE
-  requestView.classList.remove('hidden');
-  songInput.classList.add('active-field');
-
-  // Listen for lock changes from the DJ in real time
-  lockedRef.on('value', snap => applyLockState(snap.val() === true));
-
-  // Sync active-field highlight when user taps a real input
-  [songInput, nameInput, noteInput].forEach(el => {
-    el.addEventListener('focus', () => {
-      const f = el === songInput ? 'song' : el === nameInput ? 'name' : 'note';
-      setActiveField(f);
-    });
-  });
-
-  // Physical keyboard navigation
-  songInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameInput.focus(); } });
-  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); noteInput.focus(); } });
-  noteInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitRequest(); } });
 }
 
-// ─── SUBMIT REQUEST (guest side → writes to Firebase)
+// ─── SUBMIT REQUEST
 function submitRequest() {
   const song = songInput.value.trim();
   if (!song) {
@@ -971,7 +1394,10 @@ function submitRequest() {
   setTimeout(() => thankYou.classList.remove('show'), 2800);
 }
 
-// ─── FIELD SWITCHING (on-screen keyboard tabs)
+// ─── FIELD SWITCHING
+let capsOn = false;
+let activeField = 'song';
+
 function switchField(f) {
   setActiveField(f);
   currentInput().focus();
@@ -999,7 +1425,7 @@ function typeChar(ch) {
   inp.value += c;
 }
 
-document.getElementById('keyboard').addEventListener('click', e => {
+document.getElementById('keyboard')?.addEventListener('click', e => {
   const key = e.target.closest('.key');
   if (!key) return;
 
@@ -1026,15 +1452,6 @@ document.getElementById('keyboard').addEventListener('click', e => {
   }
 });
 
-// ─── TIME
-function relativeTime(ts) {
-  const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60) return 'Just now';
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  return `${Math.floor(m / 60)}h ago`;
-}
-
 // ─── RENDER DJ QUEUE
 function renderDJ() {
   if (!requestList) return;
@@ -1051,7 +1468,7 @@ function renderDJ() {
 
   currentRequests.forEach((r, i) => {
     const div = document.createElement('div');
-    div.className  = 'request';
+    div.className   = 'request';
     div.dataset.key = r.key;
     div.innerHTML = `
       <div class="request-num">${String(i + 1).padStart(2, '0')}</div>
@@ -1070,20 +1487,14 @@ function renderDJ() {
   });
 }
 
-function escapeHtml(s) {
-  return String(s || '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ─── REMOVE (animate card out, then delete from Firebase)
+// ─── REMOVE REQUEST
 function removeRequest(key) {
-  const card = requestList ? requestList.querySelector(`[data-key="${key}"]`) : null;
+  const card = requestList?.querySelector(`[data-key="${key}"]`);
   if (card) {
     card.classList.add('rejecting');
-    setTimeout(() => db.ref('requests/' + key).remove(), 300);
+    setTimeout(() => requestsRef.child(key).remove(), 300);
   } else {
-    db.ref('requests/' + key).remove();
+    requestsRef.child(key).remove();
   }
 }
 
@@ -1105,12 +1516,8 @@ function markRejected(key) {
 // ─── EXPORT CSV
 function exportCSV() {
   Promise.all([historyRef.get(), requestsRef.get()]).then(([histSnap, reqSnap]) => {
-    const history = histSnap.val()
-      ? Object.values(histSnap.val())
-      : [];
-    const pending = reqSnap.val()
-      ? Object.values(reqSnap.val()).map(r => ({ ...r, status: 'Pending' }))
-      : [];
+    const history = histSnap.val() ? Object.values(histSnap.val()) : [];
+    const pending = reqSnap.val()  ? Object.values(reqSnap.val()).map(r => ({ ...r, status: 'Pending' })) : [];
     const all = [...history, ...pending];
 
     if (all.length === 0) { alert('No requests to export yet.'); return; }
@@ -1126,11 +1533,12 @@ function exportCSV() {
       ...all.map(r => [esc(r.song), esc(r.name), esc(r.note || ''), esc(fmtTime(r.time)), esc(r.status)].join(','))
     ];
 
+    const eventName = document.getElementById('qrEventName')?.textContent || 'dj-requests';
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = `dj-requests-${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `${eventName.replace(/[^a-z0-9]/gi, '-')}-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   });
