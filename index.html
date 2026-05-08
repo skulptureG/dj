@@ -1090,25 +1090,6 @@
 </head>
 <body>
 
-<!-- ═══ EVENT SETUP (DJ only, shown when no event loaded) ═══ -->
-<div id="eventSetup" class="hidden">
-  <div class="event-setup-box">
-    <div class="setup-logo">DJ<span>:</span>Events</div>
-    <div class="setup-sub">Create or load an event to begin</div>
-
-    <label class="setup-label">New event name</label>
-    <input id="setupNameInput" class="setup-input" type="text" placeholder="e.g. Dave's Wedding" maxlength="60" autocomplete="off">
-    <button class="btn-create-event" onclick="createDJEvent()">Create Event →</button>
-
-    <div class="setup-divider"><span>or load existing</span></div>
-
-    <div class="setup-load-row">
-      <input id="setupCodeInput" class="setup-code-input" type="text" placeholder="Paste event code…" maxlength="20" autocomplete="off">
-      <button class="btn-load-event" onclick="loadEventByCode()">Load →</button>
-    </div>
-  </div>
-</div>
-
 <!-- ═══ REQUEST VIEW ═══ -->
 <div id="requestView" class="panel hidden">
   <div class="header">
@@ -1351,14 +1332,12 @@ if (mode === 'admin') {
 
 } else if (mode === 'dj') {
   const savedEvent = localStorage.getItem('djCurrentEvent');
-  const eventId    = savedEvent || null;
 
-  if (eventId) {
-    openDJBooth(eventId);
+  if (savedEvent) {
+    openDJBooth(savedEvent);
   } else {
-    // Show event setup screen
-    eventSetup.classList.remove('hidden');
-    document.getElementById('setupNameInput').focus();
+    // No event — send to admin to create/pick one
+    window.location.href = window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
   }
 
 } else {
@@ -1463,21 +1442,13 @@ function loadEventByCode() {
 }
 
 function startNewEvent() {
-  if (!confirm('Start a new event? This won\'t delete the current one — you can reload it with its code anytime.')) return;
+  if (!confirm('Go to admin to switch event? This won\'t delete the current one.')) return;
   localStorage.removeItem('djCurrentEvent');
-
-  // Detach all listeners
-  if (requestsRef)  requestsRef.off();
-  if (lockedRef)    lockedRef.off();
-  if (statsRef)     statsRef.off();
-
-  djView.classList.add('hidden');
-  document.getElementById('qrCode').innerHTML = '';
-  qrInstance = null;
-  document.getElementById('setupNameInput').value = '';
-  document.getElementById('setupCodeInput').value = '';
-  eventSetup.classList.remove('hidden');
-  document.getElementById('setupNameInput').focus();
+  if (requestsRef) requestsRef.off();
+  if (lockedRef)   lockedRef.off();
+  if (statsRef)    statsRef.off();
+  const adminUrl = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
+  window.location.href = adminUrl;
 }
 
 // ─── OPEN DJ BOOTH
