@@ -1245,12 +1245,22 @@ function createEvent() {
     document.getElementById('setupNameInput').focus();
     return;
   }
+  const btn = document.querySelector('.btn-create-event');
+  btn.textContent = 'Creating…';
+  btn.disabled = true;
+
   const eventId = genEventId();
-  db.ref('events/' + eventId + '/name').set(name).then(() => {
-    localStorage.setItem('djCurrentEvent', eventId);
-    eventSetup.classList.add('hidden');
-    openDJBooth(eventId);
-  });
+  db.ref('events/' + eventId + '/name').set(name)
+    .then(() => {
+      localStorage.setItem('djCurrentEvent', eventId);
+      eventSetup.classList.add('hidden');
+      openDJBooth(eventId);
+    })
+    .catch(err => {
+      btn.textContent = 'Create Event →';
+      btn.disabled = false;
+      alert('Could not create event.\n\nFirebase error: ' + err.message + '\n\nCheck your database rules are set to allow read/write.');
+    });
 }
 
 document.getElementById('setupNameInput')?.addEventListener('keydown', e => {
