@@ -525,6 +525,23 @@
 
   .btn-clear:hover { border-color: var(--pink); color: var(--pink); }
 
+  .btn-sort {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--border-bright);
+    background: var(--surface2);
+    color: var(--muted);
+  }
+
+  .btn-sort:hover { border-color: var(--text); color: var(--text); }
+  .btn-sort.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
   .btn-export {
     font-family: var(--font-mono);
     font-size: 0.65rem;
@@ -935,6 +952,140 @@
   .btn-new-event:hover { border-color: var(--pink); color: var(--pink); }
 
   .caps-indicator.on { opacity: 1; }
+  /* ─── ADMIN VIEW ─── */
+  #adminView {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  .admin-event-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    transition: border-color 0.2s, opacity 0.3s, transform 0.3s;
+  }
+
+  .admin-event-card.deleting {
+    opacity: 0;
+    transform: translateX(40px);
+    pointer-events: none;
+  }
+
+  .admin-event-info { flex: 1; min-width: 160px; }
+
+  .admin-event-name {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+
+  .admin-event-meta {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .admin-event-meta .code-pill {
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.2);
+    border-radius: 4px;
+    padding: 2px 7px;
+  }
+
+  .admin-stats {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .admin-stat {
+    text-align: center;
+  }
+
+  .admin-stat .n {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .admin-stat .l {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .btn-load-in-booth {
+    padding: 10px 16px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.25);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-load-in-booth:hover { background: var(--accent); color: #0a0a0f; }
+
+  .btn-delete-event {
+    padding: 10px 16px;
+    background: var(--pink-dim);
+    border: 1px solid rgba(255,62,127,0.25);
+    border-radius: var(--radius-sm);
+    color: var(--pink);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-delete-event:hover { background: var(--pink); color: #fff; }
+
+  .admin-empty {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--muted);
+  }
+
+  .admin-empty .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+  .admin-empty p { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; }
+
+  .admin-loading {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    padding: 60px 0;
+  }
 </style>
 </head>
 <body>
@@ -1092,7 +1243,8 @@
 
   <div class="dj-toolbar">
     <div class="section-label">Request queue</div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn-sort" id="sortBtn" onclick="toggleSort()">↓ Oldest First</button>
       <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
       <button class="btn-lock" id="lockBtn" onclick="toggleLock()">⛔ Lock Requests</button>
       <button class="btn-clear" onclick="clearAll()">Clear All</button>
@@ -1100,6 +1252,15 @@
   </div>
 
   <div id="requestList"></div>
+</div>
+
+<!-- ═══ ADMIN VIEW ═══ -->
+<div id="adminView" class="hidden">
+  <div class="header">
+    <div class="logo">DJ<span>:</span>Admin</div>
+    <div class="badge">All Events</div>
+  </div>
+  <div id="adminList"><div class="admin-loading">Loading events…</div></div>
 </div>
 
 <!-- LOCKED OVERLAY (request page) -->
@@ -1183,7 +1344,12 @@ const thankYou     = document.getElementById('thankYou');
 const requestList  = document.getElementById('requestList');
 
 // ─── ROUTING
-if (mode === 'dj') {
+if (mode === 'admin') {
+  document.getElementById('adminView').classList.remove('hidden');
+  document.title = 'DJ Admin — All Events';
+  loadAdminEvents();
+
+} else if (mode === 'dj') {
   const savedEvent = localStorage.getItem('djCurrentEvent');
   const eventId    = savedEvent || null;
 
@@ -1348,8 +1514,7 @@ function openDJBooth(eventId) {
   requestsRef.on('value', snapshot => {
     const data = snapshot.val() || {};
     currentRequests = Object.entries(data)
-      .map(([key, val]) => ({ ...val, key }))
-      .sort((a, b) => b.time - a.time);
+      .map(([key, val]) => ({ ...val, key }));
     renderDJ();
   });
 
@@ -1370,6 +1535,17 @@ function openDJBooth(eventId) {
     dot.style.background = snap.val() ? 'var(--accent)' : 'var(--pink)';
     dot.title = snap.val() ? 'Connected' : 'Disconnected';
   });
+}
+
+// ─── SORT
+let sortNewestFirst = true;
+
+function toggleSort() {
+  sortNewestFirst = !sortNewestFirst;
+  const btn = document.getElementById('sortBtn');
+  btn.textContent   = sortNewestFirst ? '↓ Newest First' : '↑ Oldest First';
+  btn.classList.toggle('active', !sortNewestFirst);
+  renderDJ();
 }
 
 // ─── SUBMIT REQUEST
@@ -1487,7 +1663,11 @@ function renderDJ() {
     return;
   }
 
-  currentRequests.forEach((r, i) => {
+  const sorted = [...currentRequests].sort((a, b) =>
+    sortNewestFirst ? b.time - a.time : a.time - b.time
+  );
+
+  sorted.forEach((r, i) => {
     const div = document.createElement('div');
     div.className   = 'request';
     div.dataset.key = r.key;
