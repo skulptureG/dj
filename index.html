@@ -947,7 +947,7 @@
 
     <label class="setup-label">New event name</label>
     <input id="setupNameInput" class="setup-input" type="text" placeholder="e.g. Dave's Wedding" maxlength="60" autocomplete="off">
-    <button class="btn-create-event" onclick="createEvent()">Create Event →</button>
+    <button class="btn-create-event" onclick="createDJEvent()">Create Event →</button>
 
     <div class="setup-divider"><span>or load existing</span></div>
 
@@ -1239,7 +1239,7 @@ if (mode === 'dj') {
 }
 
 // ─── EVENT SETUP (DJ side)
-function createEvent() {
+function createDJEvent() {
   const name = document.getElementById('setupNameInput').value.trim();
   if (!name) {
     document.getElementById('setupNameInput').focus();
@@ -1264,7 +1264,7 @@ function createEvent() {
 }
 
 document.getElementById('setupNameInput')?.addEventListener('keydown', e => {
-  if (e.key === 'Enter') createEvent();
+  if (e.key === 'Enter') createDJEvent();
 });
 
 document.getElementById('setupCodeInput')?.addEventListener('keydown', e => {
