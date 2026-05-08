@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DJ Admin — All Events</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #090b10;
+    --surface: #111420;
+    --surface2: #181c2a;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.14);
+    --accent: #c6ff00;
+    --accent-dim: rgba(198,255,0,0.12);
+    --accent-glow: rgba(198,255,0,0.35);
+    --pink: #ff3e7f;
+    --pink-dim: rgba(255,62,127,0.12);
+    --text: #f0f0f8;
+    --muted: rgba(240,240,248,0.45);
+    --font-display: 'Bebas Neue', Impact, sans-serif;
+    --font-mono: 'DM Mono', 'Courier New', monospace;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .panel {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 22px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .logo span { color: var(--pink); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border-bright);
+    padding: 5px 10px;
+    border-radius: 100px;
+  }
+
+  .live-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: var(--pink);
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ─── SUMMARY BAR ─── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+
+  .summary-card .val {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .summary-card .lbl {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ─── TOOLBAR ─── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .btn-delete-all {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid rgba(255,62,127,0.35);
+    background: rgba(255,62,127,0.06);
+    color: var(--pink);
+  }
+
+  .btn-delete-all:hover { background: var(--pink); color: #fff; }
+
+  /* ─── EVENT CARD ─── */
+  .event-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+
+  .event-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 3px 0 0 3px;
+  }
+
+  .event-card.removing {
+    opacity: 0;
+    transform: translateX(40px);
+    pointer-events: none;
+  }
+
+  .event-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .event-name {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  .event-code {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin-top: 6px;
+    display: inline-block;
+  }
+
+  .event-meta {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-top: 10px;
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .event-meta .meta-item { display: flex; gap: 6px; align-items: center; }
+
+  .event-meta .meta-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    opacity: 0.4;
+  }
+
+  .event-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+
+  .btn-open {
+    padding: 11px 20px;
+    border: 1px solid rgba(198,255,0,0.3);
+    border-radius: var(--radius-sm);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    display: inline-block;
+  }
+
+  .btn-open:hover { background: var(--accent); color: #0a0a0f; }
+
+  .btn-delete {
+    padding: 11px 20px;
+    border: 1px solid rgba(255,62,127,0.3);
+    border-radius: var(--radius-sm);
+    background: var(--pink-dim);
+    color: var(--pink);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-delete:hover { background: var(--pink); color: #fff; }
+
+  /* ─── PENDING REQUESTS EXPANDABLE ─── */
+  .btn-expand {
+    padding: 11px 20px;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-expand:hover { border-color: var(--text); color: var(--text); }
+
+  .requests-list {
+    display: none;
+    margin-top: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  .requests-list.open { display: block; }
+
+  .req-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .req-item:last-child { border-bottom: none; }
+
+  .req-song {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .req-who {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  /* ─── EMPTY / LOADING ─── */
+  .state-msg {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--muted);
+  }
+
+  .state-msg .icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+
+  .state-msg p {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* ─── CONFIRM MODAL ─── */
+  #confirmModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,11,16,0.92);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 30px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  #confirmModal.show { opacity: 1; pointer-events: all; }
+
+  .modal-box {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    padding: 32px;
+    max-width: 440px;
+    width: 100%;
+  }
+
+  .modal-box h2 {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    letter-spacing: 0.04em;
+    color: var(--pink);
+    margin-bottom: 10px;
+  }
+
+  .modal-box p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  .modal-box p strong { color: var(--text); }
+
+  .modal-actions { display: flex; gap: 10px; }
+
+  .btn-confirm-delete {
+    flex: 1;
+    padding: 14px;
+    background: var(--pink);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-confirm-delete:hover { background: #ff1a65; }
+
+  .btn-cancel {
+    flex: 1;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+</style>
+</head>
+<body>
+<div class="panel">
+
+  <div class="header">
+    <div class="logo">DJ<span>:</span>Admin</div>
+    <div class="header-right">
+      <div class="badge"><span class="live-dot" id="connDot"></span>Event Manager</div>
+      <a href="index.html?mode=dj" style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">← DJ Booth</a>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-card">
+      <div class="val" id="totalEvents">—</div>
+      <div class="lbl">Total events</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" id="totalRequests">—</div>
+      <div class="lbl">Total requests</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" id="totalPlayed">—</div>
+      <div class="lbl">Songs played</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="section-label">All events</div>
+    <button class="btn-delete-all" onclick="confirmDeleteAll()">🗑 Delete All Events</button>
+  </div>
+
+  <div id="eventList"><div class="state-msg"><div class="icon">⏳</div><p>Loading events…</p></div></div>
+
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirmModal">
+  <div class="modal-box">
+    <h2 id="modalTitle">Delete Event?</h2>
+    <p id="modalBody">This will permanently delete all requests and history for this event.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm-delete" id="modalConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBOdgG_AE1Rng88eoH5bLue1eY9VMwAsOc",
+  authDomain:        "dj-request-gt.firebaseapp.com",
+  databaseURL:       "https://dj-request-gt-default-rtdb.firebaseio.com",
+  projectId:         "dj-request-gt",
+  storageBucket:     "dj-request-gt.firebasestorage.app",
+  messagingSenderId: "793216376391",
+  appId:             "1:793216376391:web:6cf9f0b7cfa0fbc5ec9b62"
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+
+// ─── CONNECTION DOT
+db.ref('.info/connected').on('value', snap => {
+  const dot = document.getElementById('connDot');
+  dot.style.background = snap.val() ? 'var(--accent)' : 'var(--pink)';
+});
+
+// ─── LOAD ALL EVENTS
+function loadEvents() {
+  db.ref('events').get().then(snap => {
+    const eventList = document.getElementById('eventList');
+    const data = snap.val();
+
+    if (!data) {
+      eventList.innerHTML = `<div class="state-msg"><div class="icon">♫</div><p>No events found</p></div>`;
+      document.getElementById('totalEvents').textContent = '0';
+      document.getElementById('totalRequests').textContent = '0';
+      document.getElementById('totalPlayed').textContent = '0';
+      return;
+    }
+
+    const events = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+
+    // Sort newest first by checking request timestamps
+    // (approximate — use the id since it's random, fall back to name)
+    eventList.innerHTML = '';
+
+    let grandRequests = 0;
+    let grandPlayed   = 0;
+
+    events.forEach(event => {
+      const requests  = event.requests  ? Object.values(event.requests)  : [];
+      const history   = event.history   ? Object.values(event.history)   : [];
+      const pending   = requests.length;
+      const played    = (event.stats?.played   || 0);
+      const rejected  = (event.stats?.rejected || 0);
+      const locked    = event.locked === true;
+
+      grandRequests += pending + history.length;
+      grandPlayed   += played;
+
+      // Most recent request time
+      const allTimes = requests.map(r => r.time).filter(Boolean);
+      const lastTime = allTimes.length ? Math.max(...allTimes) : null;
+
+      const card = document.createElement('div');
+      card.className   = 'event-card';
+      card.id          = 'card-' + event.id;
+
+      const baseUrl    = window.location.href.replace('admin.html', 'index.html').split('?')[0];
+      const guestUrl   = baseUrl + '?event=' + event.id;
+      const djUrl      = baseUrl + '?mode=dj';
+
+      card.innerHTML = `
+        <div class="event-top">
+          <div>
+            <div class="event-name">${escHtml(event.name || 'Unnamed Event')}</div>
+            <div class="event-code">CODE: ${event.id}</div>
+          </div>
+          ${locked ? '<div style="font-size:1.4rem;padding-top:4px;" title="Requests locked">🔒</div>' : ''}
+        </div>
+        <div class="event-meta">
+          <div class="meta-item"><div class="meta-dot"></div>${pending} pending</div>
+          <div class="meta-item"><div class="meta-dot"></div>${played} played</div>
+          <div class="meta-item"><div class="meta-dot"></div>${rejected} rejected</div>
+          ${lastTime ? `<div class="meta-item"><div class="meta-dot"></div>Last request ${relTime(lastTime)}</div>` : ''}
+        </div>
+        <div class="event-actions">
+          <a class="btn-open" href="${guestUrl}" target="_blank">↗ Guest Page</a>
+          <a class="btn-open" href="${djUrl}" target="_blank" onclick="localStorage.setItem('djCurrentEvent','${event.id}')">🎧 Open in Booth</a>
+          ${requests.length > 0 ? `<button class="btn-expand" onclick="toggleRequests('${event.id}')">▾ ${pending} Pending</button>` : ''}
+          <button class="btn-delete" onclick="confirmDelete('${event.id}', '${escAttr(event.name || 'Unnamed Event')}')">🗑 Delete</button>
+        </div>
+        ${requests.length > 0 ? `
+        <div class="requests-list" id="reqs-${event.id}">
+          ${requests.map(r => `
+            <div class="req-item">
+              <div>
+                <div class="req-song">${escHtml(r.song)}</div>
+                <div class="req-who">${escHtml(r.name)}${r.note ? ' · ' + escHtml(r.note) : ''}</div>
+              </div>
+              <div class="req-who">${r.time ? relTime(r.time) : ''}</div>
+            </div>`).join('')}
+        </div>` : ''}`;
+
+      eventList.appendChild(card);
+    });
+
+    document.getElementById('totalEvents').textContent   = events.length;
+    document.getElementById('totalRequests').textContent = grandRequests;
+    document.getElementById('totalPlayed').textContent   = grandPlayed;
+
+  }).catch(err => {
+    document.getElementById('eventList').innerHTML =
+      `<div class="state-msg"><div class="icon">⚠️</div><p>Error loading events<br>${err.message}</p></div>`;
+  });
+}
+
+loadEvents();
+
+// ─── TOGGLE PENDING LIST
+function toggleRequests(eventId) {
+  const list = document.getElementById('reqs-' + eventId);
+  if (!list) return;
+  list.classList.toggle('open');
+  const btn = list.previousElementSibling?.querySelector('.btn-expand')
+    || document.querySelector(`#card-${eventId} .btn-expand`);
+}
+
+// ─── CONFIRM MODAL
+let pendingAction = null;
+
+function confirmDelete(eventId, eventName) {
+  document.getElementById('modalTitle').textContent = 'Delete Event?';
+  document.getElementById('modalBody').innerHTML =
+    `This will permanently delete <strong>${escHtml(eventName)}</strong> and all its requests, history and stats. This cannot be undone.`;
+  document.getElementById('modalConfirmBtn').onclick = () => deleteEvent(eventId);
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+function confirmDeleteAll() {
+  document.getElementById('modalTitle').textContent = 'Delete All Events?';
+  document.getElementById('modalBody').innerHTML =
+    `This will permanently delete <strong>every event</strong> and all requests, history and stats. This cannot be undone.`;
+  document.getElementById('modalConfirmBtn').onclick = deleteAllEvents;
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('show');
+}
+
+document.getElementById('confirmModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirmModal')) closeModal();
+});
+
+// ─── DELETE SINGLE EVENT
+function deleteEvent(eventId) {
+  closeModal();
+  const card = document.getElementById('card-' + eventId);
+  if (card) card.classList.add('removing');
+  db.ref('events/' + eventId).remove().then(() => {
+    if (localStorage.getItem('djCurrentEvent') === eventId) {
+      localStorage.removeItem('djCurrentEvent');
+    }
+    setTimeout(() => { if (card) card.remove(); updateSummary(); }, 320);
+  }).catch(err => alert('Delete failed: ' + err.message));
+}
+
+// ─── DELETE ALL EVENTS
+function deleteAllEvents() {
+  closeModal();
+  db.ref('events').remove().then(() => {
+    localStorage.removeItem('djCurrentEvent');
+    loadEvents();
+  }).catch(err => alert('Delete failed: ' + err.message));
+}
+
+// ─── UPDATE SUMMARY AFTER DELETION
+function updateSummary() {
+  const remaining = document.querySelectorAll('.event-card').length;
+  document.getElementById('totalEvents').textContent = remaining;
+  if (remaining === 0) {
+    document.getElementById('eventList').innerHTML =
+      `<div class="state-msg"><div class="icon">♫</div><p>No events found</p></div>`;
+    document.getElementById('totalRequests').textContent = '0';
+    document.getElementById('totalPlayed').textContent   = '0';
+  }
+}
+
+// ─── HELPERS
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(s) {
+  return String(s || '').replace(/'/g, "\\'");
+}
+
+function relTime(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+</script>
+</body>
+</html>
