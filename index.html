@@ -5,6 +5,9 @@
 <title>DJ Requests</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -778,7 +781,7 @@
 <div id="djView" class="panel hidden">
   <div class="header">
     <div class="logo">DJ<span>:</span>Booth</div>
-    <div class="badge"><span class="live-dot"></span>Live Queue</div>
+    <div class="badge"><span class="live-dot" id="connDot" title="Connecting…"></span>Live Queue</div>
   </div>
 
   <div class="dj-stats">
@@ -824,318 +827,342 @@
 </div>
 
 <script>
-  // ─── STATE
-  let capsOn = false;
-  let activeField = 'song';
+// ═══════════════════════════════════════════════════════════════
+//  FIREBASE CONFIG
+//  Setup steps (one-time, ~3 minutes):
+//  1. Go to https://console.firebase.google.com
+//  2. Click "Add project" → give it a name → Create
+//  3. In the project, click "Add app" → choose Web (</>)
+//  4. Register the app, then copy the firebaseConfig values below
+//  5. In the left sidebar go to Build → Realtime Database
+//  6. Click "Create database" → choose a region → Start in TEST MODE
+//  7. Paste your values into the object below and push to GitHub
+// ═══════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBOdgG_AE1Rng88eoH5bLue1eY9VMwAsOc",
+  authDomain:        "dj-request-gt.firebaseapp.com",
+  databaseURL:       "https://dj-request-gt-default-rtdb.firebaseio.com",
+  projectId:         "dj-request-gt",
+  storageBucket:     "dj-request-gt.firebasestorage.app",
+  messagingSenderId: "793216376391",
+  appId:             "1:793216376391:web:6cf9f0b7cfa0fbc5ec9b62"
+};
+// ═══════════════════════════════════════════════════════════════
 
-  const mode = new URLSearchParams(window.location.search).get('mode');
-  const requestView = document.getElementById('requestView');
-  const djView = document.getElementById('djView');
-  const songInput = document.getElementById('songInput');
-  const nameInput = document.getElementById('nameInput');
-  const noteInput = document.getElementById('noteInput');
-  const thankYou = document.getElementById('thankYou');
-  const requestList = document.getElementById('requestList');
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+const requestsRef = db.ref('requests');
+const historyRef  = db.ref('history');
+const lockedRef   = db.ref('locked');
+const statsRef    = db.ref('stats');
 
-  // ─── ROUTING
-  if (mode === 'dj') {
-    djView.classList.remove('hidden');
+// ─── LOCAL STATE
+let capsOn = false;
+let activeField = 'song';
+let currentRequests = []; // mirror of Firebase requests, kept live by onValue
+
+const mode        = new URLSearchParams(window.location.search).get('mode');
+const requestView = document.getElementById('requestView');
+const djView      = document.getElementById('djView');
+const songInput   = document.getElementById('songInput');
+const nameInput   = document.getElementById('nameInput');
+const noteInput   = document.getElementById('noteInput');
+const thankYou    = document.getElementById('thankYou');
+const requestList = document.getElementById('requestList');
+
+// ─── ROUTING
+if (mode === 'dj') {
+  djView.classList.remove('hidden');
+
+  // Live request queue
+  requestsRef.on('value', snapshot => {
+    const data = snapshot.val() || {};
+    currentRequests = Object.entries(data)
+      .map(([key, val]) => ({ ...val, key }))
+      .sort((a, b) => b.time - a.time); // newest first
     renderDJ();
-    updateLockBtn();
-    window.addEventListener('storage', e => { if (e.key === 'djRequests') renderDJ(); });
-    setInterval(renderDJ, 5000);
-  } else {
-    requestView.classList.remove('hidden');
-    songInput.classList.add('active-field');
-    applyLockState();
+  });
 
-    // React to lock toggled from another tab
-    window.addEventListener('storage', e => { if (e.key === 'djLocked') applyLockState(); });
+  // Live stats (played / rejected counters)
+  statsRef.on('value', snap => {
+    const s = snap.val() || {};
+    document.getElementById('statPlayed').textContent   = s.played   || 0;
+    document.getElementById('statRejected').textContent = s.rejected || 0;
+  });
 
-    // Sync active field when user physically focuses an input
-    [songInput, nameInput, noteInput].forEach(el => {
-      el.addEventListener('focus', () => {
-        const f = el === songInput ? 'song' : el === nameInput ? 'name' : 'note';
-        setActiveField(f);
-      });
-    });
+  // Lock state
+  lockedRef.on('value', snap => updateLockBtn(snap.val() === true));
 
-    // Enter key on song/name moves to next field; on note submits
-    songInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameInput.focus(); } });
-    nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); noteInput.focus(); } });
-    noteInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitRequest(); } });
-  }
-
-  // ─── DATA
-  function getRequests() {
-    return JSON.parse(localStorage.getItem('djRequests') || '[]');
-  }
-
-  // ─── SUBMIT
-  function submitRequest() {
-    const song = songInput.value.trim();
-    if (!song) {
-      songInput.classList.remove('active-field');
-      void songInput.offsetWidth;
-      songInput.style.borderColor = 'var(--pink)';
-      songInput.style.boxShadow = '0 0 0 3px var(--pink-dim)';
-      setTimeout(() => {
-        songInput.style.borderColor = '';
-        songInput.style.boxShadow = '';
-        songInput.classList.add('active-field');
-      }, 600);
-      songInput.focus();
-      return;
-    }
-
-    const list = getRequests();
-    list.unshift({
-      song,
-      name: nameInput.value.trim() || 'Anonymous',
-      note: noteInput.value.trim(),
-      time: Date.now()
-    });
-    localStorage.setItem('djRequests', JSON.stringify(list));
-
-    songInput.value = '';
-    nameInput.value = '';
-    noteInput.value = '';
-    setActiveField('song');
-    songInput.focus();
-
-    const msgs = [
-      ['🎶', 'Request sent!'],
-      ['🔥', 'Great choice!'],
-      ['🙌', 'Nice one!'],
-      ['✅', 'On the list!'],
-    ];
-    const m = msgs[Math.floor(Math.random() * msgs.length)];
-    document.getElementById('tyIcon').textContent = m[0];
-    document.getElementById('tyText').textContent = m[1];
-    thankYou.classList.add('show');
-    setTimeout(() => thankYou.classList.remove('show'), 2800);
-  }
-
-  // ─── FIELD SWITCHING (on-screen keyboard tabs)
-  function switchField(f) {
-    setActiveField(f);
-    currentInput().focus();
-  }
-
-  function setActiveField(f) {
-    activeField = f;
-    document.getElementById('toggleSong').classList.toggle('active', f === 'song');
-    document.getElementById('toggleName').classList.toggle('active', f === 'name');
-    document.getElementById('toggleNote').classList.toggle('active', f === 'note');
-    [songInput, nameInput, noteInput].forEach(el => el.classList.remove('active-field'));
-    currentInput().classList.add('active-field');
-  }
-
-  function currentInput() {
-    if (activeField === 'song') return songInput;
-    if (activeField === 'name') return nameInput;
-    return noteInput;
-  }
-
-  function typeChar(ch) {
-    const inp = currentInput();
-    const c = (!isNaN(ch) || ch === ' ' || ch === "'") ? ch
-              : capsOn ? ch.toUpperCase() : ch.toLowerCase();
-    inp.value += c;
-  }
-
-  document.getElementById('keyboard').addEventListener('click', e => {
-    const key = e.target.closest('.key');
-    if (!key) return;
-
-    key.classList.add('pressed');
-    setTimeout(() => key.classList.remove('pressed'), 120);
-
-    const ch = key.dataset.char;
-    const action = key.dataset.action;
-
-    if (ch !== undefined) {
-      typeChar(ch);
-    } else if (action === 'back') {
-      const inp = currentInput();
-      inp.value = inp.value.slice(0, -1);
-    } else if (action === 'caps') {
-      capsOn = !capsOn;
-      document.getElementById('capsIndicator').classList.toggle('on', capsOn);
-      key.style.borderColor = capsOn ? 'var(--accent)' : '';
-      key.style.color = capsOn ? 'var(--accent)' : '';
-    } else if (action === 'clear') {
-      currentInput().value = '';
-    } else if (action === 'submit') {
-      submitRequest();
+  // Connection indicator — dot goes pink when offline
+  db.ref('.info/connected').on('value', snap => {
+    const dot = document.getElementById('connDot');
+    if (!dot) return;
+    if (snap.val()) {
+      dot.style.background = 'var(--accent)';
+      dot.title = 'Connected';
+    } else {
+      dot.style.background = 'var(--pink)';
+      dot.title = 'Disconnected — check internet';
     }
   });
 
-  // ─── TIME
-  function relativeTime(ts) {
-    const s = Math.floor((Date.now() - ts) / 1000);
-    if (s < 60) return 'Just now';
-    const m = Math.floor(s / 60);
-    if (m < 60) return `${m}m ago`;
-    return `${Math.floor(m / 60)}h ago`;
-  }
+} else {
+  // ─── GUEST REQUEST PAGE
+  requestView.classList.remove('hidden');
+  songInput.classList.add('active-field');
 
-  // ─── RENDER DJ
-  function renderDJ() {
-    if (!requestList) return;
-    const requests = getRequests();
+  // Listen for lock changes from the DJ in real time
+  lockedRef.on('value', snap => applyLockState(snap.val() === true));
 
-    document.getElementById('statTotal').textContent = requests.length;
-    document.getElementById('statPlayed').textContent = parseInt(localStorage.getItem('djPlayed') || '0');
-    document.getElementById('statRejected').textContent = parseInt(localStorage.getItem('djRejected') || '0');
-
-    requestList.innerHTML = '';
-
-    if (requests.length === 0) {
-      requestList.innerHTML = `<div class="empty">
-        <div class="empty-icon">♫</div>
-        <p>No requests yet</p>
-      </div>`;
-      return;
-    }
-
-    requests.forEach((r, i) => {
-      const div = document.createElement('div');
-      div.className = 'request';
-      div.dataset.index = i;
-      div.innerHTML = `
-        <div class="request-num">${String(i + 1).padStart(2,'0')}</div>
-        <div class="song-name">${escapeHtml(r.song)}</div>
-        <div class="req-meta">
-          <span>${escapeHtml(r.name)}</span>
-          <span class="sep">·</span>
-          <span>${relativeTime(r.time)}</span>
-        </div>
-        ${r.note ? `<div class="req-note">${escapeHtml(r.note)}</div>` : ''}
-        <div class="dj-actions">
-          <button class="btn-played" onclick="markPlayed(${i})">✓ Played</button>
-          <button class="btn-reject" onclick="markRejected(${i})">✕ Reject</button>
-        </div>`;
-      requestList.appendChild(div);
+  // Sync active-field highlight when user taps a real input
+  [songInput, nameInput, noteInput].forEach(el => {
+    el.addEventListener('focus', () => {
+      const f = el === songInput ? 'song' : el === nameInput ? 'name' : 'note';
+      setActiveField(f);
     });
-  }
+  });
 
-  function escapeHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+  // Physical keyboard navigation
+  songInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameInput.focus(); } });
+  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); noteInput.focus(); } });
+  noteInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitRequest(); } });
+}
 
-  // ─── HISTORY
-  function getHistory() {
-    return JSON.parse(localStorage.getItem('djHistory') || '[]');
-  }
-
-  function logToHistory(request, status) {
-    const history = getHistory();
-    history.push({ ...request, status, resolvedAt: Date.now() });
-    localStorage.setItem('djHistory', JSON.stringify(history));
-  }
-
-  function removeRequest(i, cb) {
-    const cards = requestList.querySelectorAll('.request');
-    const card = cards[i];
-    if (!card) return;
-    card.classList.add('rejecting');
+// ─── SUBMIT REQUEST (guest side → writes to Firebase)
+function submitRequest() {
+  const song = songInput.value.trim();
+  if (!song) {
+    songInput.classList.remove('active-field');
+    void songInput.offsetWidth;
+    songInput.style.borderColor = 'var(--pink)';
+    songInput.style.boxShadow   = '0 0 0 3px var(--pink-dim)';
     setTimeout(() => {
-      const list = getRequests();
-      list.splice(i, 1);
-      localStorage.setItem('djRequests', JSON.stringify(list));
-      if (cb) cb();
-      renderDJ();
-    }, 300);
+      songInput.style.borderColor = '';
+      songInput.style.boxShadow   = '';
+      songInput.classList.add('active-field');
+    }, 600);
+    songInput.focus();
+    return;
   }
 
-  function markPlayed(i) {
-    const r = getRequests()[i];
-    if (r) logToHistory(r, 'Played');
-    const n = parseInt(localStorage.getItem('djPlayed') || '0') + 1;
-    localStorage.setItem('djPlayed', n);
-    removeRequest(i);
+  requestsRef.push({
+    song,
+    name: nameInput.value.trim() || 'Anonymous',
+    note: noteInput.value.trim(),
+    time: Date.now()
+  }).catch(() => alert('Could not send request — check your internet connection.'));
+
+  songInput.value = '';
+  nameInput.value = '';
+  noteInput.value = '';
+  setActiveField('song');
+  songInput.focus();
+
+  const msgs = [
+    ['🎶', 'Request sent!'],
+    ['🔥', 'Great choice!'],
+    ['🙌', 'Nice one!'],
+    ['✅', 'On the list!'],
+  ];
+  const m = msgs[Math.floor(Math.random() * msgs.length)];
+  document.getElementById('tyIcon').textContent = m[0];
+  document.getElementById('tyText').textContent = m[1];
+  thankYou.classList.add('show');
+  setTimeout(() => thankYou.classList.remove('show'), 2800);
+}
+
+// ─── FIELD SWITCHING (on-screen keyboard tabs)
+function switchField(f) {
+  setActiveField(f);
+  currentInput().focus();
+}
+
+function setActiveField(f) {
+  activeField = f;
+  document.getElementById('toggleSong').classList.toggle('active', f === 'song');
+  document.getElementById('toggleName').classList.toggle('active', f === 'name');
+  document.getElementById('toggleNote').classList.toggle('active', f === 'note');
+  [songInput, nameInput, noteInput].forEach(el => el.classList.remove('active-field'));
+  currentInput().classList.add('active-field');
+}
+
+function currentInput() {
+  if (activeField === 'song') return songInput;
+  if (activeField === 'name') return nameInput;
+  return noteInput;
+}
+
+function typeChar(ch) {
+  const inp = currentInput();
+  const c = (!isNaN(ch) || ch === ' ' || ch === "'") ? ch
+            : capsOn ? ch.toUpperCase() : ch.toLowerCase();
+  inp.value += c;
+}
+
+document.getElementById('keyboard').addEventListener('click', e => {
+  const key = e.target.closest('.key');
+  if (!key) return;
+
+  key.classList.add('pressed');
+  setTimeout(() => key.classList.remove('pressed'), 120);
+
+  const ch     = key.dataset.char;
+  const action = key.dataset.action;
+
+  if (ch !== undefined) {
+    typeChar(ch);
+  } else if (action === 'back') {
+    const inp = currentInput();
+    inp.value = inp.value.slice(0, -1);
+  } else if (action === 'caps') {
+    capsOn = !capsOn;
+    document.getElementById('capsIndicator').classList.toggle('on', capsOn);
+    key.style.borderColor = capsOn ? 'var(--accent)' : '';
+    key.style.color       = capsOn ? 'var(--accent)' : '';
+  } else if (action === 'clear') {
+    currentInput().value = '';
+  } else if (action === 'submit') {
+    submitRequest();
+  }
+});
+
+// ─── TIME
+function relativeTime(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'Just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  return `${Math.floor(m / 60)}h ago`;
+}
+
+// ─── RENDER DJ QUEUE
+function renderDJ() {
+  if (!requestList) return;
+  document.getElementById('statTotal').textContent = currentRequests.length;
+  requestList.innerHTML = '';
+
+  if (currentRequests.length === 0) {
+    requestList.innerHTML = `<div class="empty">
+      <div class="empty-icon">♫</div>
+      <p>No requests yet</p>
+    </div>`;
+    return;
   }
 
-  function markRejected(i) {
-    const r = getRequests()[i];
-    if (r) logToHistory(r, 'Rejected');
-    const n = parseInt(localStorage.getItem('djRejected') || '0') + 1;
-    localStorage.setItem('djRejected', n);
-    removeRequest(i);
-  }
+  currentRequests.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className  = 'request';
+    div.dataset.key = r.key;
+    div.innerHTML = `
+      <div class="request-num">${String(i + 1).padStart(2, '0')}</div>
+      <div class="song-name">${escapeHtml(r.song)}</div>
+      <div class="req-meta">
+        <span>${escapeHtml(r.name)}</span>
+        <span class="sep">·</span>
+        <span>${relativeTime(r.time)}</span>
+      </div>
+      ${r.note ? `<div class="req-note">${escapeHtml(r.note)}</div>` : ''}
+      <div class="dj-actions">
+        <button class="btn-played" onclick="markPlayed('${r.key}')">✓ Played</button>
+        <button class="btn-reject" onclick="markRejected('${r.key}')">✕ Reject</button>
+      </div>`;
+    requestList.appendChild(div);
+  });
+}
 
-  // ─── EXPORT CSV
-  function exportCSV() {
-    const history = getHistory();
-    const pending = getRequests().map(r => ({ ...r, status: 'Pending' }));
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── REMOVE (animate card out, then delete from Firebase)
+function removeRequest(key) {
+  const card = requestList ? requestList.querySelector(`[data-key="${key}"]`) : null;
+  if (card) {
+    card.classList.add('rejecting');
+    setTimeout(() => db.ref('requests/' + key).remove(), 300);
+  } else {
+    db.ref('requests/' + key).remove();
+  }
+}
+
+// ─── MARK PLAYED / REJECTED
+function markPlayed(key) {
+  const r = currentRequests.find(r => r.key === key);
+  if (r) historyRef.push({ ...r, status: 'Played', resolvedAt: Date.now() });
+  statsRef.child('played').transaction(n => (n || 0) + 1);
+  removeRequest(key);
+}
+
+function markRejected(key) {
+  const r = currentRequests.find(r => r.key === key);
+  if (r) historyRef.push({ ...r, status: 'Rejected', resolvedAt: Date.now() });
+  statsRef.child('rejected').transaction(n => (n || 0) + 1);
+  removeRequest(key);
+}
+
+// ─── EXPORT CSV
+function exportCSV() {
+  Promise.all([historyRef.get(), requestsRef.get()]).then(([histSnap, reqSnap]) => {
+    const history = histSnap.val()
+      ? Object.values(histSnap.val())
+      : [];
+    const pending = reqSnap.val()
+      ? Object.values(reqSnap.val()).map(r => ({ ...r, status: 'Pending' }))
+      : [];
     const all = [...history, ...pending];
 
-    if (all.length === 0) {
-      alert('No requests to export yet.');
-      return;
-    }
+    if (all.length === 0) { alert('No requests to export yet.'); return; }
 
     const fmtTime = ts => {
       const d = new Date(ts);
       return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     };
-
-    const escape = v => `"${String(v || '').replace(/"/g, '""')}"`;
+    const esc = v => `"${String(v || '').replace(/"/g, '""')}"`;
 
     const rows = [
-      ['Song', 'Requested By', 'Note to DJ', 'Requested At', 'Status'].map(escape).join(','),
-      ...all.map(r => [
-        escape(r.song),
-        escape(r.name),
-        escape(r.note || ''),
-        escape(fmtTime(r.time)),
-        escape(r.status),
-      ].join(','))
+      ['Song', 'Requested By', 'Note to DJ', 'Requested At', 'Status'].map(esc).join(','),
+      ...all.map(r => [esc(r.song), esc(r.name), esc(r.note || ''), esc(fmtTime(r.time)), esc(r.status)].join(','))
     ];
 
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const date = new Date().toISOString().slice(0, 10);
-    a.href = url;
-    a.download = `dj-requests-${date}.csv`;
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `dj-requests-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }
+  });
+}
 
-  // ─── LOCK
-  function isLocked() {
-    return localStorage.getItem('djLocked') === 'true';
-  }
+// ─── LOCK
+function toggleLock() {
+  lockedRef.get().then(snap => lockedRef.set(snap.val() === true ? false : true));
+}
 
-  function toggleLock() {
-    localStorage.setItem('djLocked', isLocked() ? 'false' : 'true');
-    updateLockBtn();
-  }
+function updateLockBtn(locked) {
+  const btn = document.getElementById('lockBtn');
+  if (!btn) return;
+  btn.classList.toggle('locked', locked);
+  btn.textContent = locked ? '✅ Unlock Requests' : '⛔ Lock Requests';
+}
 
-  function updateLockBtn() {
-    const btn = document.getElementById('lockBtn');
-    if (!btn) return;
-    const locked = isLocked();
-    btn.classList.toggle('locked', locked);
-    btn.textContent = locked ? '✅ Unlock Requests' : '⛔ Lock Requests';
-  }
+function applyLockState(locked) {
+  const overlay = document.getElementById('lockedOverlay');
+  if (!overlay) return;
+  overlay.classList.toggle('show', locked);
+}
 
-  function applyLockState() {
-    const overlay = document.getElementById('lockedOverlay');
-    if (!overlay) return;
-    overlay.classList.toggle('show', isLocked());
+// ─── CLEAR ALL
+function clearAll() {
+  if (!confirm('Clear all pending requests?\n\nTip: export the CSV first if you want a record of tonight.')) return;
+  requestsRef.remove();
+  if (confirm('Also clear the full history log? (This cannot be undone.)')) {
+    historyRef.remove();
+    statsRef.remove();
   }
-
-  function clearAll() {
-    if (!confirm('Clear all pending requests?\n\nTip: export the CSV first if you want a record of tonight.')) return;
-    localStorage.setItem('djRequests', '[]');
-    if (confirm('Also clear the full history log? (This cannot be undone.)')) {
-      localStorage.setItem('djHistory', '[]');
-    }
-    renderDJ();
-  }
+}
 </script>
 </body>
 </html>
