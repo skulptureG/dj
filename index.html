@@ -1218,10 +1218,12 @@ if (mode === 'dj') {
           correctLevel: QRCode.CorrectLevel.M
         });
       }
-    });
+    }).catch(() => {}); // silently ignore if offline
 
-    // Live lock state
-    lockedRef.on('value', snap => applyLockState(snap.val() === true));
+    // Live lock state — only show overlay if explicitly true
+    lockedRef.on('value', snap => {
+      applyLockState(snap.val() === true);
+    }, () => {}); // ignore permission errors
 
     // Physical keyboard field sync
     [songInput, nameInput, noteInput].forEach(el => {
@@ -1577,4 +1579,19 @@ function updateLockBtn(locked) {
 
 function applyLockState(locked) {
   const overlay = document.getElementById('lockedOverlay');
-  if
+  if (!overlay) return;
+  overlay.classList.toggle('show', locked === true);
+}
+
+// ─── CLEAR ALL
+function clearAll() {
+  if (!confirm('Clear all pending requests?\n\nTip: export the CSV first if you want a record of tonight.')) return;
+  requestsRef.remove();
+  if (confirm('Also clear the full history log? (This cannot be undone.)')) {
+    historyRef.remove();
+    statsRef.remove();
+  }
+}
+</script>
+</body>
+</html>
