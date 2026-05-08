@@ -111,71 +111,6 @@
     50%       { opacity: 0.4; transform: scale(0.7); }
   }
 
-  /* ─── CREATE EVENT PANEL ─── */
-  .create-panel {
-    background: var(--surface);
-    border: 1px solid rgba(198,255,0,0.2);
-    border-radius: var(--radius);
-    padding: 22px 24px;
-    margin-bottom: 28px;
-  }
-
-  .create-label {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 12px;
-  }
-
-  .create-row {
-    display: flex;
-    gap: 10px;
-  }
-
-  .create-input {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border-bright);
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: 1.1rem;
-    font-weight: 500;
-    padding: 14px 18px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    -webkit-appearance: none;
-    min-width: 0;
-  }
-
-  .create-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-
-  .create-input::placeholder { color: var(--muted); font-weight: 400; }
-
-  .btn-create {
-    padding: 14px 24px;
-    background: var(--accent);
-    color: #0a0a0f;
-    font-family: var(--font-display);
-    font-size: 1.2rem;
-    letter-spacing: 0.06em;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: box-shadow 0.2s, transform 0.1s;
-    box-shadow: 0 0 20px var(--accent-glow);
-  }
-
-  .btn-create:hover { box-shadow: 0 0 36px rgba(198,255,0,0.55); transform: translateY(-1px); }
-  .btn-create:active { transform: scale(0.97); }
-  .btn-create:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
   /* ─── SUMMARY BAR ─── */
   .summary {
     display: grid;
@@ -514,16 +449,7 @@
     <div class="logo">DJ<span>:</span>Admin</div>
     <div class="header-right">
       <div class="badge"><span class="live-dot" id="connDot"></span>Event Manager</div>
-      <a id="boothLink" style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">← DJ Booth</a>
-    </div>
-  </div>
-
-  <!-- CREATE EVENT -->
-  <div class="create-panel">
-    <div class="create-label">New Event</div>
-    <div class="create-row">
-      <input id="newEventName" class="create-input" type="text" placeholder="e.g. Dave's Wedding, Staff Party…" maxlength="60" autocomplete="off">
-      <button class="btn-create" id="createBtn" onclick="createNewEvent()">Create →</button>
+      <a href="index.html?mode=dj" style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">← DJ Booth</a>
     </div>
   </div>
 
@@ -577,58 +503,13 @@ const FIREBASE_CONFIG = {
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 
-// ─── COMPUTE BASE URL
-const indexUrl = window.location.origin + window.location.pathname.replace(/\/admin\.html$/, '/index.html');
-document.getElementById('boothLink').href = indexUrl + '?mode=dj';
-
 // ─── CONNECTION DOT
 db.ref('.info/connected').on('value', snap => {
   const dot = document.getElementById('connDot');
   dot.style.background = snap.val() ? 'var(--accent)' : 'var(--pink)';
 });
 
-// ─── HELPERS
-function genEventId() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let id = '';
-  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
-  return id;
-}
-
-// ─── CREATE NEW EVENT
-function createNewEvent() {
-  const name = document.getElementById('newEventName').value.trim();
-  if (!name) { document.getElementById('newEventName').focus(); return; }
-
-  const btn = document.getElementById('createBtn');
-  btn.textContent = 'Creating…';
-  btn.disabled = true;
-
-  const eventId = genEventId();
-  db.ref('events/' + eventId + '/name').set(name)
-    .then(() => {
-      document.getElementById('newEventName').value = '';
-      btn.textContent = 'Create →';
-      btn.disabled = false;
-      // Open booth with this event
-      openInBooth(eventId);
-    })
-    .catch(err => {
-      btn.textContent = 'Create →';
-      btn.disabled = false;
-      alert('Could not create event: ' + err.message);
-    });
-}
-
-document.getElementById('newEventName').addEventListener('keydown', e => {
-  if (e.key === 'Enter') createNewEvent();
-});
-
-// ─── OPEN IN BOOTH
-function openInBooth(eventId) {
-  localStorage.setItem('djCurrentEvent', eventId);
-  window.location.href = indexUrl + '?mode=dj';
-}
+// ─── LOAD ALL EVENTS
 function loadEvents() {
   db.ref('events').get().then(snap => {
     const eventList = document.getElementById('eventList');
@@ -670,9 +551,9 @@ function loadEvents() {
       card.className   = 'event-card';
       card.id          = 'card-' + event.id;
 
-      const baseUrl  = window.location.origin + window.location.pathname.replace(/\/admin\.html$/, '/index.html');
-      const guestUrl = baseUrl + '?event=' + event.id;
-      const djUrl    = baseUrl + '?mode=dj';
+      const baseUrl    = window.location.href.replace('admin.html', 'index.html').split('?')[0];
+      const guestUrl   = baseUrl + '?event=' + event.id;
+      const djUrl      = baseUrl + '?mode=dj';
 
       card.innerHTML = `
         <div class="event-top">
@@ -690,7 +571,7 @@ function loadEvents() {
         </div>
         <div class="event-actions">
           <a class="btn-open" href="${guestUrl}" target="_blank">↗ Guest Page</a>
-          <button class="btn-open" onclick="openInBooth('${event.id}')">🎧 Open in Booth</button>
+          <a class="btn-open" href="${djUrl}" target="_blank" onclick="localStorage.setItem('djCurrentEvent','${event.id}')">🎧 Open in Booth</a>
           ${requests.length > 0 ? `<button class="btn-expand" onclick="toggleRequests('${event.id}')">▾ ${pending} Pending</button>` : ''}
           <button class="btn-delete" onclick="confirmDelete('${event.id}', '${escAttr(event.name || 'Unnamed Event')}')">🗑 Delete</button>
         </div>
