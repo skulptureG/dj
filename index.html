@@ -968,6 +968,7 @@
   <div class="event-name-display" id="eventNameDisplay" style="display:none">
     <div class="event-label">Tonight's event</div>
     <div class="event-title" id="eventNameTitle"></div>
+    <div id="guestQr" style="display:inline-block;background:#fff;border-radius:10px;padding:10px;margin-top:16px;line-height:0;"></div>
   </div>
 
   <div class="input-group">
@@ -1201,13 +1202,21 @@ if (mode === 'dj') {
     initRefs(eventParam);
     songInput.classList.add('active-field');
 
-    // Show event name
+    // Show event name + QR
     eventNameRef.get().then(snap => {
       const name = snap.val();
       if (name) {
         document.getElementById('eventNameTitle').textContent = name;
         document.getElementById('eventNameDisplay').style.display = 'block';
         document.title = name + ' — Song Requests';
+        new QRCode(document.getElementById('guestQr'), {
+          text: window.location.href,
+          width: 120,
+          height: 120,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
       }
     });
 
@@ -1568,19 +1577,4 @@ function updateLockBtn(locked) {
 
 function applyLockState(locked) {
   const overlay = document.getElementById('lockedOverlay');
-  if (!overlay) return;
-  overlay.classList.toggle('show', locked);
-}
-
-// ─── CLEAR ALL
-function clearAll() {
-  if (!confirm('Clear all pending requests?\n\nTip: export the CSV first if you want a record of tonight.')) return;
-  requestsRef.remove();
-  if (confirm('Also clear the full history log? (This cannot be undone.)')) {
-    historyRef.remove();
-    statsRef.remove();
-  }
-}
-</script>
-</body>
-</html>
+  if
