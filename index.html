@@ -591,6 +591,196 @@
     50%       { box-shadow: 0 0 36px rgba(255,62,127,0.8); }
   }
 
+  .event-desc-guest {
+    font-size: 1rem;
+    color: rgba(240,240,248,0.6);
+    font-style: italic;
+    margin-top: 10px;
+    line-height: 1.6;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ─── COUNTDOWN (guest page pre-event) ─── */
+  #countdownSection {
+    text-align: center;
+    padding: 10px 0 30px;
+    display: none;
+  }
+
+  .cd-label-top {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .cd-date-str {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: #7eb8ff;
+    margin-bottom: 22px;
+  }
+
+  .countdown-timer {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .cd-unit {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    min-width: 80px;
+  }
+
+  .cd-num {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    line-height: 1;
+    display: block;
+  }
+
+  .cd-unit-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 6px;
+    display: block;
+  }
+
+  .cd-go-msg {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    margin-bottom: 10px;
+  }
+
+  .form-wrap {
+    transition: opacity 0.5s, transform 0.5s;
+  }
+
+  .form-wrap.hidden-form {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+  }
+
+  /* ─── EMOJI SEND (guest page) ─── */
+  .emoji-section {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .emoji-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .emoji-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .emoji-btn {
+    font-size: 2rem;
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+    border: 1px solid var(--border-bright);
+    background: var(--surface);
+    cursor: pointer;
+    transition: transform 0.1s, background 0.1s, border-color 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .emoji-btn:hover { background: var(--surface2); border-color: var(--accent); transform: scale(1.12); }
+  .emoji-btn:active { transform: scale(0.92); }
+
+  .emoji-btn.sent {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    animation: emojiPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes emojiPop {
+    from { transform: scale(0.7); }
+    to   { transform: scale(1); }
+  }
+
+  .emoji-cooldown {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-top: 10px;
+    height: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .emoji-cooldown.show { opacity: 1; }
+
+  /* ─── EMOJI CORNER FLASH (DJ screen) ─── */
+  #emojiFlash {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 50;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .emoji-flash-item {
+    font-size: 3.8rem;
+    line-height: 1;
+    animation: flashIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5));
+  }
+
+  .emoji-flash-item.fading {
+    animation: flashOut 0.5s ease forwards;
+  }
+
+  @keyframes flashIn {
+    from { opacity: 0; transform: scale(0.3) translateY(-20px) rotate(-15deg); }
+    to   { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+  }
+
+  @keyframes flashOut {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.5) translateY(-10px); }
+  }
+
   /* ─── LOCKED OVERLAY (request page) ─── */
   #lockedOverlay {
     position: fixed;
@@ -1100,9 +1290,22 @@
   <div class="event-name-display" id="eventNameDisplay" style="display:none">
     <div class="event-label">Tonight's event</div>
     <div class="event-title" id="eventNameTitle"></div>
+    <div id="eventDescDisplay" class="event-desc-guest"></div>
     <div id="guestQr" style="display:inline-block;background:#fff;border-radius:10px;padding:10px;margin-top:16px;line-height:0;"></div>
   </div>
 
+  <div id="countdownSection">
+    <div class="cd-label-top">Event starts in</div>
+    <div class="cd-date-str" id="cdDateStr"></div>
+    <div class="countdown-timer">
+      <div class="cd-unit"><span class="cd-num" id="cdDays">00</span><span class="cd-unit-label">Days</span></div>
+      <div class="cd-unit"><span class="cd-num" id="cdHours">00</span><span class="cd-unit-label">Hours</span></div>
+      <div class="cd-unit"><span class="cd-num" id="cdMins">00</span><span class="cd-unit-label">Mins</span></div>
+      <div class="cd-unit"><span class="cd-num" id="cdSecs">00</span><span class="cd-unit-label">Secs</span></div>
+    </div>
+  </div>
+
+  <div class="form-wrap" id="formWrap">
   <div class="input-group">
     <label>Song / Artist</label>
     <div class="input-wrap">
@@ -1187,10 +1390,33 @@
       <div class="key span-2 special" data-action="submit">Send →</div>
     </div>
   </div>
+
+  <!-- EMOJI SEND -->
+  <div class="emoji-section">
+    <div class="emoji-label">Send the DJ a vibe ✨</div>
+    <div class="emoji-grid">
+      <button class="emoji-btn" onclick="sendEmoji('❤️')" title="Love">❤️</button>
+      <button class="emoji-btn" onclick="sendEmoji('💩')" title="Poo">💩</button>
+      <button class="emoji-btn" onclick="sendEmoji('🤗')" title="Hug">🤗</button>
+      <button class="emoji-btn" onclick="sendEmoji('🙌')" title="High Five">🙌</button>
+      <button class="emoji-btn" onclick="sendEmoji('👍')" title="Thumbs Up">👍</button>
+      <button class="emoji-btn" onclick="sendEmoji('🔥')" title="Fire">🔥</button>
+      <button class="emoji-btn" onclick="sendEmoji('🎉')" title="Party">🎉</button>
+      <button class="emoji-btn" onclick="sendEmoji('😂')" title="Laughing">😂</button>
+      <button class="emoji-btn" onclick="sendEmoji('🤘')" title="Rock On">🤘</button>
+      <button class="emoji-btn" onclick="sendEmoji('⭐')" title="Star">⭐</button>
+    </div>
+    <div class="emoji-cooldown" id="emojiCooldown">Easy tiger… wait a moment!</div>
+  </div>
+
+  </div><!-- /form-wrap -->
 </div>
 
 <!-- ═══ DJ VIEW ═══ -->
 <div id="djView" class="panel hidden">
+  <!-- EMOJI CORNER FLASH -->
+  <div id="emojiFlash"></div>
+
   <div class="header">
     <div class="logo">DJ<span>:</span>Booth</div>
     <div class="badge"><span class="live-dot" id="connDot" title="Connecting…"></span>Live Queue</div>
@@ -1202,6 +1428,7 @@
     <div class="qr-info">
       <div class="qr-event-name" id="qrEventName">—</div>
       <div class="qr-code-badge" id="qrCodeBadge">CODE: —</div>
+      <div id="qrEventDesc" style="font-size:0.85rem;color:rgba(240,240,248,0.55);font-style:italic;margin-bottom:10px;line-height:1.5;display:none;"></div>
       <div class="qr-url" id="qrUrl"></div>
       <button class="btn-new-event" onclick="startNewEvent()">⟳ New Event</button>
     </div>
@@ -1347,13 +1574,18 @@ if (mode === 'admin') {
     initRefs(eventParam);
     songInput.classList.add('active-field');
 
-    // Show event name + QR
-    eventNameRef.get().then(snap => {
-      const name = snap.val();
-      if (name) {
-        document.getElementById('eventNameTitle').textContent = name;
+    // Show event name + description + QR + countdown
+    db.ref('events/' + eventParam).get().then(snap => {
+      const data = snap.val();
+      if (data && data.name) {
+        document.getElementById('eventNameTitle').textContent = data.name;
         document.getElementById('eventNameDisplay').style.display = 'block';
-        document.title = name + ' — Song Requests';
+        document.title = data.name + ' — Song Requests';
+
+        if (data.description) {
+          document.getElementById('eventDescDisplay').textContent = data.description;
+        }
+
         new QRCode(document.getElementById('guestQr'), {
           text: window.location.href,
           width: 120,
@@ -1362,8 +1594,13 @@ if (mode === 'admin') {
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
         });
+
+        // Scheduled event countdown
+        if (data.scheduledAt && data.scheduledAt > Date.now()) {
+          startCountdown(data.scheduledAt);
+        }
       }
-    }).catch(() => {}); // silently ignore if offline
+    }).catch(() => {});
 
     // Live lock state — only show overlay if explicitly true
     lockedRef.on('value', snap => {
@@ -1460,14 +1697,21 @@ function openDJBooth(eventId) {
   const base = window.location.href.split('?')[0];
   const guestUrl = base + '?event=' + eventId;
 
-  // Event name
-  eventNameRef.get().then(snap => {
-    const name = snap.val() || 'Unnamed Event';
+  // Event name + description
+  db.ref('events/' + eventId).get().then(snap => {
+    const data = snap.val() || {};
+    const name = data.name || 'Unnamed Event';
 
     document.getElementById('qrEventName').textContent = name;
     document.getElementById('qrCodeBadge').textContent = 'CODE: ' + eventId;
     document.getElementById('qrUrl').textContent = guestUrl;
     document.title = name + ' — DJ Booth';
+
+    const descEl = document.getElementById('qrEventDesc');
+    if (descEl) {
+      descEl.textContent = data.description || '';
+      descEl.style.display = data.description ? 'block' : 'none';
+    }
 
     // Generate QR
     document.getElementById('qrCode').innerHTML = '';
@@ -1479,6 +1723,16 @@ function openDJBooth(eventId) {
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
     });
+  });
+
+  // Live emoji feed — only listen to new ones from now
+  const emojiRef = db.ref('events/' + eventId + '/emojis');
+  const boothOpenTime = Date.now();
+  emojiRef.on('child_added', snap => {
+    const data = snap.val();
+    if (data && data.time > boothOpenTime) {
+      showEmojiFlash(data.emoji);
+    }
   });
 
   // Live request queue
@@ -1517,6 +1771,104 @@ function toggleSort() {
   btn.textContent   = sortNewestFirst ? '↓ Newest First' : '↑ Oldest First';
   btn.classList.toggle('active', !sortNewestFirst);
   renderDJ();
+}
+
+// ─── SEND EMOJI (guest)
+let emojiCooldownActive = false;
+
+function sendEmoji(emoji) {
+  if (emojiCooldownActive) {
+    const cd = document.getElementById('emojiCooldown');
+    cd.classList.add('show');
+    setTimeout(() => cd.classList.remove('show'), 1500);
+    return;
+  }
+
+  db.ref('events/' + eventParam + '/emojis').push({
+    emoji,
+    time: Date.now()
+  }).catch(() => {});
+
+  // Visual feedback on button
+  const btns = document.querySelectorAll('.emoji-btn');
+  btns.forEach(b => { if (b.textContent.trim() === emoji) { b.classList.add('sent'); setTimeout(() => b.classList.remove('sent'), 400); } });
+
+  // Cooldown 2.5 seconds
+  emojiCooldownActive = true;
+  const cd = document.getElementById('emojiCooldown');
+  cd.classList.add('show');
+  setTimeout(() => {
+    emojiCooldownActive = false;
+    cd.classList.remove('show');
+  }, 2500);
+}
+
+// ─── SHOW EMOJI FLASH (DJ screen)
+const emojiQueue = [];
+let emojiShowing = false;
+
+function showEmojiFlash(emoji) {
+  emojiQueue.push(emoji);
+  if (!emojiShowing) processEmojiQueue();
+}
+
+function processEmojiQueue() {
+  if (emojiQueue.length === 0) { emojiShowing = false; return; }
+  emojiShowing = true;
+  const emoji = emojiQueue.shift();
+  const container = document.getElementById('emojiFlash');
+  if (!container) { emojiShowing = false; return; }
+
+  const el = document.createElement('div');
+  el.className = 'emoji-flash-item';
+  el.textContent = emoji;
+  container.appendChild(el);
+
+  // Fade out after 2.8s
+  setTimeout(() => {
+    el.classList.add('fading');
+    setTimeout(() => { el.remove(); processEmojiQueue(); }, 500);
+  }, 2800);
+}
+
+// ─── COUNTDOWN (guest page)
+function startCountdown(scheduledAt) {
+  const section  = document.getElementById('countdownSection');
+  const formWrap = document.getElementById('formWrap');
+
+  // Show countdown, hide form
+  section.style.display = 'block';
+  formWrap.classList.add('hidden-form');
+
+  // Set date string
+  document.getElementById('cdDateStr').textContent =
+    new Date(scheduledAt).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' });
+
+  function tick() {
+    const diff = scheduledAt - Date.now();
+    if (diff <= 0) {
+      clearInterval(timer);
+      section.innerHTML = '<div class="cd-go-msg">🎉 Requests are now open!</div>';
+      setTimeout(() => {
+        section.style.display = 'none';
+        formWrap.classList.remove('hidden-form');
+        songInput?.focus();
+      }, 2000);
+      return;
+    }
+    const s    = Math.floor(diff / 1000);
+    const days = Math.floor(s / 86400);
+    const hrs  = Math.floor((s % 86400) / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    const secs = s % 60;
+    document.getElementById('cdDays').textContent  = String(days).padStart(2, '0');
+    document.getElementById('cdHours').textContent = String(hrs).padStart(2, '0');
+    document.getElementById('cdMins').textContent  = String(mins).padStart(2, '0');
+    document.getElementById('cdSecs').textContent  = String(secs).padStart(2, '0');
+  }
+
+  tick();
+  const timer = setInterval(tick, 1000);
 }
 
 // ─── SUBMIT REQUEST
