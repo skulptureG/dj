@@ -560,6 +560,82 @@
 
   .btn-export:hover { background: rgba(198,255,0,0.15); border-color: var(--accent); }
 
+  /* ─── DJ BOOTH COUNTDOWN BANNER ─── */
+  #djCountdownBanner {
+    display: none;
+    background: linear-gradient(135deg, rgba(198,255,0,0.07), rgba(126,184,255,0.07));
+    border: 1px solid rgba(198,255,0,0.2);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  #djCountdownBanner.visible { display: flex; }
+
+  .dj-cd-left .dj-cd-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .dj-cd-left .dj-cd-date {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: #7eb8ff;
+  }
+
+  .dj-cd-timer {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .dj-cd-unit {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+    min-width: 52px;
+  }
+
+  .dj-cd-num {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    line-height: 1;
+    display: block;
+  }
+
+  .dj-cd-unit-label {
+    font-family: var(--font-mono);
+    font-size: 0.5rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 2px;
+    display: block;
+  }
+
+  .dj-cd-sep {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--muted);
+    opacity: 0.35;
+    padding-bottom: 10px;
+    align-self: flex-end;
+  }
+
   /* ─── LOCK BUTTON ─── */
   .btn-lock {
     font-family: var(--font-mono);
@@ -1866,6 +1942,23 @@
     <div class="badge"><span class="live-dot" id="connDot" title="Connecting…"></span>Live Queue</div>
   </div>
 
+  <!-- SCHEDULED EVENT COUNTDOWN BANNER -->
+  <div id="djCountdownBanner">
+    <div class="dj-cd-left">
+      <div class="dj-cd-label">⏱ Event starts in</div>
+      <div class="dj-cd-date" id="djCdDate"></div>
+    </div>
+    <div class="dj-cd-timer">
+      <div class="dj-cd-unit"><span class="dj-cd-num" id="djCdDays">00</span><span class="dj-cd-unit-label">Days</span></div>
+      <div class="dj-cd-sep">:</div>
+      <div class="dj-cd-unit"><span class="dj-cd-num" id="djCdHours">00</span><span class="dj-cd-unit-label">Hrs</span></div>
+      <div class="dj-cd-sep">:</div>
+      <div class="dj-cd-unit"><span class="dj-cd-num" id="djCdMins">00</span><span class="dj-cd-unit-label">Mins</span></div>
+      <div class="dj-cd-sep">:</div>
+      <div class="dj-cd-unit"><span class="dj-cd-num" id="djCdSecs">00</span><span class="dj-cd-unit-label">Secs</span></div>
+    </div>
+  </div>
+
   <div class="dj-body">
     <!-- LEFT SIDEBAR -->
     <div class="dj-sidebar">
@@ -2322,6 +2415,43 @@ function loadEventByCode() {
   });
 }
 
+// ─── DJ BOOTH COUNTDOWN
+let djCountdownTimer = null;
+
+function startDJCountdown(scheduledAt) {
+  const banner = document.getElementById('djCountdownBanner');
+  if (!banner) return;
+
+  document.getElementById('djCdDate').textContent =
+    new Date(scheduledAt).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' });
+
+  banner.classList.add('visible');
+
+  function tick() {
+    const diff = scheduledAt - Date.now();
+    if (diff <= 0) {
+      clearInterval(djCountdownTimer);
+      banner.style.transition = 'opacity 1s';
+      banner.style.opacity = '0';
+      setTimeout(() => banner.classList.remove('visible'), 1000);
+      return;
+    }
+    const s    = Math.floor(diff / 1000);
+    const days = Math.floor(s / 86400);
+    const hrs  = Math.floor((s % 86400) / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    const secs = s % 60;
+    document.getElementById('djCdDays').textContent  = String(days).padStart(2, '0');
+    document.getElementById('djCdHours').textContent = String(hrs).padStart(2, '0');
+    document.getElementById('djCdMins').textContent  = String(mins).padStart(2, '0');
+    document.getElementById('djCdSecs').textContent  = String(secs).padStart(2, '0');
+  }
+
+  tick();
+  if (djCountdownTimer) clearInterval(djCountdownTimer);
+  djCountdownTimer = setInterval(tick, 1000);
+}
+
 function startNewEvent() {
   if (!confirm('Go to admin to switch event? This won\'t delete the current one.')) return;
   localStorage.removeItem('djCurrentEvent');
@@ -2367,6 +2497,11 @@ function openDJBooth(eventId) {
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
     });
+
+    // DJ countdown banner
+    if (data.scheduledAt && data.scheduledAt > Date.now()) {
+      startDJCountdown(data.scheduledAt);
+    }
   });
 
   // Live emoji feed — only listen to new ones from now
