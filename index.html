@@ -2937,6 +2937,10 @@ function renderDJ() {
 
     // Build copy text — all the useful info in one pasteable block
     const copyLines = [r.song];
+    if (r.genre) copyLines.push(`Genre: ${r.genre}`);
+    if (r.name && r.name !== 'Anonymous') copyLines.push(`Requested by: ${r.name}`);
+    if (r.note) copyLines.push(`Note: ${r.note}`);
+    const copyText = copyLines.join('\n');
 
     div.innerHTML = `
       <button class="btn-copy" onclick="copyRequest(this, ${JSON.stringify(copyText)})" title="Copy to clipboard">⧉</button>
