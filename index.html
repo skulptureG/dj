@@ -636,6 +636,43 @@
     align-self: flex-end;
   }
 
+  /* ─── COPY BUTTON (DJ cards) ─── */
+  .btn-copy {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: 2px solid var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    z-index: 2;
+    flex-shrink: 0;
+  }
+
+  .btn-copy:hover {
+    background: var(--accent);
+    color: #0a0a0f;
+    box-shadow: 0 0 16px var(--accent-glow);
+    transform: scale(1.08);
+  }
+
+  .btn-copy:active { transform: scale(0.93); }
+
+  .btn-copy.copied {
+    background: var(--accent);
+    color: #0a0a0f;
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
   /* ─── LOCK BUTTON ─── */
   .btn-lock {
     font-family: var(--font-mono);
@@ -2847,6 +2884,34 @@ document.getElementById('keyboard')?.addEventListener('click', e => {
   }
 });
 
+// ─── COPY REQUEST TO CLIPBOARD
+function copyRequest(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '⧉';
+      btn.classList.remove('copied');
+    }, 1800);
+  }).catch(() => {
+    // Fallback for browsers without clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '⧉';
+      btn.classList.remove('copied');
+    }, 1800);
+  });
+}
+
 // ─── RENDER DJ QUEUE
 function renderDJ() {
   if (!requestList) return;
@@ -2869,7 +2934,16 @@ function renderDJ() {
     const div = document.createElement('div');
     div.className   = 'request';
     div.dataset.key = r.key;
+
+    // Build copy text — all the useful info in one pasteable block
+    const copyLines = [r.song];
+    if (r.genre) copyLines.push(`Genre: ${r.genre}`);
+    if (r.name && r.name !== 'Anonymous') copyLines.push(`Requested by: ${r.name}`);
+    if (r.note) copyLines.push(`Note: ${r.note}`);
+    const copyText = copyLines.join('\n');
+
     div.innerHTML = `
+      <button class="btn-copy" onclick="copyRequest(this, ${JSON.stringify(copyText)})" title="Copy to clipboard">⧉</button>
       <div class="request-num">${String(i + 1).padStart(2, '0')}</div>
       <div class="song-name">${escapeHtml(r.song)}</div>
       ${r.genre ? `<div class="genre-tag">🎵 ${escapeHtml(r.genre)}</div>` : ''}
