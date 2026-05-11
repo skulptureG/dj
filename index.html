@@ -680,6 +680,112 @@
     transform: translateY(12px);
   }
 
+  /* ─── TRACK SEARCH RESULTS ─── */
+  .search-results {
+    display: none;
+    border: 1px solid var(--border-bright);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: var(--surface2);
+    overflow: hidden;
+    margin-top: -6px;
+  }
+
+  .search-results.open { display: block; }
+
+  .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover, .search-result-item:active { background: var(--surface); }
+
+  .search-art {
+    width: 46px;
+    height: 46px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+
+  .search-art-placeholder {
+    width: 46px;
+    height: 46px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .search-info { flex: 1; min-width: 0; }
+
+  .search-track {
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+  }
+
+  .search-artist {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
+  .search-genre {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.2);
+    border-radius: 4px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .search-loading {
+    padding: 16px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .search-source {
+    padding: 7px 14px;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(240,240,248,0.2);
+    border-top: 1px solid var(--border);
+  }
+
   /* ─── VIEW REQUESTS BUTTON ─── */
   .btn-view-queue {
     width: 100%;
@@ -1506,6 +1612,7 @@
       <span class="input-icon">♪</span>
       <input id="songInput" type="text" placeholder="Type a song name…" autocomplete="off">
     </div>
+    <div class="search-results" id="searchResults"></div>
   </div>
 
   <div class="input-group">
@@ -1556,6 +1663,17 @@
       <div class="key" data-char="8">8</div>
       <div class="key" data-char="9">9</div>
       <div class="key" data-char="0">0</div>
+      <!-- Row 0b: symbols -->
+      <div class="key mod" data-char="(">(</div>
+      <div class="key mod" data-char=")">)</div>
+      <div class="key mod" data-char="-">-</div>
+      <div class="key mod" data-char="!">!</div>
+      <div class="key mod" data-char="?">?</div>
+      <div class="key mod" data-char="&">&amp;</div>
+      <div class="key mod" data-char=".">.</div>
+      <div class="key mod" data-char=",">,</div>
+      <div class="key mod" data-char="/">/</div>
+      <div class="key mod" data-char="@">@</div>
       <!-- Row 1 -->
       <div class="key" data-char="Q">Q</div>
       <div class="key" data-char="W">W</div>
@@ -1828,6 +1946,9 @@ if (mode === 'admin') {
       applyLockState(snap.val() === true);
     }, () => {}); // ignore permission errors
 
+    // Initialise track search
+    initTrackSearch();
+
     // Physical keyboard field sync
     [songInput, nameInput, genreInput, noteInput].forEach(el => {
       el.addEventListener('focus', () => {
@@ -2053,6 +2174,99 @@ function processEmojiQueue() {
   }, 2800);
 }
 
+// ─── TRACK SEARCH
+// Uses iTunes Search API (open, no key, CORS-enabled).
+// To swap for Beatport: replace searchTracks() with your OAuth-authenticated call.
+let searchDebounce = null;
+
+function initTrackSearch() {
+  if (!songInput) return;
+
+  songInput.addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    const q = songInput.value.trim();
+    if (q.length < 2) { closeSearch(); return; }
+    showSearchLoading();
+    searchDebounce = setTimeout(() => searchTracks(q), 400);
+  });
+
+  // Close results when focus leaves the field and results panel
+  songInput.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!document.activeElement.closest('.search-results')) closeSearch();
+    }, 150);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.input-group')) closeSearch();
+  });
+}
+
+async function searchTracks(query) {
+  try {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=6`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    renderSearchResults(data.results || []);
+  } catch {
+    closeSearch();
+  }
+}
+
+function renderSearchResults(results) {
+  const panel = document.getElementById('searchResults');
+  if (!panel) return;
+
+  if (results.length === 0) {
+    panel.innerHTML = `<div class="search-loading">No results found</div><div class="search-source">iTunes Search</div>`;
+    panel.classList.add('open');
+    return;
+  }
+
+  panel.innerHTML = results.map((r, i) => `
+    <div class="search-result-item" data-index="${i}" onclick="selectTrack(${i})">
+      ${r.artworkUrl100
+        ? `<img class="search-art" src="${r.artworkUrl100.replace('100x100', '60x60')}" alt="" loading="lazy">`
+        : `<div class="search-art-placeholder">♪</div>`}
+      <div class="search-info">
+        <div class="search-track">${escapeHtml(r.trackName)}</div>
+        <div class="search-artist">${escapeHtml(r.artistName)}</div>
+      </div>
+      ${r.primaryGenreName ? `<div class="search-genre">${escapeHtml(r.primaryGenreName)}</div>` : ''}
+    </div>
+  `).join('') + `<div class="search-source">iTunes Search</div>`;
+
+  // Store results for selection
+  panel._results = results;
+  panel.classList.add('open');
+}
+
+function selectTrack(index) {
+  const panel = document.getElementById('searchResults');
+  const r = panel?._results?.[index];
+  if (!r) return;
+
+  songInput.value  = `${r.trackName} — ${r.artistName}`;
+  if (genreInput && r.primaryGenreName) genreInput.value = r.primaryGenreName;
+
+  closeSearch();
+  nameInput?.focus();
+  setActiveField('name');
+}
+
+function showSearchLoading() {
+  const panel = document.getElementById('searchResults');
+  if (!panel) return;
+  panel.innerHTML = `<div class="search-loading">Searching…</div>`;
+  panel.classList.add('open');
+}
+
+function closeSearch() {
+  const panel = document.getElementById('searchResults');
+  if (panel) panel.classList.remove('open');
+  clearTimeout(searchDebounce);
+}
+
 // ─── COUNTDOWN (guest page)
 function startCountdown(scheduledAt) {
   const section  = document.getElementById('countdownSection');
@@ -2166,7 +2380,8 @@ function currentInput() {
 
 function typeChar(ch) {
   const inp = currentInput();
-  const c = (!isNaN(ch) || ch === ' ' || ch === "'") ? ch
+  const symbols = new Set([' ', "'", '(', ')', '-', '!', '?', '&', '.', ',', '/', '@']);
+  const c = (!isNaN(ch) || symbols.has(ch)) ? ch
             : capsOn ? ch.toUpperCase() : ch.toLowerCase();
   inp.value += c;
 }
