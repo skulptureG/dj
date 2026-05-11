@@ -48,7 +48,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='15' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect width='200' height='200' fill='%23090b10' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
     background-size: 200px 200px;
     pointer-events: none;
     z-index: 0;
@@ -999,291 +999,2140 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .queue-item {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
+  .queue-overlay-list::-webkit-scrollbar { width: 4px; }
+  .queue-overlay-list::-webkit-scrollbar-track { background: transparent; }
+  .queue-overlay-list::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+  .queue-card {
     background: var(--surface);
-    margin-bottom: 8px;
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
   }
 
-  .queue-item:last-child { border-bottom: none; }
+  .queue-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 3px 0 0 3px;
+  }
 
-  .queue-item-info { flex: 1; }
-
-  .queue-item-song {
+  .queue-card-num {
+    position: absolute;
+    top: 14px;
+    right: 16px;
     font-family: var(--font-display);
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 2px;
+    font-size: 2.6rem;
+    color: rgba(255,255,255,0.04);
+    line-height: 1;
+    pointer-events: none;
   }
 
-  .queue-item-artist {
+  .queue-card-song {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    padding-right: 50px;
+  }
+
+  .queue-card-meta {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 6px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .queue-genre-tag {
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.2);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .queue-empty {
+    text-align: center;
+    padding: 80px 0;
     font-family: var(--font-mono);
     font-size: 0.75rem;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     color: var(--muted);
   }
 
-  .queue-item-requester {
+  /* ─── GENRE TAG on DJ cards ─── */
+  .genre-tag {
+    display: inline-block;
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.2);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* ─── EMOJI SEND (guest page) ─── */
+  .emoji-section {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .emoji-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .emoji-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .emoji-btn {
+    font-size: 2rem;
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+    border: 1px solid var(--border-bright);
+    background: var(--surface);
+    cursor: pointer;
+    transition: transform 0.1s, background 0.1s, border-color 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .emoji-btn:hover { background: var(--surface2); border-color: var(--accent); transform: scale(1.12); }
+  .emoji-btn:active { transform: scale(0.92); }
+
+  .emoji-btn.sent {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    animation: emojiPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes emojiPop {
+    from { transform: scale(0.7); }
+    to   { transform: scale(1); }
+  }
+
+  .emoji-cooldown {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-top: 10px;
+    height: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .emoji-cooldown.show { opacity: 1; }
+
+  /* ─── EMOJI CORNER FLASH (DJ screen) ─── */
+  #emojiFlash {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 50;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .emoji-flash-item {
+    font-size: 3.8rem;
+    line-height: 1;
+    animation: flashIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5));
+  }
+
+  .emoji-flash-item.fading {
+    animation: flashOut 0.5s ease forwards;
+  }
+
+  @keyframes flashIn {
+    from { opacity: 0; transform: scale(0.3) translateY(-20px) rotate(-15deg); }
+    to   { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+  }
+
+  @keyframes flashOut {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.5) translateY(-10px); }
+  }
+
+  /* ─── LOCKED OVERLAY (request page) ─── */
+  #lockedOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,11,16,0.96);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    z-index: 200;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+    padding: 40px;
+    text-align: center;
+  }
+
+  #lockedOverlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  #lockedOverlay .lock-icon {
+    font-size: 4rem;
+    line-height: 1;
+    animation: floatIcon 3s ease-in-out infinite;
+  }
+
+  @keyframes floatIcon {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-10px); }
+  }
+
+  #lockedOverlay .lock-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+
+  #lockedOverlay .lock-msg {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: rgba(240,240,248,0.7);
+    max-width: 520px;
+    line-height: 1.6;
+  }
+
+  #lockedOverlay .lock-rule {
     font-family: var(--font-mono);
     font-size: 0.65rem;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(240,240,248,0.3);
-    margin-top: 4px;
-  }
-
-  .queue-item-actions {
-    display: flex;
-    gap: 6px;
-    margin-left: 12px;
-    flex-shrink: 0;
-  }
-
-  .queue-item-action {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    border: none;
-    background: var(--surface2);
     color: var(--muted);
+    margin-top: 10px;
+  }
+
+  /* ─── EMPTY STATE ─── */
+  .empty {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--muted);
+  }
+
+  .empty .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+
+  .empty p {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* ─── PULSE DOT ─── */
+  .live-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: var(--pink);
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ─── CAPS indicator ─── */
+  .caps-indicator {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.15s;
+    text-align: right;
+    margin-bottom: 4px;
+    height: 14px;
+  }
+
+  /* ─── EVENT NAME (request page) ─── */
+  .event-name-display {
+    text-align: center;
+    margin-bottom: 28px;
+    margin-top: -10px;
+  }
+
+  .event-name-display .event-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .event-name-display .event-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 7vw, 3.6rem);
+    letter-spacing: 0.04em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  /* ─── EVENT SETUP OVERLAY ─── */
+  #eventSetup {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+  }
+
+  .event-setup-box {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .event-setup-box .setup-logo {
+    font-family: var(--font-display);
+    font-size: 2.8rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .event-setup-box .setup-logo span { color: var(--pink); }
+
+  .event-setup-box .setup-sub {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .setup-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .setup-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.4rem;
+    font-weight: 600;
+    padding: 20px 24px;
+    outline: none;
+    margin-bottom: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .setup-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .setup-input::placeholder { color: var(--muted); font-weight: 400; }
+
+  .btn-create-event {
+    width: 100%;
+    padding: 20px;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: var(--radius);
     cursor: pointer;
-    font-size: 0.85rem;
+    box-shadow: 0 0 30px var(--accent-glow);
+    transition: box-shadow 0.2s, transform 0.1s;
+    margin-bottom: 20px;
+  }
+
+  .btn-create-event:hover { box-shadow: 0 0 50px rgba(198,255,0,0.55); transform: translateY(-1px); }
+  .btn-create-event:active { transform: scale(0.98); }
+
+  .setup-divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    color: var(--muted);
+  }
+
+  .setup-divider::before, .setup-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-bright);
+  }
+
+  .setup-divider span {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .setup-load-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .setup-code-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 16px 20px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .setup-code-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .setup-code-input::placeholder { text-transform: none; letter-spacing: 0; color: var(--muted); }
+
+  .btn-load-event {
+    padding: 16px 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
     transition: all 0.15s;
   }
 
-  .queue-item-action:hover { background: var(--accent); color: #0a0a0f; }
+  .btn-load-event:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* Responsive */
-  @media (max-width: 860px) {
-    .panel { padding: 0 16px 40px; }
-    .header { padding: 16px 0 0; margin-bottom: 24px; }
+  /* ─── QR PANEL (DJ booth) ─── */
+  .qr-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 28px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .qr-canvas-wrap {
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px;
+    flex-shrink: 0;
+    line-height: 0;
+  }
+
+  .qr-canvas-wrap canvas, .qr-canvas-wrap img { display: block; }
+
+  .qr-info { flex: 1; min-width: 180px; }
+
+  .qr-event-name {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  .qr-url {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    word-break: break-all;
+    margin-bottom: 14px;
+  }
+
+  .qr-code-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.25);
+    border-radius: 6px;
+    padding: 5px 10px;
+    margin-bottom: 14px;
+  }
+
+  .btn-new-event {
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: block;
+  }
+
+  .btn-new-event:hover { border-color: var(--pink); color: var(--pink); }
+
+  .caps-indicator.on { opacity: 1; }
+  /* ─── ADMIN VIEW ─── */
+  #adminView {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  .admin-event-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    transition: border-color 0.2s, opacity 0.3s, transform 0.3s;
+  }
+
+  .admin-event-card.deleting {
+    opacity: 0;
+    transform: translateX(40px);
+    pointer-events: none;
+  }
+
+  .admin-event-info { flex: 1; min-width: 160px; }
+
+  .admin-event-name {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+
+  .admin-event-meta {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .admin-event-meta .code-pill {
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.2);
+    border-radius: 4px;
+    padding: 2px 7px;
+  }
+
+  .admin-stats {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .admin-stat {
+    text-align: center;
+  }
+
+  .admin-stat .n {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .admin-stat .l {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .btn-load-in-booth {
+    padding: 10px 16px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.25);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-load-in-booth:hover { background: var(--accent); color: #0a0a0f; }
+
+  .btn-delete-event {
+    padding: 10px 16px;
+    background: var(--pink-dim);
+    border: 1px solid rgba(255,62,127,0.25);
+    border-radius: var(--radius-sm);
+    color: var(--pink);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-delete-event:hover { background: var(--pink); color: #fff; }
+
+  .admin-empty {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--muted);
+  }
+
+  .admin-empty .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+  .admin-empty p { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; }
+
+  .admin-loading {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    padding: 60px 0;
+  }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE — MOBILE  (≤ 768px)
+  ════════════════════════════════════════════════ */
+  @media (max-width: 768px) {
+    /* Prevent iOS auto-zoom */
+    input[type="text"], textarea.text-input { font-size: 1rem !important; }
+
+    /* Hide on-screen keyboard on touch devices */
+    .keyboard-wrap { display: none !important; }
+    .btn-view-queue { margin-bottom: 18px; }
+
+    /* Larger touch targets */
+    input[type="text"] { padding: 18px 18px 18px 48px; }
+    .btn-submit { font-size: 1.5rem; padding: 20px; }
+
+    /* DJ booth */
+    .dj-stats { gap: 8px; }
+    .stat-card .val { font-size: 2rem; }
+    .dj-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .btn-played, .btn-reject { padding: 18px; font-size: 1rem; }
+
+    /* Emoji */
+    .emoji-btn { width: 54px; height: 54px; font-size: 1.7rem; }
+
+    /* Countdown */
+    .cd-num { font-size: 2.2rem; }
+    .cd-unit { padding: 14px 12px; min-width: 64px; }
+
+    /* General */
+    .header { padding-top: 18px; padding-bottom: 14px; margin-bottom: 20px; }
     .logo { font-size: 1.8rem; }
-    .song-name { font-size: 1.4rem; padding-right: 0; }
-    .stat-card { padding: 14px 16px; }
-    .stat-card .val { font-size: 1.8rem; }
-    .keyboard { grid-template-columns: repeat(8, 1fr); }
-    .request { padding: 16px 18px; }
-    .queue-item { flex-direction: column; }
-    .queue-item-actions { margin-left: 0; margin-top: 10px; }
+    .panel { padding: 0 16px 40px; }
+  }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE — LARGE / 16:9  (≥ 1100px, non-touch)
+  ════════════════════════════════════════════════ */
+  @media (min-width: 1100px) and (hover: hover) {
+    .panel { max-width: 1600px; padding: 0 48px 60px; }
+
+    /* REQUEST PAGE: 2-column */
+    #requestView { max-width: 1600px; margin: 0 auto; }
+
+    #formWrap {
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      column-gap: 40px;
+      align-items: start;
+    }
+
+    #formWrap > * { grid-column: 1; }
+
+    #formWrap > .keyboard-wrap {
+      grid-column: 2;
+      grid-row: 1 / 8;
+      position: sticky;
+      top: 24px;
+    }
+
+    #formWrap > .emoji-section { grid-column: 1 / -1; }
+
+    /* Tighter inputs on desktop */
+    input[type="text"] { font-size: 1.1rem; padding: 16px 18px 16px 48px; }
+    textarea.text-input { font-size: 1.1rem; }
+    .key { font-size: 0.95rem; padding: 14px 0; }
+    .keyboard { gap: 6px; }
+    .keyboard-wrap { padding: 14px; }
+
+    /* DJ BOOTH: sidebar */
+    #djView { max-width: 1600px; margin: 0 auto; }
+    #djView .header { margin-bottom: 24px; }
+
+    .dj-body {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      column-gap: 32px;
+      align-items: start;
+    }
+
+    .dj-sidebar { position: sticky; top: 24px; }
+    .qr-panel { flex-direction: column; margin-bottom: 20px; }
+    .qr-canvas-wrap { align-self: center; }
+    .dj-stats { grid-template-columns: 1fr; margin-bottom: 0; }
+    .dj-main { min-height: calc(100vh - 160px); }
+
+    /* Bigger cards */
+    .song-name { font-size: 2.2rem; }
+    .request { padding: 24px 28px; }
+    .event-title { font-size: 4.5rem; }
+    .cd-num { font-size: 4rem; }
+    .cd-unit { padding: 24px 28px; min-width: 110px; }
+  }
+
+  /* ════════════════════════════════════════════════
+     4K / 2K  (≥ 1800px)
+  ════════════════════════════════════════════════ */
+  @media (min-width: 1800px) {
+    .panel { padding: 0 80px 80px; }
+    .dj-body { grid-template-columns: 420px 1fr; column-gap: 48px; }
+    .logo { font-size: 3rem; }
+    .song-name { font-size: 2.6rem; }
+    .stat-card .val { font-size: 3.2rem; }
+    #formWrap { grid-template-columns: 1fr 520px; column-gap: 56px; }
+    .key { font-size: 1.1rem; padding: 16px 0; }
+    input[type="text"] { font-size: 1.25rem; padding: 20px 22px 20px 54px; }
+    textarea.text-input { font-size: 1.25rem; }
+    .request { padding: 28px 32px; }
+    .dj-stats { gap: 16px; }
   }
 </style>
 </head>
 <body>
 
-<div id="thankYou">
-  <div class="ty-icon">✓</div>
-  <div class="ty-text">THANK YOU</div>
-  <div class="ty-sub">REQUEST SUBMITTED</div>
-</div>
-
-<div class="panel" id="guestPanel">
-
+<!-- ═══ REQUEST VIEW ═══ -->
+<div id="requestView" class="panel hidden">
   <div class="header">
-    <div>
-      <div class="logo">DJ <span>REQUESTS</span></div>
-    </div>
-    <div class="badge">LIVE</div>
+    <div class="logo">DJ<span>:</span>Request</div>
+    <div class="badge">Send a song to the DJ</div>
   </div>
 
-  <div class="section-label">🎵 SONG REQUEST</div>
+  <div class="event-name-display" id="eventNameDisplay" style="display:none">
+    <div class="event-label">Tonight's event</div>
+    <div class="event-title" id="eventNameTitle"></div>
+    <div id="eventDescDisplay" class="event-desc-guest"></div>
+    <div id="guestQr" style="display:inline-block;background:#fff;border-radius:10px;padding:10px;margin-top:16px;line-height:0;"></div>
+  </div>
+
+  <div id="countdownSection">
+    <div class="cd-label-top">Event starts in</div>
+    <div class="cd-date-str" id="cdDateStr"></div>
+    <div class="countdown-timer">
+      <div class="cd-unit"><span class="cd-num" id="cdDays">00</span><span class="cd-unit-label">Days</span></div>
+      <div class="cd-unit"><span class="cd-num" id="cdHours">00</span><span class="cd-unit-label">Hours</span></div>
+      <div class="cd-unit"><span class="cd-num" id="cdMins">00</span><span class="cd-unit-label">Mins</span></div>
+      <div class="cd-unit"><span class="cd-num" id="cdSecs">00</span><span class="cd-unit-label">Secs</span></div>
+    </div>
+  </div>
 
   <div class="form-wrap" id="formWrap">
-    <div class="input-group">
-      <label for="songInput">🎶 Song Name</label>
-      <div class="input-wrap">
-        <span class="input-icon">🎵</span>
-        <input type="text" id="songInput" placeholder="Enter song name...">
-      </div>
+  <div class="input-group">
+    <label>Song / Artist</label>
+    <div class="input-wrap">
+      <span class="input-icon">♪</span>
+      <input id="songInput" type="text" placeholder="Type a song name…" autocomplete="off">
     </div>
-
-    <div class="input-group">
-      <label for="artistInput">🎤 Artist</label>
-      <div class="input-wrap">
-        <span class="input-icon">🎤</span>
-        <input type="text" id="artistInput" placeholder="Enter artist name...">
-      </div>
-    </div>
-
-    <div class="input-group">
-      <label for="nameInput">👤 Your Name</label>
-      <div class="input-wrap">
-        <span class="input-icon">👤</span>
-        <input type="text" id="nameInput" placeholder="What's your name?">
-      </div>
-    </div>
-
-    <div class="input-group">
-      <label for="noteInput">💬 Note (Optional)</label>
-      <div class="input-wrap">
-        <span class="input-icon">💬</span>
-        <textarea id="noteInput" class="text-input" placeholder="Add a special message..."></textarea>
-      </div>
-    </div>
-
-    <button class="btn-submit" id="submitBtn">SUBMIT REQUEST</button>
-    <button class="btn-view-queue" id="viewQueueBtn">VIEW REQUESTS QUEUE</button>
+    <div class="search-results" id="searchResults"></div>
   </div>
 
+  <div class="input-group">
+    <label>Your Name <span style="opacity:0.4;font-size:0.6rem">(optional)</span></label>
+    <div class="input-wrap">
+      <span class="input-icon">✦</span>
+      <input id="nameInput" type="text" placeholder="Who's asking?" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label>Genre <span style="opacity:0.4;font-size:0.6rem">(optional)</span></label>
+    <div class="input-wrap">
+      <span class="input-icon">🎵</span>
+      <input id="genreInput" type="text" placeholder="e.g. House, Pop, 80s, Rock…" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label>Note to DJ <span style="opacity:0.4;font-size:0.6rem">(optional)</span></label>
+    <div class="input-wrap">
+      <span class="input-icon" style="top:22px;transform:none;">✉</span>
+      <textarea id="noteInput" class="text-input" placeholder="Dedication, occasion, anything…"></textarea>
+    </div>
+  </div>
+
+  <button class="btn-submit" onclick="submitRequest()">Send Request →</button>
+  <button class="btn-view-queue" onclick="openQueueView()">♫ View Current Requests</button>
+
+  <!-- KEYBOARD -->
+  <div class="keyboard-wrap">
+    <div class="kb-field-toggle">
+      <button class="kb-toggle active" id="toggleSong" onclick="switchField('song')">Song</button>
+      <button class="kb-toggle" id="toggleName" onclick="switchField('name')">Name</button>
+      <button class="kb-toggle" id="toggleGenre" onclick="switchField('genre')">Genre</button>
+      <button class="kb-toggle" id="toggleNote" onclick="switchField('note')">Note</button>
+    </div>
+    <div class="caps-indicator" id="capsIndicator">CAPS ON</div>
+    <div class="keyboard" id="keyboard">
+      <!-- Row 0: numbers -->
+      <div class="key" data-char="1">1</div>
+      <div class="key" data-char="2">2</div>
+      <div class="key" data-char="3">3</div>
+      <div class="key" data-char="4">4</div>
+      <div class="key" data-char="5">5</div>
+      <div class="key" data-char="6">6</div>
+      <div class="key" data-char="7">7</div>
+      <div class="key" data-char="8">8</div>
+      <div class="key" data-char="9">9</div>
+      <div class="key" data-char="0">0</div>
+      <!-- Row 0b: symbols -->
+      <div class="key mod" data-char="(">(</div>
+      <div class="key mod" data-char=")">)</div>
+      <div class="key mod" data-char="-">-</div>
+      <div class="key mod" data-char="!">!</div>
+      <div class="key mod" data-char="?">?</div>
+      <div class="key mod" data-char="&">&amp;</div>
+      <div class="key mod" data-char=".">.</div>
+      <div class="key mod" data-char=",">,</div>
+      <div class="key mod" data-char="/">/</div>
+      <div class="key mod" data-char="@">@</div>
+      <!-- Row 1 -->
+      <div class="key" data-char="Q">Q</div>
+      <div class="key" data-char="W">W</div>
+      <div class="key" data-char="E">E</div>
+      <div class="key" data-char="R">R</div>
+      <div class="key" data-char="T">T</div>
+      <div class="key" data-char="Y">Y</div>
+      <div class="key" data-char="U">U</div>
+      <div class="key" data-char="I">I</div>
+      <div class="key" data-char="O">O</div>
+      <div class="key" data-char="P">P</div>
+      <!-- Row 2 -->
+      <div class="key" data-char="A">A</div>
+      <div class="key" data-char="S">S</div>
+      <div class="key" data-char="D">D</div>
+      <div class="key" data-char="F">F</div>
+      <div class="key" data-char="G">G</div>
+      <div class="key" data-char="H">H</div>
+      <div class="key" data-char="J">J</div>
+      <div class="key" data-char="K">K</div>
+      <div class="key" data-char="L">L</div>
+      <div class="key mod" data-action="back">⌫</div>
+      <!-- Row 3 -->
+      <div class="key mod span-2" data-action="caps">⇧ Caps</div>
+      <div class="key" data-char="Z">Z</div>
+      <div class="key" data-char="X">X</div>
+      <div class="key" data-char="C">C</div>
+      <div class="key" data-char="V">V</div>
+      <div class="key" data-char="B">B</div>
+      <div class="key" data-char="N">N</div>
+      <div class="key" data-char="M">M</div>
+      <div class="key mod" data-char="'">'</div>
+      <!-- Row 4 -->
+      <div class="key span-2 mod" data-action="clear">Clear</div>
+      <div class="key span-6" data-char=" ">Space</div>
+      <div class="key span-2 special" data-action="submit">Send →</div>
+    </div>
+  </div>
+
+  <!-- EMOJI SEND -->
+  <div class="emoji-section">
+    <div class="emoji-label">Send the DJ a vibe ✨</div>
+    <div class="emoji-grid">
+      <button class="emoji-btn" onclick="sendEmoji('❤️')" title="Love">❤️</button>
+      <button class="emoji-btn" onclick="sendEmoji('💩')" title="Poo">💩</button>
+      <button class="emoji-btn" onclick="sendEmoji('🤗')" title="Hug">🤗</button>
+      <button class="emoji-btn" onclick="sendEmoji('🙌')" title="High Five">🙌</button>
+      <button class="emoji-btn" onclick="sendEmoji('👍')" title="Thumbs Up">👍</button>
+      <button class="emoji-btn" onclick="sendEmoji('🔥')" title="Fire">🔥</button>
+      <button class="emoji-btn" onclick="sendEmoji('🎉')" title="Party">🎉</button>
+      <button class="emoji-btn" onclick="sendEmoji('😂')" title="Laughing">😂</button>
+      <button class="emoji-btn" onclick="sendEmoji('🤘')" title="Rock On">🤘</button>
+      <button class="emoji-btn" onclick="sendEmoji('⭐')" title="Star">⭐</button>
+    </div>
+    <div class="emoji-cooldown" id="emojiCooldown">Easy tiger… wait a moment!</div>
+  </div>
+
+  </div><!-- /form-wrap -->
 </div>
 
-<div class="queue-overlay" id="queueOverlay">
+<!-- ═══ QUEUE VIEW OVERLAY (guest) ═══ -->
+<div id="queueOverlay" class="queue-overlay">
   <div class="queue-overlay-inner">
     <div class="queue-overlay-header">
-      <div class="queue-overlay-title">REQUEST QUEUE</div>
+      <div class="queue-overlay-title">♫ Current Requests</div>
       <div class="queue-overlay-right">
-        <div class="queue-auto-close">Closes in <span id="autoCloseTimer">30</span>s</div>
-        <button class="queue-close-btn" id="queueCloseBtn">✕</button>
+        <div class="queue-auto-close" id="queueAutoClose"></div>
+        <button class="queue-close-btn" onclick="closeQueueView()">✕</button>
       </div>
     </div>
-    <div class="queue-overlay-list" id="queueList"></div>
+    <div class="queue-overlay-list" id="queueOverlayList">
+      <div class="queue-empty">No requests yet — be the first!</div>
+    </div>
   </div>
 </div>
 
-<div class="panel hidden" id="djPanel">
+<!-- ═══ DJ VIEW ═══ -->
+<div id="djView" class="panel hidden">
+  <!-- EMOJI CORNER FLASH -->
+  <div id="emojiFlash"></div>
 
   <div class="header">
-    <div>
-      <div class="logo">DJ <span>BOOTH</span></div>
-    </div>
+    <div class="logo">DJ<span>:</span>Booth</div>
+    <div class="badge"><span class="live-dot" id="connDot" title="Connecting…"></span>Live Queue</div>
   </div>
 
-  <div id="djCountdownBanner" class="hidden">
+  <!-- SCHEDULED EVENT COUNTDOWN BANNER -->
+  <div id="djCountdownBanner">
     <div class="dj-cd-left">
-      <div class="dj-cd-label">EVENT STARTS</div>
-      <div class="dj-cd-date" id="eventDateText"></div>
+      <div class="dj-cd-label">⏱ Event starts in</div>
+      <div class="dj-cd-date" id="djCdDate"></div>
     </div>
     <div class="dj-cd-timer">
-      <div class="dj-cd-unit">
-        <span class="dj-cd-num" id="djCdDays">00</span>
-        <span class="dj-cd-unit-label">Days</span>
-      </div>
+      <div class="dj-cd-unit"><span class="dj-cd-num" id="djCdDays">00</span><span class="dj-cd-unit-label">Days</span></div>
       <div class="dj-cd-sep">:</div>
-      <div class="dj-cd-unit">
-        <span class="dj-cd-num" id="djCdHours">00</span>
-        <span class="dj-cd-unit-label">Hours</span>
-      </div>
+      <div class="dj-cd-unit"><span class="dj-cd-num" id="djCdHours">00</span><span class="dj-cd-unit-label">Hrs</span></div>
       <div class="dj-cd-sep">:</div>
-      <div class="dj-cd-unit">
-        <span class="dj-cd-num" id="djCdMinutes">00</span>
-        <span class="dj-cd-unit-label">Minutes</span>
-      </div>
+      <div class="dj-cd-unit"><span class="dj-cd-num" id="djCdMins">00</span><span class="dj-cd-unit-label">Mins</span></div>
       <div class="dj-cd-sep">:</div>
-      <div class="dj-cd-unit">
-        <span class="dj-cd-num" id="djCdSeconds">00</span>
-        <span class="dj-cd-unit-label">Seconds</span>
-      </div>
+      <div class="dj-cd-unit"><span class="dj-cd-num" id="djCdSecs">00</span><span class="dj-cd-unit-label">Secs</span></div>
     </div>
   </div>
 
-  <div class="dj-stats">
-    <div class="stat-card">
-      <div class="val" id="statTotal">0</div>
-      <div class="lbl">Total Requests</div>
+  <div class="dj-body">
+    <!-- LEFT SIDEBAR -->
+    <div class="dj-sidebar">
+      <!-- QR / Event panel -->
+      <div class="qr-panel" id="qrPanel">
+        <div class="qr-canvas-wrap" id="qrCode"></div>
+        <div class="qr-info">
+          <div class="qr-event-name" id="qrEventName">—</div>
+          <div class="qr-code-badge" id="qrCodeBadge">CODE: —</div>
+          <div id="qrEventDesc" style="font-size:0.85rem;color:rgba(240,240,248,0.55);font-style:italic;margin-bottom:10px;line-height:1.5;display:none;"></div>
+          <div class="qr-url" id="qrUrl"></div>
+          <button class="btn-new-event" onclick="startNewEvent()">⟳ New Event</button>
+        </div>
+      </div>
+
+      <div class="dj-stats">
+        <div class="stat-card">
+          <div class="val" id="statTotal">0</div>
+          <div class="lbl">Pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="statPlayed">0</div>
+          <div class="lbl">Played tonight</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="statRejected">0</div>
+          <div class="lbl">Rejected</div>
+        </div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="val" id="statPlayed">0</div>
-      <div class="lbl">Played</div>
+
+    <!-- RIGHT MAIN -->
+    <div class="dj-main">
+      <div class="dj-toolbar">
+        <div class="section-label">Request queue</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-sort" id="sortBtn" onclick="toggleSort()">↓ Oldest First</button>
+          <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+          <button class="btn-lock" id="lockBtn" onclick="toggleLock()">⛔ Lock Requests</button>
+          <button class="btn-clear" onclick="clearAll()">Clear All</button>
+        </div>
+      </div>
+      <div id="requestList"></div>
     </div>
-    <div class="stat-card">
-      <div class="val" id="statPending">0</div>
-      <div class="lbl">Pending</div>
-    </div>
+  </div><!-- /dj-body -->
+</div>
+
+<!-- ═══ ADMIN VIEW ═══ -->
+<div id="adminView" class="hidden">
+  <div class="header">
+    <div class="logo">DJ<span>:</span>Admin</div>
+    <div class="badge">All Events</div>
   </div>
+  <div id="adminList"><div class="admin-loading">Loading events…</div></div>
+</div>
 
-  <div class="dj-toolbar">
-    <button class="btn-sort active" id="sortNewest">⬆ NEWEST</button>
-    <button class="btn-sort" id="sortOldest">⬇ OLDEST</button>
-    <button class="btn-export" id="exportBtn">📊 EXPORT</button>
-    <button class="btn-clear" id="clearBtn">🗑 CLEAR PLAYED</button>
-    <button class="btn-lock" id="lockBtn">🔓 UNLOCK</button>
-  </div>
+<!-- LOCKED OVERLAY (request page) -->
+<div id="lockedOverlay">
+  <div class="lock-icon">🎧</div>
+  <div class="lock-title">No More Requests Right Now</div>
+  <div class="lock-msg">The DJ has a backlog of amazing tunes to play — please come back in a little while!</div>
+  <div class="lock-rule">Requests will reopen soon</div>
+</div>
 
-  <div id="requestsList"></div>
-
+<!-- THANK YOU OVERLAY -->
+<div id="thankYou">
+  <div class="ty-icon" id="tyIcon">🎶</div>
+  <div class="ty-text" id="tyText">Nice one!</div>
+  <div class="ty-sub">Your request is with the DJ</div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════════════
-// COPY REQUEST FUNCTION - Fixed Implementation
-// ═══════════════════════════════════════════════════════════════════════════
-function copyRequest(event) {
-  event.stopPropagation();
-  
-  // Find the parent request card
-  const requestCard = event.target.closest('.request');
-  if (!requestCard) return;
-  
-  // Get song name and artist from the card
-  const songName = requestCard.querySelector('.song-name')?.textContent?.trim() || '';
-  const artistName = requestCard.querySelector('.req-meta')?.textContent?.split('•')[0]?.trim() || '';
-  
-  // Combine into copy text
-  const copyText = `${songName} - ${artistName}`.trim();
-  
-  if (!copyText) return;
-  
-  // Copy to clipboard
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(copyText).then(() => {
-      // Visual feedback
-      const btn = event.target;
-      btn.classList.add('copied');
-      btn.innerHTML = '✓';
-      
-      setTimeout(() => {
-        btn.classList.remove('copied');
-        btn.innerHTML = '📋';
-      }, 2000);
-    }).catch(() => {
-      // Fallback for older browsers
-      fallbackCopy(copyText, event.target);
-    });
+// ═══════════════════════════════════════════════════════════════
+//  FIREBASE CONFIG
+// ═══════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBOdgG_AE1Rng88eoH5bLue1eY9VMwAsOc",
+  authDomain:        "dj-request-gt.firebaseapp.com",
+  databaseURL:       "https://dj-request-gt-default-rtdb.firebaseio.com",
+  projectId:         "dj-request-gt",
+  storageBucket:     "dj-request-gt.firebasestorage.app",
+  messagingSenderId: "793216376391",
+  appId:             "1:793216376391:web:6cf9f0b7cfa0fbc5ec9b62"
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+
+// ─── HELPERS
+function genEventId() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusable chars
+  let id = '';
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
+
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function relativeTime(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'Just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  return `${Math.floor(m / 60)}h ago`;
+}
+
+// ─── FIREBASE REFS (set once event is known)
+let requestsRef, historyRef, lockedRef, statsRef, eventNameRef;
+let currentRequests = [];
+let qrInstance = null;
+
+function initRefs(eventId) {
+  const base = db.ref('events/' + eventId);
+  requestsRef  = base.child('requests');
+  historyRef   = base.child('history');
+  lockedRef    = base.child('locked');
+  statsRef     = base.child('stats');
+  eventNameRef = base.child('name');
+}
+
+// ─── DOM REFS
+const mode         = new URLSearchParams(window.location.search).get('mode');
+const eventParam   = new URLSearchParams(window.location.search).get('event');
+const requestView  = document.getElementById('requestView');
+const djView       = document.getElementById('djView');
+const eventSetup   = document.getElementById('eventSetup');
+const songInput    = document.getElementById('songInput');
+const nameInput    = document.getElementById('nameInput');
+const genreInput   = document.getElementById('genreInput');
+const noteInput    = document.getElementById('noteInput');
+const thankYou     = document.getElementById('thankYou');
+const requestList  = document.getElementById('requestList');
+
+// ─── ROUTING
+if (mode === 'admin') {
+  document.getElementById('adminView').classList.remove('hidden');
+  document.title = 'DJ Admin — All Events';
+  loadAdminEvents();
+
+} else if (mode === 'dj') {
+  const savedEvent = localStorage.getItem('djCurrentEvent');
+
+  if (savedEvent) {
+    openDJBooth(savedEvent);
   } else {
-    fallbackCopy(copyText, event.target);
+    // No event — send to admin to create/pick one
+    window.location.href = window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
+  }
+
+} else {
+  // ─── GUEST PAGE
+  if (eventParam) {
+    requestView.classList.remove('hidden');
+    initRefs(eventParam);
+    songInput.classList.add('active-field');
+
+    // Show event name + description + QR + countdown
+    db.ref('events/' + eventParam).get().then(snap => {
+      const data = snap.val();
+      if (data && data.name) {
+        document.getElementById('eventNameTitle').textContent = data.name;
+        document.getElementById('eventNameDisplay').style.display = 'block';
+        document.title = data.name + ' — Song Requests';
+
+        if (data.description) {
+          document.getElementById('eventDescDisplay').textContent = data.description;
+        }
+
+        new QRCode(document.getElementById('guestQr'), {
+          text: window.location.href,
+          width: 120,
+          height: 120,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        // Scheduled event countdown
+        if (data.scheduledAt && data.scheduledAt > Date.now()) {
+          startCountdown(data.scheduledAt);
+        }
+      }
+    }).catch(() => {});
+
+    // Live lock state — only show overlay if explicitly true
+    lockedRef.on('value', snap => {
+      applyLockState(snap.val() === true);
+    }, () => {}); // ignore permission errors
+
+    // Initialise track search
+    initTrackSearch();
+
+    // Physical keyboard field sync
+    [songInput, nameInput, genreInput, noteInput].forEach(el => {
+      el.addEventListener('focus', () => {
+        const f = el === songInput ? 'song' : el === nameInput ? 'name' : el === genreInput ? 'genre' : 'note';
+        setActiveField(f);
+      });
+    });
+
+    songInput.addEventListener('keydown',  e => { if (e.key === 'Enter') { e.preventDefault(); nameInput.focus(); } });
+    nameInput.addEventListener('keydown',  e => { if (e.key === 'Enter') { e.preventDefault(); genreInput.focus(); } });
+    genreInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); noteInput.focus(); } });
+    noteInput.addEventListener('keydown',  e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitRequest(); } });
+
+  } else {
+    // No event code — show branded landing page
+    const adminUrl = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
+
+    document.body.innerHTML = `
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: 'DM Sans', system-ui, sans-serif;
+          background: #090b10;
+          color: #f0f0f8;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 40px 24px;
+          text-align: center;
+          overflow: hidden;
+        }
+        body::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+          background-size: 200px 200px;
+          pointer-events: none;
+        }
+
+        /* Ambient glow blobs */
+        .blob {
+          position: fixed;
+          border-radius: 50%;
+          filter: blur(80px);
+          opacity: 0.12;
+          pointer-events: none;
+          animation: drift 12s ease-in-out infinite alternate;
+        }
+        .blob-1 { width: 500px; height: 500px; background: #c6ff00; top: -180px; left: -150px; animation-duration: 14s; }
+        .blob-2 { width: 400px; height: 400px; background: #ff3e7f; bottom: -120px; right: -100px; animation-duration: 10s; }
+        @keyframes drift {
+          from { transform: translate(0, 0) scale(1); }
+          to   { transform: translate(40px, 30px) scale(1.08); }
+        }
+
+        .landing-inner {
+          position: relative;
+          z-index: 1;
+          max-width: 560px;
+          width: 100%;
+        }
+
+        .landing-logo {
+          font-family: 'Bebas Neue', Impact, sans-serif;
+          font-size: clamp(4rem, 16vw, 7rem);
+          letter-spacing: 0.05em;
+          color: #c6ff00;
+          line-height: 0.9;
+          margin-bottom: 6px;
+        }
+
+        .landing-logo span { color: #ff3e7f; }
+
+        .landing-tagline {
+          font-family: 'DM Mono', monospace;
+          font-size: 0.72rem;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: rgba(240,240,248,0.4);
+          margin-bottom: 48px;
+        }
+
+        .landing-rule {
+          width: 60px;
+          height: 2px;
+          background: linear-gradient(90deg, #c6ff00, #ff3e7f);
+          border-radius: 2px;
+          margin: 0 auto 36px;
+        }
+
+        .landing-features {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          margin-bottom: 48px;
+          text-align: left;
+        }
+
+        .landing-feature {
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 12px;
+          padding: 16px 20px;
+        }
+
+        .feature-icon {
+          font-size: 1.5rem;
+          line-height: 1;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+
+        .feature-text strong {
+          display: block;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: #f0f0f8;
+          margin-bottom: 2px;
+        }
+
+        .feature-text span {
+          font-size: 0.82rem;
+          color: rgba(240,240,248,0.45);
+          line-height: 1.4;
+        }
+
+        .btn-admin {
+          display: inline-block;
+          width: 100%;
+          padding: 22px;
+          background: #c6ff00;
+          color: #0a0a0f;
+          font-family: 'Bebas Neue', Impact, sans-serif;
+          font-size: 1.7rem;
+          letter-spacing: 0.08em;
+          border: none;
+          border-radius: 14px;
+          cursor: pointer;
+          text-decoration: none;
+          transition: box-shadow 0.2s, transform 0.1s;
+          box-shadow: 0 0 30px rgba(198,255,0,0.35);
+          margin-bottom: 16px;
+        }
+
+        .btn-admin:hover {
+          box-shadow: 0 0 50px rgba(198,255,0,0.55);
+          transform: translateY(-2px);
+        }
+
+        .btn-admin:active { transform: scale(0.98); }
+
+        .landing-footer {
+          font-family: 'DM Mono', monospace;
+          font-size: 0.62rem;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(240,240,248,0.2);
+          margin-top: 8px;
+        }
+      </style>
+
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+
+      <div class="landing-inner">
+        <div class="landing-logo">DJ<span>:</span>Request</div>
+        <div class="landing-tagline">Real-time song requests for live events</div>
+        <div class="landing-rule"></div>
+
+        <div class="landing-features">
+          <div class="landing-feature">
+            <div class="feature-icon">📱</div>
+            <div class="feature-text">
+              <strong>QR Code sharing</strong>
+              <span>Guests scan to request songs from any device — no app needed</span>
+            </div>
+          </div>
+          <div class="landing-feature">
+            <div class="feature-icon">🎧</div>
+            <div class="feature-text">
+              <strong>Live DJ dashboard</strong>
+              <span>See requests in real time, mark as played or rejected</span>
+            </div>
+          </div>
+          <div class="landing-feature">
+            <div class="feature-icon">📅</div>
+            <div class="feature-text">
+              <strong>Schedule events ahead of time</strong>
+              <span>Share the link early with a countdown — requests open automatically</span>
+            </div>
+          </div>
+          <div class="landing-feature">
+            <div class="feature-icon">🎵</div>
+            <div class="feature-text">
+              <strong>iTunes track search</strong>
+              <span>Guests search for tracks with album art and auto-filled genre</span>
+            </div>
+          </div>
+        </div>
+
+        <a href="${adminUrl}" class="btn-admin">Go to DJ Admin →</a>
+        <div class="landing-footer">Create and manage events from the admin panel</div>
+      </div>`;
   }
 }
 
-// Fallback copy function for older browsers
-function fallbackCopy(text, btn) {
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  document.body.appendChild(textarea);
-  textarea.select();
-  
-  try {
-    document.execCommand('copy');
-    btn.classList.add('copied');
-    btn.innerHTML = '✓';
-    
+// ─── EVENT SETUP (DJ side)
+function createDJEvent() {
+  const name = document.getElementById('setupNameInput').value.trim();
+  if (!name) {
+    document.getElementById('setupNameInput').focus();
+    return;
+  }
+  const btn = document.querySelector('.btn-create-event');
+  btn.textContent = 'Creating…';
+  btn.disabled = true;
+
+  const eventId = genEventId();
+  db.ref('events/' + eventId + '/name').set(name)
+    .then(() => {
+      localStorage.setItem('djCurrentEvent', eventId);
+      eventSetup.classList.add('hidden');
+      openDJBooth(eventId);
+    })
+    .catch(err => {
+      btn.textContent = 'Create Event →';
+      btn.disabled = false;
+      alert('Could not create event.\n\nFirebase error: ' + err.message + '\n\nCheck your database rules are set to allow read/write.');
+    });
+}
+
+document.getElementById('setupNameInput')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') createDJEvent();
+});
+
+document.getElementById('setupCodeInput')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') loadEventByCode();
+});
+
+function loadEventByCode() {
+  const code = document.getElementById('setupCodeInput').value.trim().toUpperCase();
+  if (!code) return;
+  db.ref('events/' + code + '/name').get().then(snap => {
+    if (!snap.exists()) {
+      alert('Event code not found. Check the code and try again.');
+      return;
+    }
+    localStorage.setItem('djCurrentEvent', code);
+    eventSetup.classList.add('hidden');
+    openDJBooth(code);
+  });
+}
+
+// ─── DJ BOOTH COUNTDOWN
+let djCountdownTimer = null;
+
+function startDJCountdown(scheduledAt) {
+  const banner = document.getElementById('djCountdownBanner');
+  if (!banner) return;
+
+  document.getElementById('djCdDate').textContent =
+    new Date(scheduledAt).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' });
+
+  banner.classList.add('visible');
+
+  function tick() {
+    const diff = scheduledAt - Date.now();
+    if (diff <= 0) {
+      clearInterval(djCountdownTimer);
+      banner.style.transition = 'opacity 1s';
+      banner.style.opacity = '0';
+      setTimeout(() => banner.classList.remove('visible'), 1000);
+      return;
+    }
+    const s    = Math.floor(diff / 1000);
+    const days = Math.floor(s / 86400);
+    const hrs  = Math.floor((s % 86400) / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    const secs = s % 60;
+    document.getElementById('djCdDays').textContent  = String(days).padStart(2, '0');
+    document.getElementById('djCdHours').textContent = String(hrs).padStart(2, '0');
+    document.getElementById('djCdMins').textContent  = String(mins).padStart(2, '0');
+    document.getElementById('djCdSecs').textContent  = String(secs).padStart(2, '0');
+  }
+
+  tick();
+  if (djCountdownTimer) clearInterval(djCountdownTimer);
+  djCountdownTimer = setInterval(tick, 1000);
+}
+
+function startNewEvent() {
+  if (!confirm('Go to admin to switch event? This won\'t delete the current one.')) return;
+  localStorage.removeItem('djCurrentEvent');
+  if (requestsRef) requestsRef.off();
+  if (lockedRef)   lockedRef.off();
+  if (statsRef)    statsRef.off();
+  const adminUrl = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
+  window.location.href = adminUrl;
+}
+
+// ─── OPEN DJ BOOTH
+function openDJBooth(eventId) {
+  initRefs(eventId);
+  djView.classList.remove('hidden');
+
+  // Build request page URL
+  const base = window.location.href.split('?')[0];
+  const guestUrl = base + '?event=' + eventId;
+
+  // Event name + description
+  db.ref('events/' + eventId).get().then(snap => {
+    const data = snap.val() || {};
+    const name = data.name || 'Unnamed Event';
+
+    document.getElementById('qrEventName').textContent = name;
+    document.getElementById('qrCodeBadge').textContent = 'CODE: ' + eventId;
+    document.getElementById('qrUrl').textContent = guestUrl;
+    document.title = name + ' — DJ Booth';
+
+    const descEl = document.getElementById('qrEventDesc');
+    if (descEl) {
+      descEl.textContent = data.description || '';
+      descEl.style.display = data.description ? 'block' : 'none';
+    }
+
+    // Generate QR
+    document.getElementById('qrCode').innerHTML = '';
+    qrInstance = new QRCode(document.getElementById('qrCode'), {
+      text: guestUrl,
+      width: 140,
+      height: 140,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    // DJ countdown banner
+    if (data.scheduledAt && data.scheduledAt > Date.now()) {
+      startDJCountdown(data.scheduledAt);
+    }
+  });
+
+  // Live emoji feed — only listen to new ones from now
+  const emojiRef = db.ref('events/' + eventId + '/emojis');
+  const boothOpenTime = Date.now();
+  emojiRef.on('child_added', snap => {
+    const data = snap.val();
+    if (data && data.time > boothOpenTime) {
+      showEmojiFlash(data.emoji);
+    }
+  });
+
+  // Live request queue
+  requestsRef.on('value', snapshot => {
+    const data = snapshot.val() || {};
+    currentRequests = Object.entries(data)
+      .map(([key, val]) => ({ ...val, key }));
+    renderDJ();
+  });
+
+  // Live stats
+  statsRef.on('value', snap => {
+    const s = snap.val() || {};
+    document.getElementById('statPlayed').textContent   = s.played   || 0;
+    document.getElementById('statRejected').textContent = s.rejected || 0;
+  });
+
+  // Lock state
+  lockedRef.on('value', snap => updateLockBtn(snap.val() === true));
+
+  // Connection indicator
+  db.ref('.info/connected').on('value', snap => {
+    const dot = document.getElementById('connDot');
+    if (!dot) return;
+    dot.style.background = snap.val() ? 'var(--accent)' : 'var(--pink)';
+    dot.title = snap.val() ? 'Connected' : 'Disconnected';
+  });
+}
+
+// ─── SORT
+let sortNewestFirst = true;
+
+function toggleSort() {
+  sortNewestFirst = !sortNewestFirst;
+  const btn = document.getElementById('sortBtn');
+  btn.textContent   = sortNewestFirst ? '↓ Newest First' : '↑ Oldest First';
+  btn.classList.toggle('active', !sortNewestFirst);
+  renderDJ();
+}
+
+// ─── SEND EMOJI (guest)
+let emojiCooldownActive = false;
+
+function sendEmoji(emoji) {
+  if (emojiCooldownActive) {
+    const cd = document.getElementById('emojiCooldown');
+    cd.classList.add('show');
+    setTimeout(() => cd.classList.remove('show'), 1500);
+    return;
+  }
+
+  db.ref('events/' + eventParam + '/emojis').push({
+    emoji,
+    time: Date.now()
+  }).catch(() => {});
+
+  // Visual feedback on button
+  const btns = document.querySelectorAll('.emoji-btn');
+  btns.forEach(b => { if (b.textContent.trim() === emoji) { b.classList.add('sent'); setTimeout(() => b.classList.remove('sent'), 400); } });
+
+  // Cooldown 2.5 seconds
+  emojiCooldownActive = true;
+  const cd = document.getElementById('emojiCooldown');
+  cd.classList.add('show');
+  setTimeout(() => {
+    emojiCooldownActive = false;
+    cd.classList.remove('show');
+  }, 2500);
+}
+
+// ─── SHOW EMOJI FLASH (DJ screen)
+const emojiQueue = [];
+let emojiShowing = false;
+
+function showEmojiFlash(emoji) {
+  emojiQueue.push(emoji);
+  if (!emojiShowing) processEmojiQueue();
+}
+
+function processEmojiQueue() {
+  if (emojiQueue.length === 0) { emojiShowing = false; return; }
+  emojiShowing = true;
+  const emoji = emojiQueue.shift();
+  const container = document.getElementById('emojiFlash');
+  if (!container) { emojiShowing = false; return; }
+
+  const el = document.createElement('div');
+  el.className = 'emoji-flash-item';
+  el.textContent = emoji;
+  container.appendChild(el);
+
+  // Fade out after 2.8s
+  setTimeout(() => {
+    el.classList.add('fading');
+    setTimeout(() => { el.remove(); processEmojiQueue(); }, 500);
+  }, 2800);
+}
+
+// ─── TRACK SEARCH
+// Uses iTunes Search API (open, no key, CORS-enabled).
+// To swap for Beatport: replace searchTracks() with your OAuth-authenticated call.
+let searchDebounce = null;
+
+function initTrackSearch() {
+  if (!songInput) return;
+
+  songInput.addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    const q = songInput.value.trim();
+    if (q.length < 2) { closeSearch(); return; }
+    showSearchLoading();
+    searchDebounce = setTimeout(() => searchTracks(q), 400);
+  });
+
+  // Close results when focus leaves the field and results panel
+  songInput.addEventListener('blur', () => {
     setTimeout(() => {
-      btn.classList.remove('copied');
-      btn.innerHTML = '📋';
-    }, 2000);
-  } catch (err) {
-    console.error('Copy failed:', err);
-  }
-  
-  document.body.removeChild(textarea);
+      if (!document.activeElement.closest('.search-results')) closeSearch();
+    }, 150);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.input-group')) closeSearch();
+  });
 }
 
-// Add event delegation for copy buttons
-document.addEventListener('click', function(e) {
-  if (e.target.closest('.btn-copy')) {
-    copyRequest(e);
+async function searchTracks(query) {
+  try {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=6`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    renderSearchResults(data.results || []);
+  } catch {
+    closeSearch();
+  }
+}
+
+function renderSearchResults(results) {
+  const panel = document.getElementById('searchResults');
+  if (!panel) return;
+
+  if (results.length === 0) {
+    panel.innerHTML = `<div class="search-loading">No results found</div><div class="search-source">iTunes Search</div>`;
+    panel.classList.add('open');
+    return;
+  }
+
+  panel.innerHTML = results.map((r, i) => `
+    <div class="search-result-item" data-index="${i}" onclick="selectTrack(${i})">
+      ${r.artworkUrl100
+        ? `<img class="search-art" src="${r.artworkUrl100.replace('100x100', '60x60')}" alt="" loading="lazy">`
+        : `<div class="search-art-placeholder">♪</div>`}
+      <div class="search-info">
+        <div class="search-track">${escapeHtml(r.trackName)}</div>
+        <div class="search-artist">${escapeHtml(r.artistName)}</div>
+      </div>
+      ${r.primaryGenreName ? `<div class="search-genre">${escapeHtml(r.primaryGenreName)}</div>` : ''}
+    </div>
+  `).join('') + `<div class="search-source">iTunes Search</div>`;
+
+  // Store results for selection
+  panel._results = results;
+  panel.classList.add('open');
+}
+
+function selectTrack(index) {
+  const panel = document.getElementById('searchResults');
+  const r = panel?._results?.[index];
+  if (!r) return;
+
+  songInput.value  = `${r.trackName} — ${r.artistName}`;
+  if (genreInput && r.primaryGenreName) genreInput.value = r.primaryGenreName;
+
+  closeSearch();
+  nameInput?.focus();
+  setActiveField('name');
+}
+
+function showSearchLoading() {
+  const panel = document.getElementById('searchResults');
+  if (!panel) return;
+  panel.innerHTML = `<div class="search-loading">Searching…</div>`;
+  panel.classList.add('open');
+}
+
+function closeSearch() {
+  const panel = document.getElementById('searchResults');
+  if (panel) panel.classList.remove('open');
+  clearTimeout(searchDebounce);
+}
+
+// ─── COUNTDOWN (guest page)
+function startCountdown(scheduledAt) {
+  const section  = document.getElementById('countdownSection');
+
+  // Show countdown but leave form fully visible — requests open immediately
+  section.style.display = 'block';
+
+  // Set date string
+  document.getElementById('cdDateStr').textContent =
+    new Date(scheduledAt).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' });
+
+  // Update label to make clear requests are open
+  const labelEl = section.querySelector('.cd-label-top');
+  if (labelEl) labelEl.textContent = 'Event starts in — requests welcome now!';
+
+  function tick() {
+    const diff = scheduledAt - Date.now();
+    if (diff <= 0) {
+      clearInterval(timer);
+      section.innerHTML = '<div class="cd-go-msg">🎉 The event has started!</div>';
+      setTimeout(() => { section.style.display = 'none'; }, 3000);
+      return;
+    }
+    const s    = Math.floor(diff / 1000);
+    const days = Math.floor(s / 86400);
+    const hrs  = Math.floor((s % 86400) / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    const secs = s % 60;
+    document.getElementById('cdDays').textContent  = String(days).padStart(2, '0');
+    document.getElementById('cdHours').textContent = String(hrs).padStart(2, '0');
+    document.getElementById('cdMins').textContent  = String(mins).padStart(2, '0');
+    document.getElementById('cdSecs').textContent  = String(secs).padStart(2, '0');
+  }
+
+  tick();
+  const timer = setInterval(tick, 1000);
+}
+
+// ─── SUBMIT REQUEST
+function submitRequest() {
+  const song = songInput.value.trim();
+  if (!song) {
+    songInput.classList.remove('active-field');
+    void songInput.offsetWidth;
+    songInput.style.borderColor = 'var(--pink)';
+    songInput.style.boxShadow   = '0 0 0 3px var(--pink-dim)';
+    setTimeout(() => {
+      songInput.style.borderColor = '';
+      songInput.style.boxShadow   = '';
+      songInput.classList.add('active-field');
+    }, 600);
+    songInput.focus();
+    return;
+  }
+
+  requestsRef.push({
+    song,
+    name: nameInput.value.trim() || 'Anonymous',
+    genre: genreInput.value.trim(),
+    note: noteInput.value.trim(),
+    time: Date.now()
+  }).catch(() => alert('Could not send request — check your internet connection.'));
+
+  songInput.value  = '';
+  nameInput.value  = '';
+  genreInput.value = '';
+  noteInput.value  = '';
+  setActiveField('song');
+  songInput.focus();
+
+  const msgs = [
+    ['🎶', 'Request sent!'],
+    ['🔥', 'Great choice!'],
+    ['🙌', 'Nice one!'],
+    ['✅', 'On the list!'],
+  ];
+  const m = msgs[Math.floor(Math.random() * msgs.length)];
+  document.getElementById('tyIcon').textContent = m[0];
+  document.getElementById('tyText').textContent = m[1];
+  thankYou.classList.add('show');
+  setTimeout(() => thankYou.classList.remove('show'), 2800);
+}
+
+// ─── FIELD SWITCHING
+let capsOn = false;
+let activeField = 'song';
+
+function switchField(f) {
+  setActiveField(f);
+  currentInput().focus();
+}
+
+function setActiveField(f) {
+  activeField = f;
+  document.getElementById('toggleSong')?.classList.toggle('active', f === 'song');
+  document.getElementById('toggleName')?.classList.toggle('active', f === 'name');
+  document.getElementById('toggleGenre')?.classList.toggle('active', f === 'genre');
+  document.getElementById('toggleNote')?.classList.toggle('active', f === 'note');
+  [songInput, nameInput, genreInput, noteInput].forEach(el => el?.classList.remove('active-field'));
+  currentInput().classList.add('active-field');
+}
+
+function currentInput() {
+  if (activeField === 'song')  return songInput;
+  if (activeField === 'name')  return nameInput;
+  if (activeField === 'genre') return genreInput;
+  return noteInput;
+}
+
+function typeChar(ch) {
+  const inp = currentInput();
+  const symbols = new Set([' ', "'", '(', ')', '-', '!', '?', '&', '.', ',', '/', '@']);
+  const c = (!isNaN(ch) || symbols.has(ch)) ? ch
+            : capsOn ? ch.toUpperCase() : ch.toLowerCase();
+  inp.value += c;
+}
+
+document.getElementById('keyboard')?.addEventListener('click', e => {
+  const key = e.target.closest('.key');
+  if (!key) return;
+
+  key.classList.add('pressed');
+  setTimeout(() => key.classList.remove('pressed'), 120);
+
+  const ch     = key.dataset.char;
+  const action = key.dataset.action;
+
+  if (ch !== undefined) {
+    typeChar(ch);
+  } else if (action === 'back') {
+    const inp = currentInput();
+    inp.value = inp.value.slice(0, -1);
+  } else if (action === 'caps') {
+    capsOn = !capsOn;
+    document.getElementById('capsIndicator').classList.toggle('on', capsOn);
+    key.style.borderColor = capsOn ? 'var(--accent)' : '';
+    key.style.color       = capsOn ? 'var(--accent)' : '';
+  } else if (action === 'clear') {
+    currentInput().value = '';
+  } else if (action === 'submit') {
+    submitRequest();
   }
 });
+
+// ─── COPY REQUEST TO CLIPBOARD
+function copyRequest(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '⧉';
+      btn.classList.remove('copied');
+    }, 1800);
+  }).catch(() => {
+    // Fallback for browsers without clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '⧉';
+      btn.classList.remove('copied');
+    }, 1800);
+  });
+}
+
+// ─── RENDER DJ QUEUE
+function renderDJ() {
+  if (!requestList) return;
+  document.getElementById('statTotal').textContent = currentRequests.length;
+  requestList.innerHTML = '';
+
+  if (currentRequests.length === 0) {
+    requestList.innerHTML = `<div class="empty">
+      <div class="empty-icon">♫</div>
+      <p>No requests yet</p>
+    </div>`;
+    return;
+  }
+
+  const sorted = [...currentRequests].sort((a, b) =>
+    sortNewestFirst ? b.time - a.time : a.time - b.time
+  );
+
+  sorted.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className   = 'request';
+    div.dataset.key = r.key;
+
+    // Build copy text — all the useful info in one pasteable block
+    const copyLines = [r.song];
+    if (r.genre) copyLines.push(`Genre: ${r.genre}`);
+    if (r.name && r.name !== 'Anonymous') copyLines.push(`Requested by: ${r.name}`);
+    if (r.note) copyLines.push(`Note: ${r.note}`);
+    const copyText = copyLines.join('\n');
+
+    div.innerHTML = `
+      <button class="btn-copy" onclick="copyRequest(this, ${JSON.stringify(copyText)})" title="Copy to clipboard">⧉</button>
+      <div class="request-num">${String(i + 1).padStart(2, '0')}</div>
+      <div class="song-name">${escapeHtml(r.song)}</div>
+      ${r.genre ? `<div class="genre-tag">🎵 ${escapeHtml(r.genre)}</div>` : ''}
+      <div class="req-meta">
+        <span>${escapeHtml(r.name)}</span>
+        <span class="sep">·</span>
+        <span>${relativeTime(r.time)}</span>
+      </div>
+      ${r.note ? `<div class="req-note">${escapeHtml(r.note)}</div>` : ''}
+      <div class="dj-actions">
+        <button class="btn-played" onclick="markPlayed('${r.key}')">✓ Played</button>
+        <button class="btn-reject" onclick="markRejected('${r.key}')">✕ Reject</button>
+      </div>`;
+    requestList.appendChild(div);
+  });
+
+  // Keep guest queue overlay in sync if open
+  if (document.getElementById('queueOverlay')?.classList.contains('open')) {
+    renderQueueOverlay(sorted);
+  }
+}
+
+// ─── QUEUE OVERLAY (guest — view current requests)
+let queueAutoCloseTimer = null;
+const QUEUE_TIMEOUT = 30; // seconds
+
+function openQueueView() {
+  const overlay = document.getElementById('queueOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+
+  // Subscribe to live requests for this event
+  db.ref('events/' + eventParam + '/requests').on('value', snap => {
+    const data = snap.val() || {};
+    const requests = Object.entries(data)
+      .map(([key, val]) => ({ ...val, key }))
+      .sort((a, b) => b.time - a.time);
+    renderQueueOverlay(requests);
+  });
+
+  startQueueAutoClose();
+
+  // Reset timer on any interaction
+  overlay.addEventListener('pointermove', resetQueueTimer, { passive: true });
+  overlay.addEventListener('touchstart',  resetQueueTimer, { passive: true });
+  overlay.addEventListener('click',       resetQueueTimer);
+}
+
+function closeQueueView() {
+  const overlay = document.getElementById('queueOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  db.ref('events/' + eventParam + '/requests').off();
+  clearQueueAutoClose();
+}
+
+function renderQueueOverlay(requests) {
+  const list = document.getElementById('queueOverlayList');
+  if (!list) return;
+
+  if (!requests || requests.length === 0) {
+    list.innerHTML = '<div class="queue-empty">No requests yet — be the first!</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  requests.forEach((r, i) => {
+    const card = document.createElement('div');
+    card.className = 'queue-card';
+    card.innerHTML = `
+      <div class="queue-card-num">${String(i + 1).padStart(2, '0')}</div>
+      <div class="queue-card-song">${escapeHtml(r.song)}</div>
+      <div class="queue-card-meta">
+        <span>${escapeHtml(r.name)}</span>
+        ${r.genre ? `<span class="queue-genre-tag">${escapeHtml(r.genre)}</span>` : ''}
+        <span>· ${relativeTime(r.time)}</span>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function startQueueAutoClose() {
+  clearQueueAutoClose();
+  let remaining = QUEUE_TIMEOUT;
+  const el = document.getElementById('queueAutoClose');
+
+  function tick() {
+    if (el) el.textContent = `Closes in ${remaining}s`;
+    if (remaining <= 0) { closeQueueView(); return; }
+    remaining--;
+  }
+
+  tick();
+  queueAutoCloseTimer = setInterval(tick, 1000);
+}
+
+function resetQueueTimer() {
+  clearQueueAutoClose();
+  startQueueAutoClose();
+}
+
+function clearQueueAutoClose() {
+  if (queueAutoCloseTimer) { clearInterval(queueAutoCloseTimer); queueAutoCloseTimer = null; }
+}
+
+// ─── REMOVE REQUEST
+function removeRequest(key) {
+  const card = requestList?.querySelector(`[data-key="${key}"]`);
+  if (card) {
+    card.classList.add('rejecting');
+    setTimeout(() => requestsRef.child(key).remove(), 300);
+  } else {
+    requestsRef.child(key).remove();
+  }
+}
+
+// ─── MARK PLAYED / REJECTED
+function markPlayed(key) {
+  const r = currentRequests.find(r => r.key === key);
+  if (r) historyRef.push({ ...r, status: 'Played', resolvedAt: Date.now() });
+  statsRef.child('played').transaction(n => (n || 0) + 1);
+  removeRequest(key);
+}
+
+function markRejected(key) {
+  const r = currentRequests.find(r => r.key === key);
+  if (r) historyRef.push({ ...r, status: 'Rejected', resolvedAt: Date.now() });
+  statsRef.child('rejected').transaction(n => (n || 0) + 1);
+  removeRequest(key);
+}
+
+// ─── EXPORT CSV
+function exportCSV() {
+  Promise.all([historyRef.get(), requestsRef.get()]).then(([histSnap, reqSnap]) => {
+    const history = histSnap.val() ? Object.values(histSnap.val()) : [];
+    const pending = reqSnap.val()  ? Object.values(reqSnap.val()).map(r => ({ ...r, status: 'Pending' })) : [];
+    const all = [...history, ...pending];
+
+    if (all.length === 0) { alert('No requests to export yet.'); return; }
+
+    const fmtTime = ts => {
+      const d = new Date(ts);
+      return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    };
+    const esc = v => `"${String(v || '').replace(/"/g, '""')}"`;
+
+    const rows = [
+      ['Song', 'Requested By', 'Note to DJ', 'Requested At', 'Status'].map(esc).join(','),
+      ...all.map(r => [esc(r.song), esc(r.name), esc(r.note || ''), esc(fmtTime(r.time)), esc(r.status)].join(','))
+    ];
+
+    const eventName = document.getElementById('qrEventName')?.textContent || 'dj-requests';
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `${eventName.replace(/[^a-z0-9]/gi, '-')}-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+// ─── LOCK
+function toggleLock() {
+  lockedRef.get().then(snap => lockedRef.set(snap.val() === true ? false : true));
+}
+
+function updateLockBtn(locked) {
+  const btn = document.getElementById('lockBtn');
+  if (!btn) return;
+  btn.classList.toggle('locked', locked);
+  btn.textContent = locked ? '✅ Unlock Requests' : '⛔ Lock Requests';
+}
+
+function applyLockState(locked) {
+  const overlay = document.getElementById('lockedOverlay');
+  if (!overlay) return;
+  overlay.classList.toggle('show', locked === true);
+}
+
+// ─── CLEAR ALL
+function clearAll() {
+  if (!confirm('Clear all pending requests?\n\nTip: export the CSV first if you want a record of tonight.')) return;
+  requestsRef.remove();
+  if (confirm('Also clear the full history log? (This cannot be undone.)')) {
+    historyRef.remove();
+    statsRef.remove();
+  }
+}
 </script>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 </body>
 </html>
