@@ -1576,6 +1576,116 @@
     text-align: center;
     padding: 60px 0;
   }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE — MOBILE  (≤ 768px)
+  ════════════════════════════════════════════════ */
+  @media (max-width: 768px) {
+    /* Prevent iOS auto-zoom */
+    input[type="text"], textarea.text-input { font-size: 1rem !important; }
+
+    /* Hide on-screen keyboard on touch devices */
+    .keyboard-wrap { display: none !important; }
+    .btn-view-queue { margin-bottom: 18px; }
+
+    /* Larger touch targets */
+    input[type="text"] { padding: 18px 18px 18px 48px; }
+    .btn-submit { font-size: 1.5rem; padding: 20px; }
+
+    /* DJ booth */
+    .dj-stats { gap: 8px; }
+    .stat-card .val { font-size: 2rem; }
+    .dj-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .btn-played, .btn-reject { padding: 18px; font-size: 1rem; }
+
+    /* Emoji */
+    .emoji-btn { width: 54px; height: 54px; font-size: 1.7rem; }
+
+    /* Countdown */
+    .cd-num { font-size: 2.2rem; }
+    .cd-unit { padding: 14px 12px; min-width: 64px; }
+
+    /* General */
+    .header { padding-top: 18px; padding-bottom: 14px; margin-bottom: 20px; }
+    .logo { font-size: 1.8rem; }
+    .panel { padding: 0 16px 40px; }
+  }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE — LARGE / 16:9  (≥ 1100px, non-touch)
+  ════════════════════════════════════════════════ */
+  @media (min-width: 1100px) and (hover: hover) {
+    .panel { max-width: 1600px; padding: 0 48px 60px; }
+
+    /* REQUEST PAGE: 2-column */
+    #requestView { max-width: 1600px; margin: 0 auto; }
+
+    #formWrap {
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      column-gap: 40px;
+      align-items: start;
+    }
+
+    #formWrap > * { grid-column: 1; }
+
+    #formWrap > .keyboard-wrap {
+      grid-column: 2;
+      grid-row: 1 / 8;
+      position: sticky;
+      top: 24px;
+    }
+
+    #formWrap > .emoji-section { grid-column: 1 / -1; }
+
+    /* Tighter inputs on desktop */
+    input[type="text"] { font-size: 1.1rem; padding: 16px 18px 16px 48px; }
+    textarea.text-input { font-size: 1.1rem; }
+    .key { font-size: 0.95rem; padding: 14px 0; }
+    .keyboard { gap: 6px; }
+    .keyboard-wrap { padding: 14px; }
+
+    /* DJ BOOTH: sidebar */
+    #djView { max-width: 1600px; margin: 0 auto; }
+    #djView .header { margin-bottom: 24px; }
+
+    .dj-body {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      column-gap: 32px;
+      align-items: start;
+    }
+
+    .dj-sidebar { position: sticky; top: 24px; }
+    .qr-panel { flex-direction: column; margin-bottom: 20px; }
+    .qr-canvas-wrap { align-self: center; }
+    .dj-stats { grid-template-columns: 1fr; margin-bottom: 0; }
+    .dj-main { min-height: calc(100vh - 160px); }
+
+    /* Bigger cards */
+    .song-name { font-size: 2.2rem; }
+    .request { padding: 24px 28px; }
+    .event-title { font-size: 4.5rem; }
+    .cd-num { font-size: 4rem; }
+    .cd-unit { padding: 24px 28px; min-width: 110px; }
+  }
+
+  /* ════════════════════════════════════════════════
+     4K / 2K  (≥ 1800px)
+  ════════════════════════════════════════════════ */
+  @media (min-width: 1800px) {
+    .panel { padding: 0 80px 80px; }
+    .dj-body { grid-template-columns: 420px 1fr; column-gap: 48px; }
+    .logo { font-size: 3rem; }
+    .song-name { font-size: 2.6rem; }
+    .stat-card .val { font-size: 3.2rem; }
+    #formWrap { grid-template-columns: 1fr 520px; column-gap: 56px; }
+    .key { font-size: 1.1rem; padding: 16px 0; }
+    input[type="text"] { font-size: 1.25rem; padding: 20px 22px 20px 54px; }
+    textarea.text-input { font-size: 1.25rem; }
+    .request { padding: 28px 32px; }
+    .dj-stats { gap: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -1760,44 +1870,51 @@
     <div class="badge"><span class="live-dot" id="connDot" title="Connecting…"></span>Live Queue</div>
   </div>
 
-  <!-- QR / Event panel -->
-  <div class="qr-panel" id="qrPanel">
-    <div class="qr-canvas-wrap" id="qrCode"></div>
-    <div class="qr-info">
-      <div class="qr-event-name" id="qrEventName">—</div>
-      <div class="qr-code-badge" id="qrCodeBadge">CODE: —</div>
-      <div id="qrEventDesc" style="font-size:0.85rem;color:rgba(240,240,248,0.55);font-style:italic;margin-bottom:10px;line-height:1.5;display:none;"></div>
-      <div class="qr-url" id="qrUrl"></div>
-      <button class="btn-new-event" onclick="startNewEvent()">⟳ New Event</button>
-    </div>
-  </div>
+  <div class="dj-body">
+    <!-- LEFT SIDEBAR -->
+    <div class="dj-sidebar">
+      <!-- QR / Event panel -->
+      <div class="qr-panel" id="qrPanel">
+        <div class="qr-canvas-wrap" id="qrCode"></div>
+        <div class="qr-info">
+          <div class="qr-event-name" id="qrEventName">—</div>
+          <div class="qr-code-badge" id="qrCodeBadge">CODE: —</div>
+          <div id="qrEventDesc" style="font-size:0.85rem;color:rgba(240,240,248,0.55);font-style:italic;margin-bottom:10px;line-height:1.5;display:none;"></div>
+          <div class="qr-url" id="qrUrl"></div>
+          <button class="btn-new-event" onclick="startNewEvent()">⟳ New Event</button>
+        </div>
+      </div>
 
-  <div class="dj-stats">
-    <div class="stat-card">
-      <div class="val" id="statTotal">0</div>
-      <div class="lbl">Pending</div>
+      <div class="dj-stats">
+        <div class="stat-card">
+          <div class="val" id="statTotal">0</div>
+          <div class="lbl">Pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="statPlayed">0</div>
+          <div class="lbl">Played tonight</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="statRejected">0</div>
+          <div class="lbl">Rejected</div>
+        </div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="val" id="statPlayed">0</div>
-      <div class="lbl">Played tonight</div>
-    </div>
-    <div class="stat-card">
-      <div class="val" id="statRejected">0</div>
-      <div class="lbl">Rejected</div>
-    </div>
-  </div>
 
-  <div class="dj-toolbar">
-    <div class="section-label">Request queue</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn-sort" id="sortBtn" onclick="toggleSort()">↓ Oldest First</button>
-      <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
-      <button class="btn-lock" id="lockBtn" onclick="toggleLock()">⛔ Lock Requests</button>
-      <button class="btn-clear" onclick="clearAll()">Clear All</button>
+    <!-- RIGHT MAIN -->
+    <div class="dj-main">
+      <div class="dj-toolbar">
+        <div class="section-label">Request queue</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-sort" id="sortBtn" onclick="toggleSort()">↓ Oldest First</button>
+          <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+          <button class="btn-lock" id="lockBtn" onclick="toggleLock()">⛔ Lock Requests</button>
+          <button class="btn-clear" onclick="clearAll()">Clear All</button>
+        </div>
+      </div>
+      <div id="requestList"></div>
     </div>
-  </div>
-
-  <div id="requestList"></div>
+  </div><!-- /dj-body -->
 </div>
 
 <!-- ═══ ADMIN VIEW ═══ -->
