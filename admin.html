@@ -970,6 +970,73 @@
   }
 
   .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE — MOBILE  (≤ 768px)
+  ════════════════════════════════════════════════ */
+  @media (max-width: 768px) {
+    input[type="text"], input[type="date"], input[type="time"],
+    textarea { font-size: 1rem !important; }
+
+    .panel { padding: 0 16px 40px; }
+    .header { padding-top: 18px; }
+
+    .summary { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .summary-card .val { font-size: 1.8rem; }
+    .summary-card .lbl { font-size: 0.55rem; }
+
+    .create-row { flex-direction: column; }
+    .btn-create { width: 100%; }
+
+    .schedule-row { flex-direction: column; }
+
+    .event-actions { flex-wrap: wrap; }
+    .btn-open, .btn-edit, .btn-delete { flex: 1 1 auto; text-align: center; }
+
+    .toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE — LARGE / 16:9  (≥ 1100px)
+  ════════════════════════════════════════════════ */
+  @media (min-width: 1100px) {
+    .panel { max-width: 1600px; padding: 0 48px 80px; }
+
+    /* 2-column event cards */
+    #eventList {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    /* State messages span both columns */
+    #eventList > .state-msg { grid-column: 1 / -1; }
+
+    /* Summary wider */
+    .summary { gap: 16px; }
+    .summary-card .val { font-size: 3rem; }
+
+    /* Create panel side by side */
+    .create-row { align-items: flex-end; }
+    .create-input { font-size: 1.15rem; }
+  }
+
+  /* ════════════════════════════════════════════════
+     4K / 2K  (≥ 1800px)
+  ════════════════════════════════════════════════ */
+  @media (min-width: 1800px) {
+    .panel { padding: 0 100px 100px; }
+
+    #eventList { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+    .summary { gap: 20px; }
+    .summary-card .val { font-size: 3.6rem; }
+    .logo { font-size: 3rem; }
+
+    .event-name { font-size: 2.4rem; }
+    .create-input { font-size: 1.25rem; padding: 16px 22px; }
+  }
   /* ─── PIN OVERLAY ─── */
   #pinOverlay {
     position: fixed;
