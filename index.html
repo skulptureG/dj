@@ -616,7 +616,7 @@
     font-size: 0.68rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--accent);
     margin-bottom: 20px;
   }
 
@@ -673,13 +673,7 @@
   }
 
   .form-wrap {
-    transition: opacity 0.5s, transform 0.5s;
-  }
-
-  .form-wrap.hidden-form {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(12px);
+    transition: opacity 0.3s;
   }
 
   /* ─── TRACK SEARCH RESULTS ─── */
@@ -2577,26 +2571,24 @@ function closeSearch() {
 // ─── COUNTDOWN (guest page)
 function startCountdown(scheduledAt) {
   const section  = document.getElementById('countdownSection');
-  const formWrap = document.getElementById('formWrap');
 
-  // Show countdown, hide form
+  // Show countdown but leave form fully visible — requests open immediately
   section.style.display = 'block';
-  formWrap.classList.add('hidden-form');
 
   // Set date string
   document.getElementById('cdDateStr').textContent =
     new Date(scheduledAt).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' });
 
+  // Update label to make clear requests are open
+  const labelEl = section.querySelector('.cd-label-top');
+  if (labelEl) labelEl.textContent = 'Event starts in — requests welcome now!';
+
   function tick() {
     const diff = scheduledAt - Date.now();
     if (diff <= 0) {
       clearInterval(timer);
-      section.innerHTML = '<div class="cd-go-msg">🎉 Requests are now open!</div>';
-      setTimeout(() => {
-        section.style.display = 'none';
-        formWrap.classList.remove('hidden-form');
-        songInput?.focus();
-      }, 2000);
+      section.innerHTML = '<div class="cd-go-msg">🎉 The event has started!</div>';
+      setTimeout(() => { section.style.display = 'none'; }, 3000);
       return;
     }
     const s    = Math.floor(diff / 1000);
