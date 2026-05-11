@@ -1,3 +1,1295 @@
+
+Claude is responding
+You said: Can you make this look visually better?
+
+DJ.html
+285 lines
+
+html
+
+Can you make this look visually better? Also suggest features.
+
+7 May
+Claude responded: Good starting point — now let me give this a serious visual overhaul.
+
+Architected nightclub-themed redesign with enhanced functionality and feature suggestions
+Architected nightclub-themed redesign with enhanced functionality and feature suggestions
+Good starting point — now let me give this a serious visual overhaul. I'll build it as a self-contained file with a club aesthetic that actually feels intentional, plus I'll wire up the keyboard (it wasn't connected to anything in the original!) and suggest features at the end.
+
+
+Created a file, read a file
+Created a file, read a file
+Here's what changed visually and functionally:
+
+Design overhaul — dark club aesthetic with Bebas Neue display font, DM Mono for metadata, electric chartreuse (
+#c6ff00) as the primary accent with hot pink as a secondary. Noise texture overlay, glowing focus states on inputs, and key-press depth effect on the keyboard.
+
+Keyboard is now actually wired up — the original had no JS connected to the keys at all. Now each key types into whichever field is active, with Caps toggle, Backspace, Clear, and a direct Send key. There's also a field-switcher so you can swap between Song and Name without touching the inputs.
+
+DJ view gets stats — a persistent played/rejected counter at the top that survives page reloads, card numbers, smooth slide-out animation on dismiss, and a live pulsing dot badge.
+
+Feature suggestions worth adding:
+
+Upvote button on the request screen — guests can +1 an existing request; the DJ sees the vote count and can sort by popularity
+QR code panel on the DJ screen that guests scan to open the request URL — useful when running this on a tablet
+"Now Playing" strip — DJ sets the current song and it shows at the top of the public view
+Duplicate detection — if someone requests a song already in the queue, warn them before submitting
+Request cooldown — rate-limit per session so one person can't spam the queue
+Message/dedication field — a short optional note ("for my friend's birthday!")
+Drag to reorder on the DJ screen — lets the DJ manually set priority
+Export to CSV — download tonight's full request history at the end of the event
+
+Dj
+Code · HTML 
+You said: Can you make this work with a keyboard input as well as a touchscreen and add an optional note to DJ field.
+Can you make this work with a keyboard input as well as a touchscreen and add an optional note to DJ field.
+
+7 May
+Claude responded: I'll make targeted edits: remove readonly, wire up focus tracking so clicking a real input syncs the on-screen keyboard, add the Note field throughout, and upd…
+
+Architected keyboard and touchscreen integration with optional note field
+Architected keyboard and touchscreen integration with optional note field
+I'll make targeted edits: remove readonly, wire up focus tracking so clicking a real input syncs the on-screen keyboard, add the Note field throughout, and update the DJ card to display it.
+
+
+Edited 6 files
+Edited 6 files
+Now update all the JavaScript:
+
+
+Edited 3 files, read a file
+Edited 3 files, read a file
+Here's what changed:
+
+Physical keyboard support — inputs are no longer readonly, so a real keyboard works naturally. Clicking or tabbing into any field automatically highlights it in the on-screen keyboard's field switcher, so both input methods stay in sync. Enter on the Song field jumps to Name, Enter on Name jumps to Note, and Enter on Note (without Shift) submits. The on-screen keyboard now also inserts at the cursor position rather than always appending to the end, so it works properly alongside a physical keyboard mid-edit.
+
+Note to DJ field — a third textarea sits below Name. It's optional, shows a subtle italic note with a green left-border on the DJ card when present, and is included in the on-screen keyboard's field toggle. It's skipped cleanly in the submission if left blank.
+
+
+Dj
+Code · HTML 
+You said: How do I view the DJ List mode?
+How do I view the DJ List mode? it used to be ?mode=dj at the end of the URL?
+
+7 May
+Claude responded: Yes, exactly — it's still ?
+Yes, exactly — it's still ?mode=dj. Just append it to whatever URL the file is open at in your browser. For example:
+
+If you're opening it as a local file: file:///path/to/DJ.html?mode=dj
+If it's hosted on a server: https://yoursite.com/DJ.html?mode=dj
+Without the parameter you get the guest request screen, with it you get the DJ booth view. You can have both open in separate tabs or devices at the same time — they share data via localStorage, so requests appear on the DJ screen in real time (it polls every 5 seconds and also listens for storage events from the same browser).
+
+You said: Can you add a temporary lock mode - On the DJ Booth window I want to be able to toggle a button that stops any more requests - when I turn off request a pop up…
+Can you add a temporary lock mode - On the DJ Booth window I want to be able to toggle a button that stops any more requests - when I turn off request a pop up overlay should come up on the request page saying "No more requests are being taken, the DJ has a back log of amazing tunes to play, please come back in a little while!" When I turn the button off - the screen goes back to normal.
+
+7 May
+Claude responded: The trick here is using localStorage as the cross-tab signal, same as the request queue.
+
+Architected cross-tab lock mechanism with overlay notification system
+Architected cross-tab lock mechanism with overlay notification system
+The trick here is using localStorage as the cross-tab signal, same as the request queue. The DJ page writes a djLocked flag, the request page listens for it.
+
+
+Architected lock feature spanning CSS, HTML, and JavaScript layers
+Architected lock feature spanning CSS, HTML, and JavaScript layers
+Good picture. Three targeted edits: CSS for the lock button and overlay, HTML for both elements, then the JS logic.
+
+
+Edited 5 files, read a file
+Edited 5 files, read a file
+Done. Here's how it works:
+
+DJ Booth (?mode=dj) — there's now a ⛔ Lock Requests button next to Clear All. When active it turns solid pink with a slow pulse and relabels itself ✅ Unlock Requests.
+Request page — on lock, a full-screen blurred overlay fades in with the 🎧 icon and your message. It disappears instantly when you unlock.
+The state is stored in localStorage under djLocked, so both tabs react immediately via the storage event — no polling delay.
+
+Dj
+Code · HTML 
+You said: When using the touch screen (mot physical keyboard) the words are typed backwards.
+When using the touch screen (mot physical keyboard) the words are typed backwards. The input is wrong.
+
+7 May
+Claude responded: Classic bug — when you tap an on-screen key the input isn't focused, so selectionStart is 0, and every character gets inserted at the beginning instead of the …
+
+Diagnosed cursor position bug and prescribed simple append solution
+Diagnosed cursor position bug and prescribed simple append solution
+Classic bug — when you tap an on-screen key the input isn't focused, so selectionStart is 0, and every character gets inserted at the beginning instead of the end. The cursor position logic only makes sense when a physical keyboard is in use (the browser handles that natively). The on-screen keyboard just needs to append.
+
+
+Edited 2 files, read a file
+Edited 2 files, read a file
+Fixed. The on-screen keyboard now simply appends to the end of the value — which is all it needs to do. The physical keyboard still works independently through normal browser input handling, so both modes are correct.
+
+
+Dj
+Code · HTML 
+You said: Add: Export to CSV — download tonight's full request history at the end of the event
+Add: Export to CSV — download tonight's full request history at the end of the event
+
+7 May
+Claude responded: The current design removes requests when actioned, so there's no history to export.
+
+Architected history tracking and CSV export functionality for request logging
+Architected history tracking and CSV export functionality for request logging
+The current design removes requests when actioned, so there's no history to export. I need to log each request to a history store when played/rejected, then the export combines that log with anything still in the pending queue.
+
+
+Edited 3 files, viewed a file
+Edited 3 files, viewed a file
+Now update markPlayed and markRejected to log to history, and add the exportCSV function:
+
+
+Add history logging to markPlayed and markRejected, and add exportCSV function
+Add history logging to markPlayed and markRejected, and add exportCSV function
+Also clear history when Clear All is used at end of night, with a prompt:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done. Here's how it works:
+
+Every time you hit Played or Rejected, that request is quietly logged to a djHistory store in localStorage with its outcome and timestamp — separate from the live queue so it survives being removed from the list
+↓ Export CSV combines the full history log with whatever is still pending in the queue, and downloads a dated file (dj-requests-2026-05-07.csv) with columns: Song, Requested By, Note to DJ, Requested At, Status
+Clear All now reminds you to export first, and gives a second prompt to optionally wipe the history log too — useful for starting fresh at the next event
+
+Dj
+Code · HTML 
+You said: I have now uploaded the code to github so the webpage is accessible online (https://skulptureg.
+I have now uploaded the code to github so the webpage is accessible online (https://skulptureg.github.io/dj/index.html) can you edit the code so request can be sent via the web, not localhost on the same machine? I plan to use a QR code so people can access the page via QR code on mobile or similar.
+
+7 May
+Claude responded: Great news — the code is already fully written for Firebase.
+
+Recognized Firebase integration complete, identified configuration setup requirements
+Recognized Firebase integration complete, identified configuration setup requirements
+Great news — the code is already fully written for Firebase. Previous sessions had already migrated it off localStorage. You just need to plug in your Firebase credentials. Here's exactly how:
+
+Step 1 — Create a Firebase project (free, ~3 mins)
+
+Go to console.firebase.google.com
+Click Add project → give it a name (e.g. dj-requests) → Continue → Create
+In the left sidebar go to Build → Realtime Database
+Click Create database → pick any region → choose Start in test mode → Enable
+Step 2 — Get your web app config
+
+In the left sidebar click the ⚙️ gear → Project settings
+Scroll to Your apps → click Add app → choose the Web icon (</>)
+Give it a nickname, click Register app
+You'll see a firebaseConfig object — copy those values
+Step 3 — Paste into the HTML
+
+Open index.html and fill in the block at the top of the <script> section:
+
+js
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSy...",
+  authDomain:        "dj-requests-abc.firebaseapp.com",
+  databaseURL:       "https://dj-requests-abc-default-rtdb.firebaseio.com",
+  projectId:         "dj-requests-abc",
+  storageBucket:     "dj-requests-abc.appspot.com",
+  messagingSenderId: "123456789",
+  appId:             "1:123456789:web:abc123"
+};
+Step 4 — Push to GitHub, done.
+
+URLs to share:
+
+Guest request page: https://skulptureg.github.io/dj/index.html
+DJ booth: https://skulptureg.github.io/dj/index.html?mode=dj
+The green/pink dot in the DJ booth header shows live connection status. Requests from any phone in the world will appear instantly on the DJ screen.
+
+Note: Test mode rules expire after 30 days. Before then, go to Realtime Database → Rules and set them to ".read": true, ".write": true permanently (fine for this use case since it's just song requests with no sensitive data).
+
+You said: You said I will see "You'll see a firebaseConfig object — copy those values" do I choose 'Use npm' or 'use a <script> tag?
+You said I will see "You'll see a firebaseConfig object — copy those values" do I choose 'Use npm' or 'use a <script> tag?
+
+8 May
+Claude responded: Choose "Use a <script> tag" — the HTML file already loads Firebase via CDN script tags at the top, so you just need the config values from that view.
+
+Reconciled Firebase setup method with existing HTML configuration
+Reconciled Firebase setup method with existing HTML configuration
+Choose "Use a <script> tag" — the HTML file already loads Firebase via CDN script tags at the top, so you just need the config values from that view. You don't need to copy any of the script tags it shows you, just the firebaseConfig object values.
+
+You said: Here is the script; <script type="module">
+Here is the script; <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBOdgG_AE1Rng88eoH5bLue1eY9VMwAsOc",
+    authDomain: "dj-request-gt.firebaseapp.com",
+    databaseURL: "https://dj-request-gt-default-rtdb.firebaseio.com",
+    projectId: "dj-request-gt",
+    storageBucket: "dj-request-gt.firebasestorage.app",
+    messagingSenderId: "793216376391",
+    appId: "1:793216376391:web:6cf9f0b7cfa0fbc5ec9b62",
+    measurementId: "G-66VRSVLVLT"
+  };
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+
+Show more
+8 May
+Claude responded: Good news — you don't need to use their module-style script.
+
+Weighed SDK migration options and opted for configuration update
+Weighed SDK migration options and opted for configuration update
+Good news — you don't need to use their module-style script. Your existing HTML already uses the simpler compat SDK approach which is fine. You just need to copy the config values across. Make this one edit in index.html:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Download that file, rename it index.html, push it to GitHub and it should be live. I've left out the measurementId as that's just for Google Analytics which you don't need.
+
+The script Firebase gave you was the newer modular style — your file uses the older compat style which is simpler and works just as well for this use case. Same database, different syntax.
+
+
+Dj
+Code · HTML 
+Uncaught Error: Uncaught ReferenceError: firebase is not defined
+8 May
+Claude responded: The compat SDK was dropped after Firebase v9, so v10.
+
+Diagnosed Firebase version incompatibility and prescribed downgrade solution
+Diagnosed Firebase version incompatibility and prescribed downgrade solution
+The compat SDK was dropped after Firebase v9, so v10.12.0 doesn't have those files. Fix is simple — downgrade the two CDN script tags to v9 where compat is fully supported.
+
+
+Edited a file, read a file
+Edited a file, read a file
+Push that to GitHub and the error should be gone. The compat SDK (firebase.database() style) only exists up to v9 — Firebase v10+ switched to modules only, which is what the script they gave you was using.
+
+
+Dj
+Code · HTML 
+You said: This is now working great.
+This is now working great. is there a way to create a project name like "Daves Wedding" or "Staff party" I want to create this in the DJ page at it appears at the top of the Request page. When creating the Project name can it create a custom QR code so people can scan it and then go directly to the request page? Every event I do I can create a custom name then and keep everything separate. Is this possible?
+
+8 May
+Claude responded: Yes, absolutely possible.
+
+Architected event-scoped Firebase structure with QR code generation
+Architected event-scoped Firebase structure with QR code generation
+Yes, absolutely possible. The plan: event name + a short unique ID stored in Firebase, all data scoped per-event, QR code generated from the request URL. DJ creates/switches events from the booth, guests just scan the QR.
+
+Let me look at the full current file first to plan the edits carefully.
+
+
+Viewed 3 files
+Viewed 3 files
+Good picture of the whole structure. Now I'll do this in clean targeted edits — add CSS, update HTML for both views, add the event setup overlay, then rewrite the JS to scope everything per-event.
+
+
+Edited 4 files
+Edited 4 files
+Now rewrite the full JS block:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Here's the full flow once you push this:
+
+DJ Booth (?mode=dj)
+
+First visit shows a setup screen — type the event name (e.g. "Dave's Wedding") and hit Create
+Generates a random 6-character code like K7MNP2, saves it to Firebase, and opens the booth
+The top of the booth shows the event name, the 6-char code, a live QR code, and the guest URL
+Hit ⟳ New Event to set up a fresh event for the next gig — old data is preserved in Firebase, nothing deleted
+Guest page (no ?mode=dj)
+
+URL is index.html?event=K7MNP2 — this is what the QR code encodes
+Shows the event name at the top ("Tonight's event — Dave's Wedding")
+If someone visits the URL with no event code they get a polite holding message
+Reload resilience — the DJ's current event code is saved in localStorage, so if you accidentally refresh the booth page it reopens the same event automatically rather than asking you to start over. You can also reload a previous event by pasting its code into the "load existing" box.
+
+
+Dj
+Code · HTML 
+You said: Create Event does not work.
+Create Event does not work.
+
+8 May
+Claude responded: The createEvent function has no error handling — if the Firebase write fails (e.
+
+Diagnosed Firebase write failures and pinpointed error handling gaps
+Diagnosed Firebase write failures and pinpointed error handling gaps
+The createEvent function has no error handling — if the Firebase write fails (e.g. database rules blocking it) the .then() never fires and nothing happens. Let me add a catch and also some button feedback so you can see what's going on.
+
+
+Edited a file, read a file
+Edited a file, read a file
+Push that and try again — the button will now say "Creating…" while it works, and if it fails you'll see the exact Firebase error message in an alert.
+
+The most likely culprit is expired database rules. Firebase test mode only lasts 30 days. To fix it permanently, go to:
+
+Firebase Console → Realtime Database → Rules and set:
+
+json
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+Then click Publish. That'll tell you for certain if rules are the issue.
+
+
+Dj
+Code · HTML 
+You said: I being told this error in console (Edge) dj/?
+I being told this error in console (Edge) dj/?mode=dj:950 Uncaught TypeError: Failed to execute 'createEvent' on 'Document': 1 argument required, but only 0 present.
+    at HTMLButtonElement.onclick (dj/?mode=dj:950:62)
+
+8 May
+Claude responded: createEvent is a built-in browser DOM method (document.
+
+Identified naming conflict with DOM API, recommended renaming function
+Identified naming conflict with DOM API, recommended renaming function
+createEvent is a built-in browser DOM method (document.createEvent()), so the browser calls that instead of the custom function. Just need to rename it.
+
+
+Edited 3 files, read a file
+Edited 3 files, read a file
+Classic naming collision — createEvent is a reserved DOM API method so the browser grabbed that instead of yours. Renamed to createDJEvent throughout. Push and it should work now.
+
+
+Dj
+Code · HTML 
+You said: Works!
+Works! Thank you. Finally can you add the QR code to the top of the request page so people can scan it from that window too?
+
+8 May
+Claude responded: Now generate the QR code when the event name loads on the guest page: Done.
+
+Devised method to display QR code across multiple pages
+Devised method to display QR code across multiple pages
+Now generate the QR code when the event name loads on the guest page:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done. The QR code now appears on the request page itself, centred under the event name, so if you have the page up on a screen or tablet at the venue guests can scan it directly from there too. It encodes the same URL the page is already on, so it's always correct.
+
+
+Dj
+Code · HTML 
+You said: When creating a new event - O get this error in console (edge) : Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, …
+When creating a new event - O get this error in console (edge) : Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received.
+
+The screen is black on the request page.
+
+8 May
+Claude responded: The console error is actually a browser extension in Edge interfering (Grammarly, LastPass, Bitwarden etc.
+
+Diagnosed extension error versus black screen root cause
+Diagnosed extension error versus black screen root cause
+The console error is actually a browser extension in Edge interfering (Grammarly, LastPass, Bitwarden etc.) — not your code. You can ignore it.
+
+The black screen is the real bug. When the guest page loads, if the Firebase lockedRef listener fires before the data exists it can call applyLockState with an unexpected value and flash the overlay on. Also there's no catch on the Firebase calls if something goes slow. Let me harden the guest page routing:
+
+
+Harden guest page routing - always show requestView first, guard lock state, add catch handlers
+Harden guest page routing - always show requestView first, guard lock state, add catch handlers
+Also fix applyLockState to be explicit about only showing the overlay for true:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Two fixes in this build:
+
+Request form now shows immediately regardless of Firebase state — the form is visible the moment the page loads, then the event name and QR code fill in once Firebase responds. No more dependency on async calls for basic visibility.
+Lock overlay is now strictly guarded — it only activates if the value is explicitly true, and Firebase listener errors are silently ignored rather than potentially breaking the page.
+The Edge console message will keep appearing as long as you have certain extensions installed — it's harmless noise from the extension trying to intercept page messages, not anything wrong with the app.
+
+
+Dj
+Code · HTML 
+You said: Got all these errors now:
+1778222869372_image.png
+Got all these errors now:
+
+8 May
+Claude responded: These are all Edge's Tracking Prevention feature, not code errors.
+
+Diagnosed Firebase tracking prevention warnings as non-critical
+Diagnosed Firebase tracking prevention warnings as non-critical
+These are all Edge's Tracking Prevention feature, not code errors. Here's what each means:
+
+"Tracking Prevention blocked access to storage" — Edge is blocking Firebase and the QR library from using browser storage (localStorage/IndexedDB) because they're loaded from third-party domains (gstatic.com, cdnjs.cloudflare.com). Importantly, this won't break the app — Firebase Realtime Database uses WebSockets for actual data sync, not localStorage. The storage is only used for optional caching. Your requests will still go through.
+
+"favicon.ico 404" — the site has no icon file, harmless but easy to fix.
+
+Two ways to stop the warnings:
+
+Option 1 — Fix it in Edge (easiest, just for you as the DJ): Go to Edge Settings → Privacy, search, and services → Tracking Prevention → set to Basic instead of Balanced/Strict. Or click the lock icon in the address bar and allow storage for your site specifically.
+
+Option 2 — Add a favicon to kill the 404. Create a simple favicon.ico file in the same GitHub folder as index.html. You can generate one free at favicon.io, then add this to the <head> of the HTML:
+
+html
+<link rel="icon" href="favicon.ico">
+The app should be fully functional despite all those warnings — they're Edge being overprotective about third-party scripts, not actual failures.
+
+You said: Is there a way for me to view all events so I can delete them when done?
+Is there a way for me to view all events so I can delete them when done?
+
+8 May
+Claude responded: Yes — the simplest approach is a separate admin page.
+Yes — the simplest approach is a separate admin page. Let me build admin.html that connects to the same Firebase and lists all events with stats and a delete button.
+
+
+Architected standalone admin interface for event management
+Architected standalone admin interface for event management
+There's already an admin stub in the file. Let me build it out properly as a clean standalone admin.html.
+
+
+Created a file, read a file
+Created a file, read a file
+Drop admin.html into the same GitHub folder as index.html and visit:
+
+https://skulptureg.github.io/dj/admin.html
+
+Here's what it does:
+
+Lists every event with its name, code, pending count, played count, rejected count, and when the last request came in
+🔒 icon if that event's requests are currently locked
+▾ Pending button expands to show the actual song queue inline
+↗ Guest Page and 🎧 Open in Booth links — the Booth link also loads that event into the DJ screen automatically
+🗑 Delete per event, with a confirmation modal — also clears it from localStorage so the DJ screen doesn't try to reopen a deleted event
+Delete All Events button in the toolbar if you want to wipe everything at once
+Summary bar at the top showing total events, total requests across all events, and total songs played
+
+Admin
+Code · HTML 
+You said: Should I add this as a sperate page called admin.
+Should I add this as a sperate page called admin.html in github? Will everything work and sync?
+
+8 May
+Claude responded: Yes, exactly.
+
+Validated file structure and synchronization compatibility
+Validated file structure and synchronization compatibility
+Yes, exactly. Just add admin.html as a separate file in the same folder as index.html in your GitHub repo. So your repo structure should look like:
+
+dj/
+├── index.html
+└── admin.html
+Everything will sync automatically because both files share the same Firebase config pointing to the same database — there's no extra setup needed.
+
+Access it at: https://skulptureg.github.io/dj/admin.html
+
+A few things worth knowing:
+
+It's not password protected — anyone who knows the URL can access it. Since it's a public GitHub Pages site, you may want to keep the URL quiet and just bookmark it for yourself. If you ever want to add a simple password prompt I can add one.
+The ← DJ Booth link in the top right takes you back to index.html?mode=dj
+The Open in Booth button automatically loads that event into the DJ screen, so you can jump straight from admin into managing a specific event
+Deleting an event in admin also clears it from the DJ screen's memory (localStorage), so everything stays in sync
+You said: in the DJ window can you add a feature: order the requests by latest first and vice versa?
+in the DJ window can you add a feature: order the requests by latest first and vice versa?
+
+8 May
+Claude responded: Now add the CSS for the sort button: Now add the sort state variable and wire up the logic: Now apply the sort inside renderDJ: The previous edit left a gap — …
+
+Viewed 2 files, edited a file
+Viewed 2 files, edited a file
+Now add the CSS for the sort button:
+
+
+Add btn-sort CSS alongside btn-export
+Add btn-sort CSS alongside btn-export
+Now add the sort state variable and wire up the logic:
+
+
+Edited 2 files
+Edited 2 files
+Now apply the sort inside renderDJ:
+
+
+Identified and resolved broken forEach implementation in DJ renderer
+Identified and resolved broken forEach implementation in DJ renderer
+The previous edit left a gap — the sorted.forEach call is missing. Let me fix that whole block cleanly:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done. There's now a sort button in the DJ toolbar:
+
+Default is ↓ Newest First (most recent requests at the top)
+Click it to switch to ↑ Oldest First (first-come, first-served order) — button highlights in green so you can see at a glance which mode you're in
+Switching sort never affects the data, just the display — and new incoming requests instantly appear in the correct position
+
+Dj
+Code · HTML 
+You said: In DJ admin - the Guest Page and Open in Booth do not work - they are looking for local files.
+In DJ admin - the Guest Page and Open in Booth do not work - they are looking for local files.
+
+8 May
+Claude responded: Found it.
+
+Viewed 3 files
+Viewed 3 files
+Found it. The replace('admin.html', 'index.html') is fragile — if the URL doesn't literally end in admin.html it breaks. Better to build the URL from origin and pathname:
+
+
+Fix URL construction to use origin + pathname properly
+Fix URL construction to use origin + pathname properly
+Also fix the back link at the top of the page which has the same problem:
+
+
+Fix the DJ Booth back link to use a computed URL instead of relative path
+Fix the DJ Booth back link to use a computed URL instead of relative path
+Now set the booth link href via JS after the page loads:
+
+
+Edited a file, read a file
+Edited a file, read a file
+The fix uses window.location.origin (e.g. https://skulptureg.github.io) plus the correct path instead of trying to string-replace the current URL — which was failing because GitHub Pages sometimes serves paths without the filename visible. All three links (Guest Page, Open in Booth, ← DJ Booth) now build their URLs the same reliable way.
+
+
+Admin
+Code · HTML 
+You said: Can we move the "create an event" to the DJ admin page so everything is managed from there?
+Can we move the "create an event" to the DJ admin page so everything is managed from there?
+
+8 May
+Claude responded: Good call — it's cleaner.
+
+Architected workflow to consolidate event management into admin interface
+Architected workflow to consolidate event management into admin interface
+Good call — it's cleaner. The DJ booth just opens directly into an event, and the admin page handles all the management. Here's the plan:
+
+Admin: add a Create Event form at the top, "Open in Booth" on each event sets localStorage and navigates
+DJ booth: if no event loaded, redirect straight to admin instead of showing the setup screen
+
+Viewed 5 files
+Viewed 5 files
+Good, I have the full picture. Now I'll make all the edits:
+
+1. DJ.html — replace no-event path with redirect to admin, simplify startNewEvent:
+
+
+Replace setup screen with redirect to admin when no event loaded
+Replace setup screen with redirect to admin when no event loaded
+2. Replace startNewEvent to redirect to admin instead of showing the old setup screen:
+
+
+Simplify startNewEvent to redirect to admin
+Simplify startNewEvent to redirect to admin
+3. Remove the event setup HTML div and its CSS from DJ.html:
+
+
+Remove event setup overlay HTML from DJ.html
+Remove event setup overlay HTML from DJ.html
+Now update admin.html — add a Create Event panel at the top, and make "Open in Booth" set localStorage then navigate:
+
+
+Add create event panel HTML to admin after the header
+Add create event panel HTML to admin after the header
+Now add CSS for the create panel in admin.html:
+
+
+Add create panel CSS to admin.html
+Add create panel CSS to admin.html
+Now add createNewEvent JS and update "Open in Booth" to set localStorage:
+
+
+Add createNewEvent function and update Open in Booth onclick
+Add createNewEvent function and update Open in Booth onclick
+Now update the "Open in Booth" button in the card to use openInBooth():
+
+
+Edited a file, read a file
+Edited a file, read a file
+Both files updated. Here's the new flow:
+
+Admin page (admin.html) is now the hub:
+
+Type an event name at the top → Create → generates the event and immediately drops you into the DJ Booth with it loaded
+Each existing event has 🎧 Open in Booth which sets the active event and navigates to the booth in one click
+↗ Guest Page still opens in a new tab as before
+DJ Booth (?mode=dj):
+
+Opens straight into the last active event with no setup screen
+If somehow no event is set, it redirects to admin automatically
+⟳ New Event button in the QR panel now sends you to admin to pick or create one
+
+Dj
+Code · HTML 
+
+Admin
+Code · HTML 
+You said: Can I add a PIN number on the admin page so that no-one can create, delete or see any of the links?
+Can I add a PIN number on the admin page so that no-one can create, delete or see any of the links? I want the pin to be "2424" all numerical - again; 2424. Maybe a full screen overlay or something? I only need this on the admin page.
+
+8 May
+Claude responded: Now add the PIN logic at the top of the script: Done.
+
+Architected PIN-protected overlay with session-based persistence mechanism
+Architected PIN-protected overlay with session-based persistence mechanism
+Now add the PIN logic at the top of the script:
+
+
+Viewed 4 files, edited 2 files, read a file
+Viewed 4 files, edited 2 files, read a file
+Done. Here's how it works:
+
+Full-screen PIN overlay blocks everything on the admin page until the correct code is entered
+Tap the number pad (or type on a physical keyboard) to enter 2424
+Wrong PIN shakes the dots red and clears automatically after 0.7s so you can try again
+Correct PIN fades out smoothly and removes the overlay
+Uses sessionStorage so you only need to enter the PIN once per browser session — refreshing the page won't ask again, but closing and reopening the tab will
+
+Admin
+Code · HTML 
+You said: What could I add next?
+What could I add next? Full evaluation please.
+
+8 May
+Claude responded: Here's a full honest evaluation of where the system stands and what's worth building next, roughly in priority order.
+
+Evaluated feature enhancements for professional DJ event systems
+Evaluated feature enhancements for professional DJ event systems
+Here's a full honest evaluation of where the system stands and what's worth building next, roughly in priority order.
+
+🔴 High value — solve real problems at events
+
+Duplicate request detection If 10 people request "Mr Brightside" you currently see 10 separate cards. The system should group them, show a vote count badge, and let you dismiss all copies in one tap. This is probably the single most useful DJ-side feature missing.
+
+"Now Playing" display A DJ-controlled field that shows the current song on the guest request page. Guests often approach the booth to ask what's playing — this eliminates that. One text field on the booth, live-synced to the guest screen via Firebase.
+
+Request limit per device Right now one person can spam the queue endlessly. A simple session-based counter (e.g. max 3 requests per device per event) keeps the queue honest without requiring accounts.
+
+🟡 Medium value — polish the DJ workflow
+
+Drag to reorder The DJ should be able to manually drag cards to set priority order. Useful when you know you want to play something in 2 songs' time. Achievable with the HTML Drag and Drop API, no extra libraries needed.
+
+"Up Next" pin A way to mark one card as "up next" — it stays pinned to the top regardless of sort order, highlighted differently. Simple but very useful mid-set.
+
+Undo for Played/Rejected A brief toast notification after marking a song with an Undo button (5 second window). Accidental taps happen on a busy dancefloor.
+
+Queue visible to guests An optional read-only view guests can check to see if their song is already requested, reducing duplicates organically. Could be toggled on/off per event from the booth.
+
+🟢 Lower priority — nice to have
+
+Event scheduling Set a date and time for an event in admin. Events could auto-lock when they're past their end time. The admin list could sort by upcoming vs past.
+
+Request search/filter on DJ screen When the queue gets long (20+ songs) a search box to quickly find a specific request saves time.
+
+Guest "I'm at the front" button A secondary button guests can tap alongside their request — sends a flag to the DJ screen that this person is physically at the booth. Small but eliminates the awkward "who sent this?" moment.
+
+Admin PIN change UI Currently the PIN is hardcoded. A simple settings panel in admin to change it (stored in Firebase so it persists) would be more robust than editing the HTML file.
+
+Event templates Save a set of preferences (lock state, request limit, welcome message) as a template you apply when creating a new event. Useful if you do the same type of event regularly.
+
+Print/share QR A button in the booth that opens a print-friendly full-page QR code you can display on a screen or print as a sign. Currently the QR is small and embedded in the UI.
+
+🔵 Bigger builds — only if the system grows
+
+DJ authentication Right now anyone who knows the ?mode=dj URL can see the booth. Firebase Auth with email/password would lock this down properly without relying on security-through-obscurity.
+
+Multiple DJs / events simultaneously The system is single-DJ right now. If you ever work with a team, per-event permissions and multiple booth operators would need proper auth.
+
+Analytics dashboard Track which songs get requested most across all events, peak request times, rejection rates. Firebase already stores all the history — it just needs a chart view.
+
+Spotify integration Match requests against the Spotify API to show album art, confirm the song exists, and auto-format song/artist. Would significantly reduce misspellings and "I don't know that song" situations.
+
+What I'd build first
+
+Duplicate detection + vote counting is the clearest win — it directly affects every busy event and the data is already there to make it work. After that, Now Playing, then the undo toast. Those three together would make the DJ screen feel genuinely professional rather than functional.
+
+Want me to start on any of these?
+
+You said: When creating an event add a description field.
+When creating an event add a description field. The DJ can enter information and details. This is optional. But could add things like "no dubstep" or "Welcome to the Party of Dave and Sarah"
+
+8 May
+Claude responded: Three places to update: admin create form, guest request page display, and admin event cards.
+
+Architected optional description field across event management system
+Architected optional description field across event management system
+Three places to update: admin create form, guest request page display, and admin event cards.
+
+
+Edited 2 files
+Edited 2 files
+Now save description to Firebase on create:
+
+
+Include description in Firebase write on createNewEvent
+Include description in Firebase write on createNewEvent
+Now show description on the admin event card:
+
+
+Show description on event card in admin
+Show description on event card in admin
+Add the description CSS for the event card:
+
+
+Add event-desc CSS to admin
+Add event-desc CSS to admin
+Now show the description on the guest request page in DJ.html:
+
+
+Viewed a file, edited a file
+Viewed a file, edited a file
+Add guest description CSS and update the Firebase fetch to read description:
+
+
+Add event-desc-guest CSS to DJ.html
+Add event-desc-guest CSS to DJ.html
+Now update the Firebase fetch to also read and display the description:
+
+
+Update eventNameRef.get to also read and display description
+Update eventNameRef.get to also read and display description
+Also show it in the DJ booth QR panel. Find openDJBooth and update the name fetch:
+
+
+Show description in DJ booth QR panel
+Show description in DJ booth QR panel
+Add the description element to the QR panel HTML in the DJ booth:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Description now appears in three places:
+
+Admin create form — optional textarea beneath the event name input, 200 character limit
+Guest request page — appears in italic beneath the event title, above the QR code. Guests see it the moment they scan in — perfect for "Welcome to Dave & Sarah's Wedding 🎉" or "No dubstep please!"
+DJ booth — shown in the QR info panel beneath the event name, so the DJ can always see what message guests are reading
+If no description is entered, nothing extra is shown anywhere — it's completely invisible when unused.
+
+
+Dj
+Code · HTML 
+
+Admin
+Code · HTML 
+You said: Can you add a feature that schedules an event ahead of time?
+Can you add a feature that schedules an event ahead of time? Using a calendar option with a countdown to the event. I still want a QR code to share with people ahead of the event.
+
+9 May
+Claude responded: Big feature — I'll update both files.
+
+Architected scheduled events with countdown timers and QR code sharing
+Architected scheduled events with countdown timers and QR code sharing
+Big feature — I'll update both files. Admin gets date/time scheduling in the create form and status badges on cards. The guest page shows a live countdown with the QR code visible for pre-sharing, then automatically reveals the request form when the event goes live.
+
+
+Viewed 3 files
+Viewed 3 files
+Good. Now I have the full picture. Let me make all the edits:
+
+
+Edited 2 files
+Edited 2 files
+Now update createNewEvent in admin to include scheduledAt, and add toggleScheduleInputs:
+
+
+Update createNewEvent to include scheduledAt and add toggleScheduleInputs
+Update createNewEvent to include scheduledAt and add toggleScheduleInputs
+Now update event card rendering to show status badge and countdown:
+
+
+Update event card to show scheduled status badge and countdown
+Update event card to show scheduled status badge and countdown
+Now add formatCountdown helper and start live countdown ticking on admin cards:
+
+
+Edited 2 files
+Edited 2 files
+Now fix the countdown element to carry the data-ts attribute:
+
+
+Add data-ts attribute to countdown element in card
+Add data-ts attribute to countdown element in card
+Now update DJ.html — add countdown CSS, HTML, and logic on the guest page:
+
+
+Add countdown CSS to DJ.html guest page
+Add countdown CSS to DJ.html guest page
+Now add countdown HTML section and wrap the form in form-wrap:
+
+
+Add countdown section and wrap form in form-wrap div
+Add countdown section and wrap form in form-wrap div
+Now close the form-wrap div — find end of keyboard section:
+
+
+Viewed 4 files, edited a file
+Viewed 4 files, edited a file
+Now add the countdown logic to the guest page Firebase fetch:
+
+
+Add countdown logic to guest page Firebase fetch
+Add countdown logic to guest page Firebase fetch
+Finally add the startCountdown function to the JS:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Both files updated. Here's how it all works together:
+
+Creating a scheduled event (admin)
+
+Tick "Schedule for a future date" — date and time pickers appear, defaulting to tomorrow at 7pm
+The hint explains that the QR is shareable immediately but the form opens at the scheduled time
+Event card shows a blue Upcoming badge, the scheduled date, and a live ticking countdown (e.g. 2d 04h 37m)
+When the time arrives the badge automatically switches to green Live
+Guest page before the event
+
+Event name, description, and QR code all show immediately — perfect for sharing early
+Below that, a large countdown in four units: Days / Hours / Mins / Secs ticking in real time
+The request form and keyboard are hidden behind it
+When the countdown hits zero: "🎉 Requests are now open!" appears for 2 seconds, then the form smoothly fades in — no page refresh needed
+DJ booth
+
+Works exactly as before — the scheduled time is just metadata, the booth is always accessible
+
+Dj
+Code · HTML 
+
+Admin
+Code · HTML 
+You said: What's next?
+What's next?
+
+9 May
+Claude responded: Here's a fresh look now that the system is significantly more complete.
+
+Evaluated feature priorities and identified duplicate detection as highest impact next build
+Evaluated feature priorities and identified duplicate detection as highest impact next build
+Here's a fresh look now that the system is significantly more complete.
+
+🔴 Should build next — genuine event-night problems
+
+Duplicate detection + vote counting Still the biggest gap. If 15 people request "Mr Brightside" you get 15 cards. The fix: when a guest submits, fuzzy-match against the existing queue and if it's close, increment a vote counter instead of creating a new card. DJ sees one card with a ×15 badge. One dismiss clears all copies. This changes how useful the queue is at a busy event.
+
+Edit event after creation Right now there's no way to fix a typo in the event name or update the description after creation. A simple edit button on each admin card opening an inline form would cover it. Useful when you create the event in advance and details change.
+
+Undo for Played / Rejected A 5-second toast at the bottom of the DJ screen after marking a song — with an Undo button. Accidental taps on a touchscreen during a busy set are inevitable and currently unrecoverable without manually re-adding the request.
+
+🟡 Medium value — polish that matters
+
+"Now Playing" display on guest page One editable field on the DJ booth — whatever you type appears live on the guest request page. Reduces the number of people walking up to ask what's on. Simple Firebase write, big practical value.
+
+Request limit per guest Cap at 2–3 requests per device per event using sessionStorage. Prevents one person flooding the queue. DJ can set the limit per event from the booth.
+
+Up Next pin Mark one card as "Up Next" — it stays pinned to the top of the queue regardless of sort order, highlighted in a distinct colour. Useful for planning 2–3 songs ahead mid-set.
+
+Print QR page A button on the DJ booth that opens a clean full-page, print-optimised view — big QR code, event name, maybe the description. You can put it on a screen at the venue or print it as a sign.
+
+🟢 Lower priority — nice but not urgent
+
+Guest-visible queue — optional toggle per event; guests see a read-only list of pending requests so they don't double-submit something already in the queue.
+
+Request search on DJ screen — a filter input above the queue to find a specific song quickly when the list is long.
+
+Drag to reorder — manual priority ordering on the DJ screen.
+
+Change PIN from admin — store the PIN in Firebase so you can update it without editing the HTML file.
+
+Cross-event analytics — a tab in admin showing which songs get requested most, busiest times, rejection rates, across all events combined.
+
+What I'd prioritise
+
+If I were doing one thing: duplicate + vote counting — it's the feature that makes the biggest difference at an actual event and the data is already there to build it. Second: Undo, because losing a request to an accidental tap with no recovery is frustrating in a live situation. Third: Now Playing, because it's a tiny build with outsized impact on the guest experience.
+
+Want me to start on any of these?
+
+You said: Fix: cant edit event after creation.
+Fix: cant edit event after creation.
+
+9 May
+Claude responded: Now add the Edit button to the event card actions and the inline edit panel to the card HTML: Now add toggleEdit and saveEdit functions: Done.
+
+Architected inline edit form to enable post-creation event modifications
+Architected inline edit form to enable post-creation event modifications
+Now add the Edit button to the event card actions and the inline edit panel to the card HTML:
+
+
+Add edit button to card actions and inline edit panel below
+Add edit button to card actions and inline edit panel below
+Now add toggleEdit and saveEdit functions:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done. Each event card now has a ✎ Edit button that opens an inline panel — no page changes or modals. You can edit:
+
+Event name — required
+Description — optional, clears if left blank
+Scheduled date & time — pre-filled if already set, leave both blank to remove the schedule entirely
+Hit Save Changes and the card refreshes in place. Opening a second card's edit panel automatically closes the first. The DJ booth and guest page pick up the changes immediately via Firebase.
+
+
+Admin
+Code · HTML 
+You said: Add print QR page with name, date and details.
+Add print QR page with name, date and details. Full screen A4 format.
+
+9 May
+Claude responded: Now add the print overlay HTML just before the confirm modal: Now add all the print CSS — both screen preview and @media print: Add the Print QR button to even…
+
+Architected full-screen A4 print overlay with QR code integration
+Architected full-screen A4 print overlay with QR code integration
+Now add the print overlay HTML just before the confirm modal:
+
+
+Add print overlay HTML before confirm modal
+Add print overlay HTML before confirm modal
+Now add all the print CSS — both screen preview and @media print:
+
+
+Add print overlay CSS and @media print rules
+Add print overlay CSS and @media print rules
+Add the Print QR button to event card actions:
+
+
+Add Print QR button to event card actions
+Add Print QR button to event card actions
+Now add openPrintView and closePrint JS functions:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done. Each event card now has a 🖨 Print QR button. Here's what happens:
+
+On screen — a full preview of the A4 page appears as an overlay so you can see exactly what will print before committing. Has a Print and Close button at the top.
+
+When printed — clean white A4 page with:
+
+Colour gradient rule across the top
+DJ:Request branding
+Large event name in display font
+Date & time (only shown if the event is scheduled)
+Description/details (only shown if one was set)
+Large bordered QR code (260px, high error correction so it's robust when printed small)
+"Scan to request a song" call to action
+The full guest URL in small mono text below
+Gradient rule and footer at the bottom
+Everything except the print page is hidden when the print dialog fires, so you get a clean A4 with no browser chrome or sidebar. Works as a sign, a table card, or a printed handout.
+
+
+Admin
+Code · HTML 
+You said: How about a silly feature: send an emoji to the DJ?
+How about a silly feature: send an emoji to the DJ? This has nothing to do with the playlist. Choose 10 emojis; include: love, poo, hug, hi5, thumbs up and others. This flashes in the top corner of the DJ screen. Not too distracting but jusy for fun. The emojis can not be sent in advance.
+
+10 May
+Claude responded: Good, I have everything I need.
+
+Architected real-time emoji flash feature with rate limiting and Firebase integration
+Architected real-time emoji flash feature with rate limiting and Firebase integration
+Good, I have everything I need. Now all four edits:
+
+1. CSS — emoji grid on guest page + corner flash on DJ screen:
+
+
+Add emoji CSS for guest grid and DJ corner flash
+Add emoji CSS for guest grid and DJ corner flash
+2. HTML — emoji grid inside form-wrap (guest) and flash container on DJ screen:
+
+
+Edited 2 files
+Edited 2 files
+3. JS — sendEmoji (guest) with cooldown, and showEmojiFlash (DJ) with queue:
+
+
+Add sendEmoji guest function and emoji Firebase listener in openDJBooth
+Add sendEmoji guest function and emoji Firebase listener in openDJBooth
+4. Wire up the Firebase emoji listener inside openDJBooth:
+
+
+Add emoji Firebase listener in openDJBooth
+Add emoji Firebase listener in openDJBooth
+Fix the sendEmoji function — requestsRef won't exist on the guest page; use the event param directly:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done. Here's how it works:
+
+Guest page — below the keyboard, a "Send the DJ a vibe ✨" section with 10 emoji buttons: ❤️ 💩 🤗 🙌 👍 🔥 🎉 😂 🤘 ⭐
+
+Tap one and it pops with a brief animation. There's a 2.5-second cooldown between sends — tap again too quickly and you get "Easy tiger… wait a moment!" The section is hidden during the countdown like the rest of the form, so emojis can only be sent when the event is live.
+
+DJ screen — incoming emojis appear in the top-right corner, bouncing in with a rotation, staying for ~3 seconds then fading out. If several arrive at once they queue and play one after another rather than all stacking simultaneously. Unobtrusive enough not to distract mid-set, but fun when someone sends a 💩 at the right moment.
+
+
+Dj
+Code · HTML 
+You said: A few things:
+A few things:
+
+Can you add 'genre' to Song / Artist in the request field. 
+
+Can you add a 'View current requests' page on the Request page? This shows users the current requests - a clone of what the DJ see's. An X should show to close the window. This is a simplified view that shows all the requests but users cant edit then or anything. This should be dynamic and scroll if there are a lot of requests. If no one touches this window for 30 seconds it should auto close and go back.
+
+10 May
+Claude responded: Good picture of everything.
+
+Architected genre field integration and dynamic request viewing overlay
+Architected genre field integration and dynamic request viewing overlay
+Good picture of everything. Now all the edits in order:
+
+1. Add Genre field HTML + keyboard toggle + View Requests button:
+
+
+Add genre field, update keyboard toggle, add view requests button
+Add genre field, update keyboard toggle, add view requests button
+2. Add queue overlay HTML just before the DJ view:
+
+
+Add queue view overlay HTML before DJ view
+Add queue view overlay HTML before DJ view
+3. Add all CSS for genre icon, view button, queue overlay, and genre tag on DJ cards:
+
+
+Add CSS for view queue button, queue overlay, and genre tag
+Add CSS for view queue button, queue overlay, and genre tag
+4. Update JS — genre in field switching, submit, DJ card render, and queue overlay logic:
+
+
+Viewed 5 files, edited a file
+Viewed 5 files, edited a file
+Now I have everything. Make all the JS updates in one block:
+
+
+Edited 2 files
+Edited 2 files
+Now update submitRequest to include genre, setActiveField and currentInput to handle genre, and the renderDJ card to show the genre tag:
+
+
+Viewed 3 files
+Viewed 3 files
+Now update all three functions and submitRequest:
+
+
+Edited 2 files
+Edited 2 files
+Now update the DJ card render to show the genre tag:
+
+
+Viewed a file, edited a file
+Viewed a file, edited a file
+Now add the queue overlay JS — open/close, auto-close timer, and render:
+
+
+Edited a file, read a file
+Edited a file, read a file
+All done. Here's what was added:
+
+Genre field Sits between Name and Note to DJ. Optional, with a 🎵 icon and placeholder "e.g. House, Pop, 80s, Rock…". Included in the on-screen keyboard toggle, Enter key chain (Song → Name → Genre → Note → Submit), and saved to Firebase. Shows as a small green tag on the DJ card and in the queue overlay.
+
+♫ View Current Requests button Sits just below the Send Request button on the guest page. Opens a full-screen dark overlay showing the live queue — same data the DJ sees, updating in real time. Each card shows song, name, genre tag, and how long ago it was requested. Read-only with no actions.
+
+Auto-close countdown A "Closes in 30s" timer ticks down in the top-right corner. Any tap, scroll, or movement on the overlay resets it to 30 seconds. The ✕ button closes it immediately. If no one touches it for 30 seconds it fades away automatically and goes back to the request form.
+
+
+Dj
+Code · HTML 
+You said: We need to make the touch screen keyboard include characters like ( and ) and - and !
+We need to make the touch screen keyboard include characters like ( and ) and - and ! and ?
+
+10 May
+Claude responded: Clean approach: add a symbols row between numbers and QWERTY — always visible, no layer toggle needed.
+
+Architected dedicated symbols row for keyboard integration
+Architected dedicated symbols row for keyboard integration
+Clean approach: add a symbols row between numbers and QWERTY — always visible, no layer toggle needed. Ten symbols: ( ) - ! ? & . , / @.
+
+
+Add symbols row to keyboard and update typeChar passthrough list
+Add symbols row to keyboard and update typeChar passthrough list
+Now update typeChar to pass symbols through without case transformation:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done. A second row of 10 symbol keys now sits between the number row and QWERTY — always visible, no mode toggle needed:
+
+( ) - ! ? & . , / @
+
+They're styled as modifier keys (same muted style as Caps, Back etc.) so they're visually distinct from letter keys. All symbols pass straight through without being affected by Caps Lock.
+
+
+Dj
+Code · HTML 
+You said: Can you add beatport integration?
+Can you add beatport integration? It has an api. This would be perfect for requests.
+
+10 May
+Claude responded: Good idea, but worth being upfront first: Beatport's API requires OAuth 2.
+
+Weighed Beatport API constraints and devised iTunes alternative solution
+Weighed Beatport API constraints and devised iTunes alternative solution
+Good idea, but worth being upfront first: Beatport's API requires OAuth 2.0 and approved developer registration — it's not directly usable from a static GitHub Pages site without a backend server to hold credentials securely. You'd need to apply at developer.beatport.com and build a proxy.
+
+What I can build right now — that works immediately with no keys or registration — is the same feature using the iTunes Search API, which is free, open, CORS-enabled, and has solid electronic music coverage. The search code is isolated in one function so swapping it to Beatport later (once you have credentials) is a single change.
+
+The feature: as the guest types in the Song field, it searches and shows live results — album art, track name, artist, genre. Tapping a result fills everything in automatically.
+
+
+Add search results panel HTML below song input
+Add search results panel HTML below song input
+Now add CSS for the search panel:
+
+
+Add search results CSS
+Add search results CSS
+Now add the search JS — debounced input listener, iTunes fetch, result rendering, and selection handler:
+
+
+Add track search JS before countdown function
+Add track search JS before countdown function
+Now call initTrackSearch() when the guest page loads:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done. Here's how it works:
+
+Guest experience — start typing in the Song/Artist field (2+ characters) and a live dropdown appears after a short pause showing up to 6 results. Each result shows album art, track name, artist, and a genre badge. Tap any result and it fills:
+
+Song/Artist → Track Name — Artist Name
+Genre → pulled directly from the track metadata
+The results panel closes when you tap outside it, select a result, or clear the field.
+
+On the DJ card — genre shows as a green tag as before, now auto-populated if the guest used search.
+
+On Beatport specifically — to add it properly you'd need to:
+
+Apply for API access at developer.beatport.com
+Set up a small backend (e.g. a free Cloudflare Worker or Vercel function) to handle OAuth and proxy requests — this keeps your credentials off the client
+Replace the searchTracks() function with a call to your proxy
+The function is cleanly isolated so that swap is straightforward when you're ready. Beatport would give you BPM, key, and label info too — very useful additions for a DJ.
+
+
+Dj
+Code · HTML 
+You said: When landing on this page "https://skulptureg.
+When landing on this page "https://skulptureg.github.io/dj/" it takes us to the index.html page. Can we add a button to take us to admin.html and remove the text "Scan the QR code at the event to request a song." as there is no QR code. basically let's make this page look nicer/better before an actually event URL is created.
+
+07:14
+Claude responded: Done.
+
+Identified landing page improvements: enhanced styling, admin button, removed QR text
+Identified landing page improvements: enhanced styling, admin button, removed QR text
+Done. The landing page at skulptureg.github.io/dj/ now shows:
+
+Big logo — DJ:Request in the same display font at a large scale
+Two ambient glow blobs — one green, one pink, slowly drifting in the background for atmosphere
+Four feature cards — QR sharing, live dashboard, scheduled events, iTunes search — concise selling points if anyone stumbles on the URL
+"Go to DJ Admin →" — large green button linking directly to admin.html
+Small footer line underneath explaining what it leads to
+It builds itself entirely inline so no extra CSS or HTML files are needed — it replaces the body content when no event code is detected.
+
+
+Dj
+Code · HTML 
+You said: Can you optimise all pages for 16:9 screens (1920*1080 or 4K).
+Can you optimise all pages for 16:9 screens (1920*1080 or 4K). If it's mobile - optimise for that instead. If on mobile then they won't need the touch screen QWERTY input as the device will have it's own (but this only applies to mobile!)
+
+12:14
+Claude responded: Good picture of the full structure.
+
+Architected responsive layouts for desktop and mobile viewing modes
+Architected responsive layouts for desktop and mobile viewing modes
+Good picture of the full structure. Now I'll wrap the DJ view in sidebar/main divs, then add a comprehensive responsive CSS block covering mobile and 16:9.
+
+
+Wrap DJ view content in sidebar and main divs for 16:9 layout
+Wrap DJ view content in sidebar and main divs for 16:9 layout
+Now add all the responsive CSS before </style>:
+
+
+Edited 2 files
+Edited 2 files
+Now add responsive CSS to admin.html for 16:9 event card grid:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Here's what changes at each breakpoint:
+
+Mobile (≤ 768px)
+
+On-screen keyboard is hidden entirely — display: none via @media (max-width: 768px). The inputs are already editable so the device's native keyboard pops up as normal
+Touch targets enlarged — inputs, buttons, DJ actions all get more padding
+iOS auto-zoom prevented — all inputs forced to font-size: 1rem minimum (below 16px triggers Safari zoom)
+Layouts stack vertically, toolbar wraps cleanly
+16:9 Desktop (≥ 1100px, non-touch)
+
+Request page: 2-column grid — form inputs fill the left, keyboard sticks to the right and stays in view as you scroll. Emoji row spans the full width below both
+DJ Booth: sidebar layout — QR panel and stats sit in a sticky 360px left column, the scrollable request queue fills the right. No more scrolling past the QR to reach requests on large screens
+Wider max-width (1600px), more padding, slightly larger cards
+4K / 2K (≥ 1800px)
+
+Everything scales up further — sidebar widens to 420px, admin event cards go 3-column, keyboard column widens to 520px, larger typography throughout
+The hover: hover media feature on the desktop rule ensures that large-screen tablets (which are touch devices) still get the mobile experience — keyboard hidden, native input used.
+
+
+Dj
+Code · HTML 
+
+Admin
+Code · HTML 
+You said: In DJ Admin can you make the links to Guest page and Open in Booth open in a new tab always.
+In DJ Admin can you make the links to Guest page and Open in Booth open in a new tab always.
+
+12:24
+Claude responded: Also make the createNewEvent flow open the booth in a new tab rather than navigating away: openInBooth already has _blank from the earlier fix.
+
+Identified button behavior discrepancy and devised fix
+Identified button behavior discrepancy and devised fix
+Also make the createNewEvent flow open the booth in a new tab rather than navigating away:
+
+
+Identified existing implementation and orchestrated additional link modifications
+Identified existing implementation and orchestrated additional link modifications
+openInBooth already has _blank from the earlier fix. Now update the ← DJ Booth header link and the boothLink setter to also open in a new tab:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done. All three links now open in a new tab:
+
+↗ Guest Page — was already target="_blank", unchanged
+🎧 Open in Booth — now uses window.open(..., '_blank')
+↗ DJ Booth header link — now has target="_blank", also updated the label from ← to ↗ to match the new behaviour
+Admin stays open in its own tab so you can manage everything from there while the booth runs separately.
+
+
+Admin
+Code · HTML 
+You said: Can you make the comments 'note to the DJ' field and the person name 'Who's asking' a bright pink or other colour that in better to see and bigger so I can rea…
+Can you make the comments 'note to the DJ' field and the person name 'Who's asking' a bright pink or other colour that in better to see and bigger so I can read it better? Currently both are very small on the DJ Booth page.
+
+12:28
+
+Working
+Working
+
+Find the req-meta and req-note CSS
+
+Find req-meta CSS
+
+Make req-meta name bigger and pink, req-note bigger and brighter pink
++68
+-65
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+Admin · HTML
+Copy
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +1302,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+ 
   :root {
     --bg: #090b10;
     --surface: #111420;
@@ -30,14 +1322,14 @@
     --radius: 14px;
     --radius-sm: 8px;
   }
-
+ 
   body {
     font-family: var(--font-body);
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
   }
-
+ 
   body::before {
     content: '';
     position: fixed;
@@ -47,7 +1339,7 @@
     pointer-events: none;
     z-index: 0;
   }
-
+ 
   .panel {
     position: relative;
     z-index: 1;
@@ -55,7 +1347,7 @@
     margin: 0 auto;
     padding: 0 24px 60px;
   }
-
+ 
   /* ─── HEADER ─── */
   .header {
     display: flex;
@@ -67,7 +1359,7 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-
+ 
   .logo {
     font-family: var(--font-display);
     font-size: 2.4rem;
@@ -75,16 +1367,16 @@
     color: var(--accent);
     line-height: 1;
   }
-
+ 
   .logo span { color: var(--pink); }
-
+ 
   .header-right {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
   }
-
+ 
   .badge {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -95,7 +1387,7 @@
     padding: 5px 10px;
     border-radius: 100px;
   }
-
+ 
   .live-dot {
     display: inline-block;
     width: 7px;
@@ -106,12 +1398,12 @@
     vertical-align: middle;
     animation: pulse 1.8s ease-in-out infinite;
   }
-
+ 
   @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50%       { opacity: 0.4; transform: scale(0.7); }
   }
-
+ 
   /* ─── CREATE EVENT PANEL ─── */
   .create-panel {
     background: var(--surface);
@@ -120,7 +1412,7 @@
     padding: 22px 24px;
     margin-bottom: 28px;
   }
-
+ 
   .create-label {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -129,12 +1421,12 @@
     color: var(--accent);
     margin-bottom: 12px;
   }
-
+ 
   .create-row {
     display: flex;
     gap: 10px;
   }
-
+ 
   .create-input {
     flex: 1;
     background: var(--surface2);
@@ -150,14 +1442,14 @@
     -webkit-appearance: none;
     min-width: 0;
   }
-
+ 
   .create-input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-dim);
   }
-
+ 
   .create-input::placeholder { color: var(--muted); font-weight: 400; }
-
+ 
   .btn-create {
     padding: 14px 24px;
     background: var(--accent);
@@ -172,7 +1464,7 @@
     transition: box-shadow 0.2s, transform 0.1s;
     box-shadow: 0 0 20px var(--accent-glow);
   }
-
+ 
   .btn-create:hover { box-shadow: 0 0 36px rgba(198,255,0,0.55); transform: translateY(-1px); }
   .btn-create:active { transform: scale(0.97); }
   .create-desc {
@@ -184,7 +1476,7 @@
     font-size: 0.95rem;
     line-height: 1.5;
   }
-
+ 
   .create-desc {
     margin-top: 10px;
     width: 100%;
@@ -194,11 +1486,11 @@
     font-size: 0.95rem;
     line-height: 1.5;
   }
-
+ 
   .schedule-toggle-row {
     margin-top: 14px;
   }
-
+ 
   .schedule-toggle-label {
     display: flex;
     align-items: center;
@@ -206,7 +1498,7 @@
     cursor: pointer;
     width: fit-content;
   }
-
+ 
   .schedule-toggle-label input[type="checkbox"] {
     width: 18px;
     height: 18px;
@@ -214,7 +1506,7 @@
     cursor: pointer;
     flex-shrink: 0;
   }
-
+ 
   .schedule-toggle-text {
     font-family: var(--font-mono);
     font-size: 0.7rem;
@@ -223,17 +1515,17 @@
     color: var(--muted);
     transition: color 0.15s;
   }
-
+ 
   .schedule-toggle-label:hover .schedule-toggle-text { color: var(--text); }
-
+ 
   .schedule-fields {
     margin-top: 14px;
     padding-top: 14px;
     border-top: 1px solid var(--border);
   }
-
+ 
   .schedule-fields.hidden { display: none; }
-
+ 
   .schedule-hint {
     font-family: var(--font-mono);
     font-size: 0.65rem;
@@ -246,16 +1538,16 @@
     margin-bottom: 14px;
     line-height: 1.5;
   }
-
+ 
   .schedule-row {
     display: flex;
     gap: 10px;
   }
-
+ 
   .schedule-group {
     flex: 1;
   }
-
+ 
   .schedule-field-label {
     display: block;
     font-family: var(--font-mono);
@@ -265,14 +1557,14 @@
     color: var(--muted);
     margin-bottom: 6px;
   }
-
+ 
   .schedule-input {
     width: 100%;
     padding: 12px 14px;
     font-size: 0.95rem;
     color-scheme: dark;
   }
-
+ 
   /* ─── EVENT STATUS BADGES ─── */
   .event-status {
     display: inline-flex;
@@ -287,36 +1579,36 @@
     margin-top: 8px;
     border: 1px solid;
   }
-
+ 
   .event-status.live {
     color: var(--accent);
     border-color: rgba(198,255,0,0.3);
     background: var(--accent-dim);
   }
-
+ 
   .event-status.upcoming {
     color: #7eb8ff;
     border-color: rgba(126,184,255,0.3);
     background: rgba(126,184,255,0.08);
   }
-
+ 
   .event-status.past {
     color: var(--muted);
     border-color: var(--border-bright);
     background: transparent;
   }
-
+ 
   .status-dot {
     width: 6px; height: 6px;
     border-radius: 50%;
     background: currentColor;
     animation: none;
   }
-
+ 
   .event-status.live .status-dot {
     animation: pulse 1.8s ease-in-out infinite;
   }
-
+ 
   .event-countdown-admin {
     font-family: var(--font-mono);
     font-size: 0.72rem;
@@ -324,9 +1616,9 @@
     color: #7eb8ff;
     margin-top: 8px;
   }
-
+ 
   .btn-create:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
+ 
   /* ─── INLINE EDIT PANEL ─── */
   .edit-panel {
     display: none;
@@ -334,9 +1626,9 @@
     padding-top: 18px;
     border-top: 1px solid var(--border);
   }
-
+ 
   .edit-panel.open { display: block; }
-
+ 
   .edit-field-label {
     font-family: var(--font-mono);
     font-size: 0.62rem;
@@ -346,7 +1638,7 @@
     margin-bottom: 6px;
     display: block;
   }
-
+ 
   .edit-input {
     width: 100%;
     background: var(--surface2);
@@ -363,34 +1655,34 @@
     -webkit-appearance: none;
     box-sizing: border-box;
   }
-
+ 
   .edit-input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-dim);
   }
-
+ 
   .edit-input::placeholder { color: var(--muted); font-weight: 400; }
-
+ 
   textarea.edit-input {
     height: 80px;
     resize: none;
     line-height: 1.5;
   }
-
+ 
   .edit-schedule-row {
     display: flex;
     gap: 10px;
     margin-bottom: 10px;
   }
-
+ 
   .edit-schedule-group { flex: 1; }
-
+ 
   .edit-actions {
     display: flex;
     gap: 8px;
     margin-top: 4px;
   }
-
+ 
   .btn-save {
     padding: 10px 20px;
     background: var(--accent);
@@ -405,9 +1697,9 @@
     transition: all 0.15s;
     font-weight: 600;
   }
-
+ 
   .btn-save:hover { box-shadow: 0 0 16px var(--accent-glow); }
-
+ 
   .btn-cancel-edit {
     padding: 10px 20px;
     background: transparent;
@@ -421,9 +1713,9 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-
+ 
   .btn-cancel-edit:hover { border-color: var(--text); color: var(--text); }
-
+ 
   .btn-edit {
     padding: 11px 20px;
     border: 1px solid var(--border-bright);
@@ -437,9 +1729,9 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-
+ 
   .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
-
+ 
   /* ─── PRINT OVERLAY ─── */
   #printOverlay {
     display: none;
@@ -452,20 +1744,20 @@
     align-items: flex-start;
     justify-content: center;
   }
-
+ 
   #printOverlay.open {
     display: flex;
     flex-direction: column;
     align-items: center;
   }
-
+ 
   .print-toolbar {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
     z-index: 1;
   }
-
+ 
   .print-toolbar-btn {
     font-family: var(--font-mono);
     font-size: 0.72rem;
@@ -479,10 +1771,10 @@
     background: var(--surface);
     color: var(--text);
   }
-
+ 
   .print-toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
   .print-toolbar-btn.close:hover { border-color: var(--pink); color: var(--pink); }
-
+ 
   /* A4 PAGE */
   .print-page {
     width: 210mm;
@@ -493,7 +1785,7 @@
     display: flex;
     align-items: stretch;
   }
-
+ 
   .print-inner {
     width: 100%;
     padding: 18mm 16mm;
@@ -504,7 +1796,7 @@
     color: #0a0a0f;
     font-family: 'DM Sans', system-ui, sans-serif;
   }
-
+ 
   .print-top-rule {
     width: 100%;
     height: 4px;
@@ -512,7 +1804,7 @@
     border-radius: 2px;
     margin-bottom: 10mm;
   }
-
+ 
   .print-bottom-rule {
     width: 100%;
     height: 2px;
@@ -521,18 +1813,18 @@
     margin-top: auto;
     margin-bottom: 6mm;
   }
-
+ 
   .print-header { margin-bottom: 8mm; }
-
+ 
   .print-brand {
     font-family: 'Bebas Neue', Impact, sans-serif;
     font-size: 1.4rem;
     letter-spacing: 0.1em;
     color: #555;
   }
-
+ 
   .print-brand span { color: #ff3e7f; }
-
+ 
   .print-event-name {
     font-family: 'Bebas Neue', Impact, sans-serif;
     font-size: clamp(2.8rem, 8vw, 4.8rem);
@@ -541,7 +1833,7 @@
     line-height: 1;
     margin-bottom: 4mm;
   }
-
+ 
   .print-event-date {
     font-family: 'DM Mono', monospace;
     font-size: 0.95rem;
@@ -550,7 +1842,7 @@
     margin-bottom: 5mm;
     text-transform: uppercase;
   }
-
+ 
   .print-event-desc {
     font-size: 1.05rem;
     color: #333;
@@ -560,11 +1852,11 @@
     font-style: italic;
     min-height: 0;
   }
-
+ 
   .print-qr-wrap {
     margin: 4mm 0 8mm;
   }
-
+ 
   .print-qr-box {
     display: inline-block;
     padding: 6mm;
@@ -572,9 +1864,9 @@
     border-radius: 8px;
     line-height: 0;
   }
-
+ 
   .print-qr-box canvas, .print-qr-box img { display: block; }
-
+ 
   .print-cta {
     font-family: 'Bebas Neue', Impact, sans-serif;
     font-size: 2rem;
@@ -582,7 +1874,7 @@
     color: #0a0a0f;
     margin-bottom: 3mm;
   }
-
+ 
   .print-url {
     font-family: 'DM Mono', monospace;
     font-size: 0.7rem;
@@ -592,7 +1884,7 @@
     max-width: 130mm;
     margin-bottom: 10mm;
   }
-
+ 
   .print-footer {
     font-family: 'DM Mono', monospace;
     font-size: 0.65rem;
@@ -600,16 +1892,16 @@
     text-transform: uppercase;
     color: #aaa;
   }
-
+ 
   /* ─── @MEDIA PRINT ─── */
   @media print {
     @page { size: A4; margin: 0; }
-
+ 
     body * { visibility: hidden; }
-
+ 
     #printOverlay,
     #printOverlay * { visibility: visible; }
-
+ 
     #printOverlay {
       display: block !important;
       position: fixed;
@@ -618,9 +1910,9 @@
       padding: 0;
       overflow: visible;
     }
-
+ 
     .print-toolbar { display: none !important; }
-
+ 
     .print-page {
       width: 210mm;
       min-height: 297mm;
@@ -630,7 +1922,7 @@
       page-break-after: always;
     }
   }
-
+ 
   /* ─── SUMMARY BAR ─── */
   .summary {
     display: grid;
@@ -638,14 +1930,14 @@
     gap: 12px;
     margin-bottom: 28px;
   }
-
+ 
   .summary-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 16px 20px;
   }
-
+ 
   .summary-card .val {
     font-family: var(--font-display);
     font-size: 2.4rem;
@@ -653,7 +1945,7 @@
     letter-spacing: 0.02em;
     line-height: 1;
   }
-
+ 
   .summary-card .lbl {
     font-family: var(--font-mono);
     font-size: 0.62rem;
@@ -662,7 +1954,7 @@
     color: var(--muted);
     margin-top: 4px;
   }
-
+ 
   /* ─── TOOLBAR ─── */
   .toolbar {
     display: flex;
@@ -672,7 +1964,7 @@
     flex-wrap: wrap;
     gap: 10px;
   }
-
+ 
   .section-label {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -680,7 +1972,7 @@
     text-transform: uppercase;
     color: var(--muted);
   }
-
+ 
   .btn-delete-all {
     font-family: var(--font-mono);
     font-size: 0.65rem;
@@ -694,9 +1986,9 @@
     background: rgba(255,62,127,0.06);
     color: var(--pink);
   }
-
+ 
   .btn-delete-all:hover { background: var(--pink); color: #fff; }
-
+ 
   /* ─── EVENT CARD ─── */
   .event-card {
     background: var(--surface);
@@ -708,7 +2000,7 @@
     overflow: hidden;
     transition: opacity 0.3s, transform 0.3s;
   }
-
+ 
   .event-card::before {
     content: '';
     position: absolute;
@@ -717,13 +2009,13 @@
     background: var(--accent);
     border-radius: 3px 0 0 3px;
   }
-
+ 
   .event-card.removing {
     opacity: 0;
     transform: translateX(40px);
     pointer-events: none;
   }
-
+ 
   .event-top {
     display: flex;
     align-items: flex-start;
@@ -731,7 +2023,7 @@
     gap: 16px;
     flex-wrap: wrap;
   }
-
+ 
   .event-name {
     font-family: var(--font-display);
     font-size: 2rem;
@@ -739,7 +2031,7 @@
     line-height: 1.1;
     color: var(--text);
   }
-
+ 
   .event-code {
     font-family: var(--font-mono);
     font-size: 0.7rem;
@@ -753,7 +2045,7 @@
     margin-top: 6px;
     display: inline-block;
   }
-
+ 
   .event-desc {
     font-size: 0.9rem;
     color: rgba(240,240,248,0.65);
@@ -763,7 +2055,7 @@
     border-left: 2px solid rgba(198,255,0,0.3);
     padding-left: 12px;
   }
-
+ 
   .event-meta {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -774,23 +2066,23 @@
     gap: 18px;
     flex-wrap: wrap;
   }
-
+ 
   .event-meta .meta-item { display: flex; gap: 6px; align-items: center; }
-
+ 
   .event-meta .meta-dot {
     width: 6px; height: 6px;
     border-radius: 50%;
     background: var(--muted);
     opacity: 0.4;
   }
-
+ 
   .event-actions {
     display: flex;
     gap: 10px;
     margin-top: 18px;
     flex-wrap: wrap;
   }
-
+ 
   .btn-open {
     padding: 11px 20px;
     border: 1px solid rgba(198,255,0,0.3);
@@ -806,9 +2098,9 @@
     transition: all 0.15s;
     display: inline-block;
   }
-
+ 
   .btn-open:hover { background: var(--accent); color: #0a0a0f; }
-
+ 
   .btn-delete {
     padding: 11px 20px;
     border: 1px solid rgba(255,62,127,0.3);
@@ -822,9 +2114,9 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-
+ 
   .btn-delete:hover { background: var(--pink); color: #fff; }
-
+ 
   /* ─── PENDING REQUESTS EXPANDABLE ─── */
   .btn-expand {
     padding: 11px 20px;
@@ -839,18 +2131,18 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-
+ 
   .btn-expand:hover { border-color: var(--text); color: var(--text); }
-
+ 
   .requests-list {
     display: none;
     margin-top: 16px;
     border-top: 1px solid var(--border);
     padding-top: 16px;
   }
-
+ 
   .requests-list.open { display: block; }
-
+ 
   .req-item {
     display: flex;
     align-items: center;
@@ -860,37 +2152,37 @@
     gap: 12px;
     flex-wrap: wrap;
   }
-
+ 
   .req-item:last-child { border-bottom: none; }
-
+ 
   .req-song {
     font-weight: 600;
     font-size: 0.95rem;
   }
-
+ 
   .req-who {
     font-family: var(--font-mono);
     font-size: 0.65rem;
     letter-spacing: 0.08em;
     color: var(--muted);
   }
-
+ 
   /* ─── EMPTY / LOADING ─── */
   .state-msg {
     text-align: center;
     padding: 80px 0;
     color: var(--muted);
   }
-
+ 
   .state-msg .icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
-
+ 
   .state-msg p {
     font-family: var(--font-mono);
     font-size: 0.75rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }
-
+ 
   /* ─── CONFIRM MODAL ─── */
   #confirmModal {
     position: fixed;
@@ -906,9 +2198,9 @@
     pointer-events: none;
     transition: opacity 0.2s;
   }
-
+ 
   #confirmModal.show { opacity: 1; pointer-events: all; }
-
+ 
   .modal-box {
     background: var(--surface2);
     border: 1px solid var(--border-bright);
@@ -917,7 +2209,7 @@
     max-width: 440px;
     width: 100%;
   }
-
+ 
   .modal-box h2 {
     font-family: var(--font-display);
     font-size: 1.8rem;
@@ -925,18 +2217,18 @@
     color: var(--pink);
     margin-bottom: 10px;
   }
-
+ 
   .modal-box p {
     color: var(--muted);
     font-size: 0.9rem;
     line-height: 1.5;
     margin-bottom: 24px;
   }
-
+ 
   .modal-box p strong { color: var(--text); }
-
+ 
   .modal-actions { display: flex; gap: 10px; }
-
+ 
   .btn-confirm-delete {
     flex: 1;
     padding: 14px;
@@ -951,9 +2243,9 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-
+ 
   .btn-confirm-delete:hover { background: #ff1a65; }
-
+ 
   .btn-cancel {
     flex: 1;
     padding: 14px;
@@ -968,40 +2260,40 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-
+ 
   .btn-cancel:hover { border-color: var(--text); color: var(--text); }
-
+ 
   /* ════════════════════════════════════════════════
      RESPONSIVE — MOBILE  (≤ 768px)
   ════════════════════════════════════════════════ */
   @media (max-width: 768px) {
     input[type="text"], input[type="date"], input[type="time"],
     textarea { font-size: 1rem !important; }
-
+ 
     .panel { padding: 0 16px 40px; }
     .header { padding-top: 18px; }
-
+ 
     .summary { grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .summary-card .val { font-size: 1.8rem; }
     .summary-card .lbl { font-size: 0.55rem; }
-
+ 
     .create-row { flex-direction: column; }
     .btn-create { width: 100%; }
-
+ 
     .schedule-row { flex-direction: column; }
-
+ 
     .event-actions { flex-wrap: wrap; }
     .btn-open, .btn-edit, .btn-delete { flex: 1 1 auto; text-align: center; }
-
+ 
     .toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
   }
-
+ 
   /* ════════════════════════════════════════════════
      RESPONSIVE — LARGE / 16:9  (≥ 1100px)
   ════════════════════════════════════════════════ */
   @media (min-width: 1100px) {
     .panel { max-width: 1600px; padding: 0 48px 80px; }
-
+ 
     /* 2-column event cards */
     #eventList {
       display: grid;
@@ -1009,31 +2301,31 @@
       gap: 16px;
       align-items: start;
     }
-
+ 
     /* State messages span both columns */
     #eventList > .state-msg { grid-column: 1 / -1; }
-
+ 
     /* Summary wider */
     .summary { gap: 16px; }
     .summary-card .val { font-size: 3rem; }
-
+ 
     /* Create panel side by side */
     .create-row { align-items: flex-end; }
     .create-input { font-size: 1.15rem; }
   }
-
+ 
   /* ════════════════════════════════════════════════
      4K / 2K  (≥ 1800px)
   ════════════════════════════════════════════════ */
   @media (min-width: 1800px) {
     .panel { padding: 0 100px 100px; }
-
+ 
     #eventList { grid-template-columns: repeat(3, 1fr); gap: 20px; }
-
+ 
     .summary { gap: 20px; }
     .summary-card .val { font-size: 3.6rem; }
     .logo { font-size: 3rem; }
-
+ 
     .event-name { font-size: 2.4rem; }
     .create-input { font-size: 1.25rem; padding: 16px 22px; }
   }
@@ -1050,13 +2342,13 @@
     flex-direction: column;
     gap: 0;
   }
-
+ 
   .pin-box {
     width: 100%;
     max-width: 340px;
     text-align: center;
   }
-
+ 
   .pin-logo {
     font-family: var(--font-display);
     font-size: 2.6rem;
@@ -1065,9 +2357,9 @@
     margin-bottom: 6px;
     line-height: 1;
   }
-
+ 
   .pin-logo span { color: var(--pink); }
-
+ 
   .pin-sub {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -1076,14 +2368,14 @@
     color: var(--muted);
     margin-bottom: 40px;
   }
-
+ 
   .pin-dots {
     display: flex;
     justify-content: center;
     gap: 16px;
     margin-bottom: 32px;
   }
-
+ 
   .pin-dot {
     width: 18px;
     height: 18px;
@@ -1092,19 +2384,19 @@
     background: transparent;
     transition: background 0.15s, border-color 0.15s;
   }
-
+ 
   .pin-dot.filled {
     background: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px var(--accent-glow);
   }
-
+ 
   .pin-dot.error {
     background: var(--pink);
     border-color: var(--pink);
     animation: shake 0.4s ease;
   }
-
+ 
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
     20%       { transform: translateX(-6px); }
@@ -1112,7 +2404,7 @@
     60%       { transform: translateX(-4px); }
     80%       { transform: translateX(4px); }
   }
-
+ 
   .pin-keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1120,7 +2412,7 @@
     max-width: 280px;
     margin: 0 auto;
   }
-
+ 
   .pin-key {
     background: var(--surface);
     border: 1px solid var(--border-bright);
@@ -1137,7 +2429,7 @@
     transition: background 0.08s, transform 0.06s, border-color 0.08s;
     -webkit-tap-highlight-color: transparent;
   }
-
+ 
   .pin-key:active {
     background: var(--surface2);
     transform: translateY(2px);
@@ -1145,17 +2437,17 @@
     border-color: var(--accent);
     color: var(--accent);
   }
-
+ 
   .pin-key.wide {
     grid-column: span 2;
   }
-
+ 
   .pin-key.del {
     color: var(--pink);
     font-size: 1.4rem;
     letter-spacing: 0;
   }
-
+ 
   .pin-error-msg {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -1167,7 +2459,7 @@
     transition: opacity 0.2s;
     opacity: 0;
   }
-
+ 
   .pin-error-msg.show { opacity: 1; }
   /* ─── PIN OVERLAY ─── */
   #pinOverlay {
@@ -1180,19 +2472,19 @@
     justify-content: center;
     padding: 30px;
   }
-
+ 
   #pinOverlay.unlocked {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s;
   }
-
+ 
   .pin-box {
     width: 100%;
     max-width: 320px;
     text-align: center;
   }
-
+ 
   .pin-logo {
     font-family: var(--font-display);
     font-size: 2.8rem;
@@ -1200,9 +2492,9 @@
     letter-spacing: 0.05em;
     margin-bottom: 6px;
   }
-
+ 
   .pin-logo span { color: var(--pink); }
-
+ 
   .pin-sub {
     font-family: var(--font-mono);
     font-size: 0.7rem;
@@ -1211,14 +2503,14 @@
     color: var(--muted);
     margin-bottom: 36px;
   }
-
+ 
   .pin-dots {
     display: flex;
     justify-content: center;
     gap: 16px;
     margin-bottom: 12px;
   }
-
+ 
   .pin-dot {
     width: 18px;
     height: 18px;
@@ -1227,19 +2519,19 @@
     background: transparent;
     transition: background 0.15s, border-color 0.15s, transform 0.15s;
   }
-
+ 
   .pin-dot.filled {
     background: var(--accent);
     border-color: var(--accent);
     transform: scale(1.15);
   }
-
+ 
   .pin-dot.error {
     background: var(--pink);
     border-color: var(--pink);
     animation: shake 0.4s ease;
   }
-
+ 
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
     20%       { transform: translateX(-6px); }
@@ -1247,7 +2539,7 @@
     60%       { transform: translateX(-4px); }
     80%       { transform: translateX(4px); }
   }
-
+ 
   .pin-error {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -1259,15 +2551,15 @@
     opacity: 0;
     transition: opacity 0.2s;
   }
-
+ 
   .pin-error.show { opacity: 1; }
-
+ 
   .pin-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
   }
-
+ 
   .pin-key {
     background: var(--surface);
     border: 1px solid var(--border-bright);
@@ -1282,15 +2574,15 @@
     transition: background 0.08s, transform 0.06s, border-color 0.1s;
     -webkit-tap-highlight-color: transparent;
   }
-
+ 
   .pin-key:hover { background: var(--surface2); border-color: var(--accent); }
-
+ 
   .pin-key:active {
     transform: translateY(2px);
     border-bottom-width: 1px;
     background: var(--surface2);
   }
-
+ 
   .pin-back {
     font-size: 1.4rem;
     color: var(--muted);
@@ -1326,17 +2618,17 @@
     </div>
   </div>
 </div>
-
+ 
 <div class="panel">
-
+ 
   <div class="header">
     <div class="logo">DJ<span>:</span>Admin</div>
     <div class="header-right">
       <div class="badge"><span class="live-dot" id="connDot"></span>Event Manager</div>
-      <a id="boothLink" style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">← DJ Booth</a>
+      <a id="boothLink" target="_blank" style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">↗ DJ Booth</a>
     </div>
   </div>
-
+ 
   <!-- CREATE EVENT -->
   <div class="create-panel">
     <div class="create-label">New Event</div>
@@ -1365,7 +2657,7 @@
       </div>
     </div>
   </div>
-
+ 
   <div class="summary">
     <div class="summary-card">
       <div class="val" id="totalEvents">—</div>
@@ -1380,16 +2672,16 @@
       <div class="lbl">Songs played</div>
     </div>
   </div>
-
+ 
   <div class="toolbar">
     <div class="section-label">All events</div>
     <button class="btn-delete-all" onclick="confirmDeleteAll()">🗑 Delete All Events</button>
   </div>
-
+ 
   <div id="eventList"><div class="state-msg"><div class="icon">⏳</div><p>Loading events…</p></div></div>
-
+ 
 </div>
-
+ 
 <!-- PRINT QR OVERLAY -->
 <div id="printOverlay">
   <div class="print-toolbar" id="printToolbar">
@@ -1399,28 +2691,28 @@
   <div class="print-page" id="printPage">
     <div class="print-inner">
       <div class="print-top-rule"></div>
-
+ 
       <div class="print-header">
         <div class="print-brand">DJ<span>:</span>Request</div>
       </div>
-
+ 
       <div class="print-event-name" id="printEventName"></div>
       <div class="print-event-date" id="printEventDate"></div>
       <div class="print-event-desc" id="printEventDesc"></div>
-
+ 
       <div class="print-qr-wrap">
         <div class="print-qr-box" id="printQrBox"></div>
       </div>
-
+ 
       <div class="print-cta">Scan to request a song</div>
       <div class="print-url" id="printUrl"></div>
-
+ 
       <div class="print-bottom-rule"></div>
       <div class="print-footer">Powered by DJ:Request</div>
     </div>
   </div>
 </div>
-
+ 
 <!-- CONFIRM MODAL -->
 <div id="confirmModal">
   <div class="modal-box">
@@ -1432,25 +2724,25 @@
     </div>
   </div>
 </div>
-
+ 
 <script>
 // ═══ PIN ═══
 const CORRECT_PIN = '2424';
 let pinEntry = '';
-
+ 
 function pinPress(digit) {
   if (pinEntry.length >= 4) return;
   pinEntry += digit;
   updateDots();
   if (pinEntry.length === 4) checkPin();
 }
-
+ 
 function pinBack() {
   pinEntry = pinEntry.slice(0, -1);
   updateDots();
   clearPinError();
 }
-
+ 
 function updateDots() {
   for (let i = 0; i < 4; i++) {
     const dot = document.getElementById('d' + i);
@@ -1458,7 +2750,7 @@ function updateDots() {
     dot.classList.remove('error');
   }
 }
-
+ 
 function checkPin() {
   if (pinEntry === CORRECT_PIN) {
     sessionStorage.setItem('adminUnlocked', '1');
@@ -1478,11 +2770,11 @@ function checkPin() {
     }, 700);
   }
 }
-
+ 
 function clearPinError() {
   document.getElementById('pinError').classList.remove('show');
 }
-
+ 
 // Physical keyboard support for PIN
 document.addEventListener('keydown', e => {
   const overlay = document.getElementById('pinOverlay');
@@ -1491,12 +2783,12 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Backspace') pinBack();
   }
 });
-
+ 
 // Already unlocked this session?
 if (sessionStorage.getItem('adminUnlocked') === '1') {
   document.getElementById('pinOverlay').remove();
 }
-
+ 
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyBOdgG_AE1Rng88eoH5bLue1eY9VMwAsOc",
   authDomain:        "dj-request-gt.firebaseapp.com",
@@ -1506,20 +2798,20 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "793216376391",
   appId:             "1:793216376391:web:6cf9f0b7cfa0fbc5ec9b62"
 };
-
+ 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-
+ 
 // ─── COMPUTE BASE URL
 const indexUrl = window.location.origin + window.location.pathname.replace(/\/admin\.html$/, '/index.html');
 document.getElementById('boothLink').href = indexUrl + '?mode=dj';
-
+ 
 // ─── CONNECTION DOT
 db.ref('.info/connected').on('value', snap => {
   const dot = document.getElementById('connDot');
   dot.style.background = snap.val() ? 'var(--accent)' : 'var(--pink)';
 });
-
+ 
 // ─── HELPERS
 function genEventId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1527,7 +2819,7 @@ function genEventId() {
   for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
   return id;
 }
-
+ 
 // ─── CREATE NEW EVENT
 function toggleScheduleInputs() {
   const fields = document.getElementById('scheduleFields');
@@ -1541,14 +2833,14 @@ function toggleScheduleInputs() {
     document.getElementById('scheduleTime').value = '19:00';
   }
 }
-
+ 
 // ─── CREATE NEW EVENT
 function createNewEvent() {
   const name = document.getElementById('newEventName').value.trim();
   if (!name) { document.getElementById('newEventName').focus(); return; }
   const desc     = document.getElementById('newEventDesc').value.trim();
   const scheduled = document.getElementById('scheduleCheck').checked;
-
+ 
   let scheduledAt = null;
   if (scheduled) {
     const d = document.getElementById('scheduleDate').value;
@@ -1560,16 +2852,16 @@ function createNewEvent() {
     scheduledAt = new Date(d + 'T' + t).getTime();
     if (isNaN(scheduledAt)) { alert('Invalid date or time.'); return; }
   }
-
+ 
   const btn = document.getElementById('createBtn');
   btn.textContent = 'Creating…';
   btn.disabled = true;
-
+ 
   const eventId = genEventId();
   const payload = { name };
   if (desc) payload.description = desc;
   if (scheduledAt) payload.scheduledAt = scheduledAt;
-
+ 
   db.ref('events/' + eventId).update(payload)
     .then(() => {
       document.getElementById('newEventName').value = '';
@@ -1586,21 +2878,21 @@ function createNewEvent() {
       alert('Could not create event: ' + err.message);
     });
 }
-
+ 
 document.getElementById('newEventName').addEventListener('keydown', e => {
   if (e.key === 'Enter') createNewEvent();
 });
-
+ 
 // ─── OPEN IN BOOTH
 function openInBooth(eventId) {
   localStorage.setItem('djCurrentEvent', eventId);
-  window.location.href = indexUrl + '?mode=dj';
+  window.open(indexUrl + '?mode=dj', '_blank');
 }
 function loadEvents() {
   db.ref('events').get().then(snap => {
     const eventList = document.getElementById('eventList');
     const data = snap.val();
-
+ 
     if (!data) {
       eventList.innerHTML = `<div class="state-msg"><div class="icon">♫</div><p>No events found</p></div>`;
       document.getElementById('totalEvents').textContent = '0';
@@ -1608,16 +2900,16 @@ function loadEvents() {
       document.getElementById('totalPlayed').textContent = '0';
       return;
     }
-
+ 
     const events = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-
+ 
     // Sort newest first by checking request timestamps
     // (approximate — use the id since it's random, fall back to name)
     eventList.innerHTML = '';
-
+ 
     let grandRequests = 0;
     let grandPlayed   = 0;
-
+ 
     events.forEach(event => {
       const requests  = event.requests  ? Object.values(event.requests)  : [];
       const history   = event.history   ? Object.values(event.history)   : [];
@@ -1625,22 +2917,22 @@ function loadEvents() {
       const played    = (event.stats?.played   || 0);
       const rejected  = (event.stats?.rejected || 0);
       const locked    = event.locked === true;
-
+ 
       grandRequests += pending + history.length;
       grandPlayed   += played;
-
+ 
       // Most recent request time
       const allTimes = requests.map(r => r.time).filter(Boolean);
       const lastTime = allTimes.length ? Math.max(...allTimes) : null;
-
+ 
       const card = document.createElement('div');
       card.className   = 'event-card';
       card.id          = 'card-' + event.id;
-
+ 
       const baseUrl  = window.location.origin + window.location.pathname.replace(/\/admin\.html$/, '/index.html');
       const guestUrl = baseUrl + '?event=' + event.id;
       const djUrl    = baseUrl + '?mode=dj';
-
+ 
       // Determine status
       const now = Date.now();
       let statusHtml = '';
@@ -1656,7 +2948,7 @@ function loadEvents() {
       } else {
         statusHtml = `<div class="event-status live"><div class="status-dot"></div>Live</div>`;
       }
-
+ 
       card.innerHTML = `
         <div class="event-top">
           <div>
@@ -1683,7 +2975,7 @@ function loadEvents() {
           ${requests.length > 0 ? `<button class="btn-expand" onclick="toggleRequests('${event.id}')">▾ ${pending} Pending</button>` : ''}
           <button class="btn-delete" onclick="confirmDelete('${event.id}', '${escAttr(event.name || 'Unnamed Event')}')">🗑 Delete</button>
         </div>
-
+ 
         <!-- INLINE EDIT PANEL -->
         <div class="edit-panel" id="edit-${event.id}">
           <label class="edit-field-label">Event Name</label>
@@ -1717,26 +3009,26 @@ function loadEvents() {
               <div class="req-who">${r.time ? relTime(r.time) : ''}</div>
             </div>`).join('')}
         </div>` : ''}`;
-
+ 
       eventList.appendChild(card);
     });
-
+ 
     document.getElementById('totalEvents').textContent   = events.length;
     document.getElementById('totalRequests').textContent = grandRequests;
     document.getElementById('totalPlayed').textContent   = grandPlayed;
-
+ 
   }).catch(err => {
     document.getElementById('eventList').innerHTML =
       `<div class="state-msg"><div class="icon">⚠️</div><p>Error loading events<br>${err.message}</p></div>`;
   });
 }
-
+ 
 loadEvents();
-
+ 
 // ─── PRINT QR
 function openPrintView(eventId, name, scheduledAt, description, guestUrl) {
   document.getElementById('printEventName').textContent = name || 'Unnamed Event';
-
+ 
   const dateEl = document.getElementById('printEventDate');
   if (scheduledAt) {
     dateEl.textContent = new Date(scheduledAt).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' });
@@ -1745,7 +3037,7 @@ function openPrintView(eventId, name, scheduledAt, description, guestUrl) {
     dateEl.textContent = '';
     dateEl.style.display = 'none';
   }
-
+ 
   const descEl = document.getElementById('printEventDesc');
   if (description) {
     descEl.textContent = description;
@@ -1754,9 +3046,9 @@ function openPrintView(eventId, name, scheduledAt, description, guestUrl) {
     descEl.textContent = '';
     descEl.style.display = 'none';
   }
-
+ 
   document.getElementById('printUrl').textContent = guestUrl;
-
+ 
   // Generate QR
   const qrBox = document.getElementById('printQrBox');
   qrBox.innerHTML = '';
@@ -1768,16 +3060,16 @@ function openPrintView(eventId, name, scheduledAt, description, guestUrl) {
     colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.H
   });
-
+ 
   document.getElementById('printOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-
+ 
 function closePrint() {
   document.getElementById('printOverlay').classList.remove('open');
   document.body.style.overflow = '';
 }
-
+ 
 // ─── TOGGLE EDIT PANEL
 function toggleEdit(eventId) {
   const panel = document.getElementById('edit-' + eventId);
@@ -1790,7 +3082,7 @@ function toggleEdit(eventId) {
     document.getElementById('edit-name-' + eventId)?.focus();
   }
 }
-
+ 
 // ─── SAVE EDIT
 function saveEdit(eventId) {
   const name = document.getElementById('edit-name-' + eventId)?.value.trim();
@@ -1801,20 +3093,20 @@ function saveEdit(eventId) {
   const desc     = document.getElementById('edit-desc-' + eventId)?.value.trim();
   const dateVal  = document.getElementById('edit-date-' + eventId)?.value;
   const timeVal  = document.getElementById('edit-time-' + eventId)?.value;
-
+ 
   const updates = { name };
   updates.description = desc || null;
-
+ 
   if (dateVal && timeVal) {
     const ts = new Date(dateVal + 'T' + timeVal).getTime();
     updates.scheduledAt = isNaN(ts) ? null : ts;
   } else {
     updates.scheduledAt = null;
   }
-
+ 
   const btn = document.querySelector(`#edit-${eventId} .btn-save`);
   if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
-
+ 
   db.ref('events/' + eventId).update(updates)
     .then(() => {
       document.getElementById('edit-' + eventId)?.classList.remove('open');
@@ -1825,7 +3117,7 @@ function saveEdit(eventId) {
       alert('Save failed: ' + err.message);
     });
 }
-
+ 
 // ─── TOGGLE PENDING LIST
 function toggleRequests(eventId) {
   const list = document.getElementById('reqs-' + eventId);
@@ -1834,10 +3126,10 @@ function toggleRequests(eventId) {
   const btn = list.previousElementSibling?.querySelector('.btn-expand')
     || document.querySelector(`#card-${eventId} .btn-expand`);
 }
-
+ 
 // ─── CONFIRM MODAL
 let pendingAction = null;
-
+ 
 function confirmDelete(eventId, eventName) {
   document.getElementById('modalTitle').textContent = 'Delete Event?';
   document.getElementById('modalBody').innerHTML =
@@ -1845,7 +3137,7 @@ function confirmDelete(eventId, eventName) {
   document.getElementById('modalConfirmBtn').onclick = () => deleteEvent(eventId);
   document.getElementById('confirmModal').classList.add('show');
 }
-
+ 
 function confirmDeleteAll() {
   document.getElementById('modalTitle').textContent = 'Delete All Events?';
   document.getElementById('modalBody').innerHTML =
@@ -1853,15 +3145,15 @@ function confirmDeleteAll() {
   document.getElementById('modalConfirmBtn').onclick = deleteAllEvents;
   document.getElementById('confirmModal').classList.add('show');
 }
-
+ 
 function closeModal() {
   document.getElementById('confirmModal').classList.remove('show');
 }
-
+ 
 document.getElementById('confirmModal').addEventListener('click', e => {
   if (e.target === document.getElementById('confirmModal')) closeModal();
 });
-
+ 
 // ─── DELETE SINGLE EVENT
 function deleteEvent(eventId) {
   closeModal();
@@ -1874,7 +3166,7 @@ function deleteEvent(eventId) {
     setTimeout(() => { if (card) card.remove(); updateSummary(); }, 320);
   }).catch(err => alert('Delete failed: ' + err.message));
 }
-
+ 
 // ─── DELETE ALL EVENTS
 function deleteAllEvents() {
   closeModal();
@@ -1883,7 +3175,7 @@ function deleteAllEvents() {
     loadEvents();
   }).catch(err => alert('Delete failed: ' + err.message));
 }
-
+ 
 // ─── UPDATE SUMMARY AFTER DELETION
 function updateSummary() {
   const remaining = document.querySelectorAll('.event-card').length;
@@ -1895,7 +3187,7 @@ function updateSummary() {
     document.getElementById('totalPlayed').textContent   = '0';
   }
 }
-
+ 
 // ─── FORMAT COUNTDOWN
 function formatCountdown(ms) {
   if (ms <= 0) return 'Starting now';
@@ -1907,7 +3199,7 @@ function formatCountdown(ms) {
   if (days > 0) return `${days}d ${String(hrs).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m`;
   return `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
 }
-
+ 
 // Tick all visible admin countdown elements
 setInterval(() => {
   document.querySelectorAll('[id^="acd-"]').forEach(el => {
@@ -1917,16 +3209,16 @@ setInterval(() => {
     if (diff <= 0) { el.remove(); } else { el.textContent = '⏱ ' + formatCountdown(diff); }
   });
 }, 1000);
-
+ 
 // ─── HELPERS
 function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
+ 
 function escAttr(s) {
   return String(s || '').replace(/'/g, "\\'");
 }
-
+ 
 function relTime(ts) {
   const s = Math.floor((Date.now() - ts) / 1000);
   if (s < 60) return 'just now';
@@ -1939,3 +3231,6 @@ function relTime(ts) {
 </script>
 </body>
 </html>
+ 
+
+
