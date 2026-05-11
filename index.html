@@ -1963,13 +1963,201 @@ if (mode === 'admin') {
     noteInput.addEventListener('keydown',  e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitRequest(); } });
 
   } else {
-    // No event code in URL — show a friendly holding message
+    // No event code — show branded landing page
+    const adminUrl = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
+
     document.body.innerHTML = `
-      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px;text-align:center;font-family:'DM Sans',system-ui,sans-serif;background:#090b10;color:#f0f0f8;">
-        <div>
-          <div style="font-family:'Bebas Neue',Impact,sans-serif;font-size:3rem;color:#c6ff00;letter-spacing:.05em;margin-bottom:12px;">DJ<span style="color:#ff3e7f">:</span>Request</div>
-          <div style="color:rgba(240,240,248,.5);font-size:1rem;">Scan the QR code at the event to request a song.</div>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: 'DM Sans', system-ui, sans-serif;
+          background: #090b10;
+          color: #f0f0f8;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 40px 24px;
+          text-align: center;
+          overflow: hidden;
+        }
+        body::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+          background-size: 200px 200px;
+          pointer-events: none;
+        }
+
+        /* Ambient glow blobs */
+        .blob {
+          position: fixed;
+          border-radius: 50%;
+          filter: blur(80px);
+          opacity: 0.12;
+          pointer-events: none;
+          animation: drift 12s ease-in-out infinite alternate;
+        }
+        .blob-1 { width: 500px; height: 500px; background: #c6ff00; top: -180px; left: -150px; animation-duration: 14s; }
+        .blob-2 { width: 400px; height: 400px; background: #ff3e7f; bottom: -120px; right: -100px; animation-duration: 10s; }
+        @keyframes drift {
+          from { transform: translate(0, 0) scale(1); }
+          to   { transform: translate(40px, 30px) scale(1.08); }
+        }
+
+        .landing-inner {
+          position: relative;
+          z-index: 1;
+          max-width: 560px;
+          width: 100%;
+        }
+
+        .landing-logo {
+          font-family: 'Bebas Neue', Impact, sans-serif;
+          font-size: clamp(4rem, 16vw, 7rem);
+          letter-spacing: 0.05em;
+          color: #c6ff00;
+          line-height: 0.9;
+          margin-bottom: 6px;
+        }
+
+        .landing-logo span { color: #ff3e7f; }
+
+        .landing-tagline {
+          font-family: 'DM Mono', monospace;
+          font-size: 0.72rem;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: rgba(240,240,248,0.4);
+          margin-bottom: 48px;
+        }
+
+        .landing-rule {
+          width: 60px;
+          height: 2px;
+          background: linear-gradient(90deg, #c6ff00, #ff3e7f);
+          border-radius: 2px;
+          margin: 0 auto 36px;
+        }
+
+        .landing-features {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          margin-bottom: 48px;
+          text-align: left;
+        }
+
+        .landing-feature {
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 12px;
+          padding: 16px 20px;
+        }
+
+        .feature-icon {
+          font-size: 1.5rem;
+          line-height: 1;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+
+        .feature-text strong {
+          display: block;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: #f0f0f8;
+          margin-bottom: 2px;
+        }
+
+        .feature-text span {
+          font-size: 0.82rem;
+          color: rgba(240,240,248,0.45);
+          line-height: 1.4;
+        }
+
+        .btn-admin {
+          display: inline-block;
+          width: 100%;
+          padding: 22px;
+          background: #c6ff00;
+          color: #0a0a0f;
+          font-family: 'Bebas Neue', Impact, sans-serif;
+          font-size: 1.7rem;
+          letter-spacing: 0.08em;
+          border: none;
+          border-radius: 14px;
+          cursor: pointer;
+          text-decoration: none;
+          transition: box-shadow 0.2s, transform 0.1s;
+          box-shadow: 0 0 30px rgba(198,255,0,0.35);
+          margin-bottom: 16px;
+        }
+
+        .btn-admin:hover {
+          box-shadow: 0 0 50px rgba(198,255,0,0.55);
+          transform: translateY(-2px);
+        }
+
+        .btn-admin:active { transform: scale(0.98); }
+
+        .landing-footer {
+          font-family: 'DM Mono', monospace;
+          font-size: 0.62rem;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(240,240,248,0.2);
+          margin-top: 8px;
+        }
+      </style>
+
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+
+      <div class="landing-inner">
+        <div class="landing-logo">DJ<span>:</span>Request</div>
+        <div class="landing-tagline">Real-time song requests for live events</div>
+        <div class="landing-rule"></div>
+
+        <div class="landing-features">
+          <div class="landing-feature">
+            <div class="feature-icon">📱</div>
+            <div class="feature-text">
+              <strong>QR Code sharing</strong>
+              <span>Guests scan to request songs from any device — no app needed</span>
+            </div>
+          </div>
+          <div class="landing-feature">
+            <div class="feature-icon">🎧</div>
+            <div class="feature-text">
+              <strong>Live DJ dashboard</strong>
+              <span>See requests in real time, mark as played or rejected</span>
+            </div>
+          </div>
+          <div class="landing-feature">
+            <div class="feature-icon">📅</div>
+            <div class="feature-text">
+              <strong>Schedule events ahead of time</strong>
+              <span>Share the link early with a countdown — requests open automatically</span>
+            </div>
+          </div>
+          <div class="landing-feature">
+            <div class="feature-icon">🎵</div>
+            <div class="feature-text">
+              <strong>iTunes track search</strong>
+              <span>Guests search for tracks with album art and auto-filled genre</span>
+            </div>
+          </div>
         </div>
+
+        <a href="${adminUrl}" class="btn-admin">Go to DJ Admin →</a>
+        <div class="landing-footer">Create and manage events from the admin panel</div>
       </div>`;
   }
 }
