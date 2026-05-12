@@ -34,6 +34,97 @@
     --radius-sm: 8px;
   }
 
+  /* ══ MIDNIGHT THEME (navy / electric blue) ══ */
+  html[data-theme="midnight"] {
+    --bg: #07090f;
+    --surface: #0e1420;
+    --surface2: #151d2e;
+    --border: rgba(79,195,247,0.08);
+    --border-bright: rgba(79,195,247,0.18);
+    --accent: #4fc3f7;
+    --accent-dim: rgba(79,195,247,0.12);
+    --accent-glow: rgba(79,195,247,0.4);
+    --pink: #c084fc;
+    --pink-dim: rgba(192,132,252,0.12);
+    --text: #e2e8f0;
+    --muted: rgba(226,232,240,0.45);
+  }
+
+  /* ══ LIGHT THEME ══ */
+  html[data-theme="light"] {
+    --bg: #f1f5f9;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --border: rgba(0,0,0,0.08);
+    --border-bright: rgba(0,0,0,0.15);
+    --accent: #6d28d9;
+    --accent-dim: rgba(109,40,217,0.1);
+    --accent-glow: rgba(109,40,217,0.3);
+    --pink: #db2777;
+    --pink-dim: rgba(219,39,119,0.1);
+    --text: #0f172a;
+    --muted: rgba(15,23,42,0.5);
+  }
+
+  /* Light theme element-level overrides */
+  html[data-theme="light"] body::before { opacity: 0.02; }
+  html[data-theme="light"] .logo { color: var(--accent); }
+  html[data-theme="light"] .key {
+    background: #e2e8f0;
+    border-color: rgba(0,0,0,0.12);
+    border-bottom-color: rgba(0,0,0,0.2);
+    color: #0f172a;
+  }
+  html[data-theme="light"] .key:active,
+  html[data-theme="light"] .key.pressed {
+    background: #cbd5e1;
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  html[data-theme="light"] .key.special {
+    background: rgba(109,40,217,0.08);
+    border-color: rgba(109,40,217,0.25);
+  }
+  html[data-theme="light"] .keyboard-wrap {
+    background: #f1f5f9;
+    border-color: rgba(0,0,0,0.1);
+  }
+  html[data-theme="light"] .kb-toggle {
+    border-color: rgba(0,0,0,0.15);
+    color: rgba(15,23,42,0.5);
+  }
+  html[data-theme="light"] .kb-toggle.active {
+    background: #f1f5f9;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  html[data-theme="light"] .request {
+    background: #fff;
+    border-color: rgba(0,0,0,0.1);
+  }
+  html[data-theme="light"] .request::before { background: var(--accent); }
+  html[data-theme="light"] .request-num { color: rgba(0,0,0,0.05); }
+  html[data-theme="light"] .stat-card { background: #fff; border-color: rgba(0,0,0,0.08); }
+  html[data-theme="light"] .qr-panel { background: #fff; border-color: rgba(0,0,0,0.08); }
+  html[data-theme="light"] .qr-event-name { color: #0f172a; }
+  html[data-theme="light"] .dj-cd-unit { background: #e2e8f0; border-color: rgba(0,0,0,0.1); }
+  html[data-theme="light"] .emoji-btn { background: #e2e8f0; border-color: rgba(0,0,0,0.1); }
+  html[data-theme="light"] .emoji-section { border-top-color: rgba(0,0,0,0.08); }
+  html[data-theme="light"] .queue-overlay { background: rgba(241,245,249,0.97); }
+  html[data-theme="light"] .queue-card { background: #fff; border-color: rgba(0,0,0,0.08); }
+  html[data-theme="light"] .queue-overlay-header { border-bottom-color: rgba(0,0,0,0.08); }
+  html[data-theme="light"] .queue-close-btn { background: #e2e8f0; border-color: rgba(0,0,0,0.1); color: #0f172a; }
+  html[data-theme="light"] .search-results { background: #fff; border-color: rgba(0,0,0,0.12); }
+  html[data-theme="light"] .search-result-item:hover { background: #f8fafc; }
+  html[data-theme="light"] .btn-sort,
+  html[data-theme="light"] .btn-clear,
+  html[data-theme="light"] .btn-new-event { border-color: rgba(0,0,0,0.15); color: rgba(15,23,42,0.5); background: transparent; }
+  html[data-theme="light"] .header { border-bottom-color: rgba(0,0,0,0.08); }
+  html[data-theme="light"] .badge { border-color: rgba(0,0,0,0.12); color: rgba(15,23,42,0.5); }
+  html[data-theme="light"] #djCountdownBanner { background: rgba(109,40,217,0.06); border-color: rgba(109,40,217,0.2); }
+  html[data-theme="light"] .dj-body { --border: rgba(0,0,0,0.08); }
+  html[data-theme="light"] .lockedOverlay { background: rgba(241,245,249,0.96); }
+
   html, body { height: 100%; }
 
   body {
@@ -2343,6 +2434,10 @@ if (mode === 'admin') {
         document.getElementById('eventNameDisplay').style.display = 'block';
         document.title = data.name + ' — Song Requests';
 
+        // Apply theme
+        const theme = data.theme || 'neon';
+        document.documentElement.setAttribute('data-theme', theme === 'neon' ? '' : theme);
+
         if (data.description) {
           document.getElementById('eventDescDisplay').textContent = data.description;
         }
@@ -2756,6 +2851,10 @@ function openDJBooth(eventId) {
   db.ref('events/' + eventId).get().then(snap => {
     const data = snap.val() || {};
     const name = data.name || 'Unnamed Event';
+
+    // Apply theme
+    const theme = data.theme || 'neon';
+    document.documentElement.setAttribute('data-theme', theme === 'neon' ? '' : theme);
 
     document.getElementById('qrEventName').textContent = name;
     document.getElementById('qrCodeBadge').textContent = 'CODE: ' + eventId;
