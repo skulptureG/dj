@@ -2442,14 +2442,24 @@ if (mode === 'admin') {
           document.getElementById('eventDescDisplay').textContent = data.description;
         }
 
+        const guestUrl = window.location.href;
         new QRCode(document.getElementById('guestQr'), {
-          text: window.location.href,
+          text: guestUrl,
           width: 120,
           height: 120,
           colorDark: '#000000',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
         });
+
+        // Make guest QR clickable to zoom — same modal as DJ booth
+        setTimeout(() => {
+          const guestQrEl = document.getElementById('guestQr');
+          if (guestQrEl) {
+            guestQrEl.style.cursor = 'pointer';
+            guestQrEl.onclick = () => openQrZoom(guestUrl, data.name || '');
+          }
+        }, 400);
 
         // Scheduled event countdown
         if (data.scheduledAt && data.scheduledAt > Date.now()) {
