@@ -424,6 +424,9 @@
     text-transform: uppercase;
     color: var(--muted);
     animation: popIn 0.4s 0.12s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    max-width: 320px;
+    text-align: center;
+    line-height: 1.5;
   }
 
   @keyframes popIn {
@@ -2334,7 +2337,7 @@
 <div id="thankYou">
   <div class="ty-icon" id="tyIcon">🎶</div>
   <div class="ty-text" id="tyText">Nice one!</div>
-  <div class="ty-sub">Your request is with the DJ</div>
+  <div class="ty-sub" id="tySub">Your request is with the DJ</div>
 </div>
 
 <script>
@@ -3137,6 +3140,70 @@ function startCountdown(scheduledAt) {
   const timer = setInterval(tick, 1000);
 }
 
+// ─── THANK YOU MESSAGES
+function pickThankYouMessage(song, name, note) {
+  const n = name && name !== 'Anonymous' ? name : null;
+  const hasNote = note && note.trim().length > 0;
+
+  // Pool of messages — each is { icon, text, sub }
+  // sub can reference name/song/note via placeholders resolved below
+  const pool = [
+
+    // Generic fun
+    { icon: '🎶', text: 'Request sent!',             sub: 'The DJ has been notified' },
+    { icon: '✅', text: 'On the list!',               sub: 'Sit tight and keep dancing' },
+    { icon: '🔥', text: 'Absolute banger choice.',   sub: 'The DJ approves… probably' },
+    { icon: '🎧', text: 'Request received.',          sub: 'The DJ is considering your life choices' },
+    { icon: '🎵', text: 'Nice pick!',                 sub: 'Your request is winging its way over' },
+    { icon: '🚀', text: 'Launched!',                  sub: 'Request successfully deployed to the DJ' },
+    { icon: '💌', text: 'Message delivered.',         sub: 'The DJ is reading it now. Maybe.' },
+    { icon: '🎤', text: 'Request dropped!',           sub: 'Mic drop incoming' },
+    { icon: '🕺', text: 'Let\'s go!',                 sub: 'Your tune is in the queue' },
+    { icon: '⚡', text: 'Zapped to the DJ!',          sub: 'Faster than a lightning bolt' },
+
+    // Song-aware jokes
+    { icon: '🤔', text: 'Interesting choice…',       sub: `The DJ is Googling "${song}" right now` },
+    { icon: '👀', text: 'Bold request.',              sub: `"${song}" — we respect the commitment` },
+    { icon: '😅', text: 'No judgement here.',         sub: `"${song}" has been logged. Officially.` },
+    { icon: '🎯', text: 'Noted!',                     sub: `"${song}" — the DJ will decide your fate` },
+    { icon: '🫣', text: 'The DJ has seen it.',        sub: `"${song}" — reactions may vary` },
+    { icon: '🕵️', text: 'Request logged.',            sub: `The DJ is now investigating "${song}"` },
+    { icon: '📋', text: 'Filed under: great ideas.',  sub: `"${song}" — chef's kiss or a hard no? TBD` },
+
+    // Name-personalised (only used if name given)
+    ...(n ? [
+      { icon: '👋', text: `Hey ${n}!`,               sub: 'Your request is with the DJ' },
+      { icon: '🙌', text: `Nice one, ${n}!`,          sub: 'The DJ has your back' },
+      { icon: '⭐', text: `${n}, you legend.`,         sub: 'Officially a person of great taste' },
+      { icon: '🎉', text: `Get ready, ${n}!`,          sub: 'Your request just joined the queue' },
+      { icon: '🤩', text: `Love your work, ${n}.`,     sub: `"${song}" — outstanding selection` },
+      { icon: '😎', text: `${n} in the building!`,     sub: 'And they come bearing great music' },
+    ] : []),
+
+    // Note-aware (only used if note given)
+    ...(hasNote ? [
+      { icon: '💬', text: 'Message received!',        sub: `The DJ read your note: "${note.length > 40 ? note.slice(0,40) + '…' : note}"` },
+      { icon: '📝', text: 'Note noted!',               sub: 'The DJ is taking your message very seriously' },
+      { icon: '🗒️', text: 'Extra info logged!',        sub: 'Your note has been passed to the DJ booth' },
+    ] : []),
+
+    // Name + note combo
+    ...(n && hasNote ? [
+      { icon: '💖', text: `On it, ${n}!`,              sub: `Your note has been passed to the DJ` },
+    ] : []),
+
+    // Silly wildcards
+    { icon: '🎲', text: 'Fingers crossed!',            sub: 'The DJ is rolling the dice on this one' },
+    { icon: '🧠', text: 'Big brain request.',          sub: 'Only a person of culture would choose this' },
+    { icon: '🏆', text: 'Hall of fame material.',      sub: 'Maybe. The DJ will decide.' },
+    { icon: '🐾', text: 'Request accepted!',           sub: 'No animals were harmed in this process' },
+    { icon: '🌙', text: 'Night mode activated.',       sub: 'This track might just change everything' },
+    { icon: '🎊', text: 'Party time!',                 sub: 'Your request has entered the building' },
+  ];
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 // ─── SUBMIT REQUEST
 // ─── NORMALISE song name for fuzzy comparison
 function normaliseSong(s) {
@@ -3189,6 +3256,7 @@ function submitRequest() {
     // Show a different thank-you
     document.getElementById('tyIcon').textContent = '👍';
     document.getElementById('tyText').textContent = 'Vote added!';
+    document.getElementById('tySub').textContent  = `${existing.song} just got more popular`;
     thankYou.classList.add('show');
     setTimeout(() => thankYou.classList.remove('show'), 2800);
 
@@ -3217,17 +3285,12 @@ function submitRequest() {
   setActiveField('song');
   songInput.focus();
 
-  const msgs = [
-    ['🎶', 'Request sent!'],
-    ['🔥', 'Great choice!'],
-    ['🙌', 'Nice one!'],
-    ['✅', 'On the list!'],
-  ];
-  const m = msgs[Math.floor(Math.random() * msgs.length)];
-  document.getElementById('tyIcon').textContent = m[0];
-  document.getElementById('tyText').textContent = m[1];
+  const m = pickThankYouMessage(song, nameInput.value.trim(), noteInput.value.trim());
+  document.getElementById('tyIcon').textContent = m.icon;
+  document.getElementById('tyText').textContent = m.text;
+  document.getElementById('tySub').textContent  = m.sub;
   thankYou.classList.add('show');
-  setTimeout(() => thankYou.classList.remove('show'), 2800);
+  setTimeout(() => thankYou.classList.remove('show'), 3200);
 }
 
 // ─── FIELD SWITCHING
