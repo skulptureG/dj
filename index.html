@@ -1069,6 +1069,86 @@
     border-top: 1px solid var(--border);
   }
 
+  /* ─── PIN KEYPAD (event PIN + admin PIN gate) ─── */
+  .pin-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.18);
+    background: transparent;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  }
+
+  .pin-dot.filled {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.15);
+  }
+
+  .pin-dot.error {
+    background: var(--pink);
+    border-color: var(--pink);
+    animation: pinShake 0.4s ease;
+  }
+
+  @keyframes pinShake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-6px); }
+    40%       { transform: translateX(6px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+  }
+
+  .pin-error {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pink);
+    height: 18px;
+    margin-bottom: 28px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .pin-error.show { opacity: 1; }
+
+  .pin-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .pin-key {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-bottom: 3px solid rgba(0,0,0,0.4);
+    border-radius: 14px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    padding: 22px 0;
+    cursor: pointer;
+    transition: background 0.08s, transform 0.06s, border-color 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .pin-key:hover { background: var(--surface2); border-color: var(--accent); }
+
+  .pin-key:active {
+    transform: translateY(2px);
+    border-bottom-width: 1px;
+    background: var(--surface2);
+  }
+
+  .pin-back {
+    font-size: 1.4rem;
+    color: var(--muted);
+  }
+
   /* ─── VIEW REQUESTS BUTTON ─── */
   .btn-view-queue {
     width: 100%;
@@ -2231,6 +2311,38 @@
   </div>
 </div>
 
+<!-- ═══ ADMIN PIN GATE (from DJ booth) ═══ -->
+<div id="adminPinGate" class="hidden" style="
+  position:fixed;inset:0;background:var(--bg);z-index:900;
+  display:flex;align-items:center;justify-content:center;padding:30px;">
+  <div style="width:100%;max-width:320px;text-align:center;">
+    <div style="font-family:var(--font-display);font-size:2.6rem;color:var(--accent);letter-spacing:.05em;margin-bottom:4px;">DJ<span style="color:var(--pink)">:</span>Admin</div>
+    <div style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:36px;">Enter admin PIN to continue</div>
+    <div style="display:flex;justify-content:center;gap:14px;margin-bottom:10px;">
+      <div class="pin-dot" id="apd0"></div>
+      <div class="pin-dot" id="apd1"></div>
+      <div class="pin-dot" id="apd2"></div>
+      <div class="pin-dot" id="apd3"></div>
+    </div>
+    <div class="pin-error" id="adminPinGateError">Incorrect PIN — try again</div>
+    <div class="pin-grid">
+      <button class="pin-key" onclick="adminGatePress('1')">1</button>
+      <button class="pin-key" onclick="adminGatePress('2')">2</button>
+      <button class="pin-key" onclick="adminGatePress('3')">3</button>
+      <button class="pin-key" onclick="adminGatePress('4')">4</button>
+      <button class="pin-key" onclick="adminGatePress('5')">5</button>
+      <button class="pin-key" onclick="adminGatePress('6')">6</button>
+      <button class="pin-key" onclick="adminGatePress('7')">7</button>
+      <button class="pin-key" onclick="adminGatePress('8')">8</button>
+      <button class="pin-key" onclick="adminGatePress('9')">9</button>
+      <div></div>
+      <button class="pin-key" onclick="adminGatePress('0')">0</button>
+      <button class="pin-key pin-back" onclick="adminGateBack()">⌫</button>
+    </div>
+    <button onclick="closeAdminGate()" style="margin-top:20px;background:transparent;border:1px solid var(--border-bright);border-radius:8px;color:var(--muted);font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;padding:8px 18px;cursor:pointer;">Cancel</button>
+  </div>
+</div>
+
 <!-- ═══ EVENT PIN OVERLAY (DJ booth) ═══ -->
 <div id="eventPinOverlay" class="hidden" style="
   position:fixed;inset:0;background:var(--bg);z-index:800;
@@ -2302,7 +2414,7 @@
           <div id="qrEventDesc" style="font-size:0.85rem;color:rgba(240,240,248,0.55);font-style:italic;margin-bottom:10px;line-height:1.5;display:none;"></div>
           <div class="qr-url" id="qrUrl"></div>
           <button class="btn-new-event" onclick="lockBoothWithPin()" id="btnLockBooth">🔒 Lock Booth</button>
-          <a class="btn-new-event" id="adminLinkBtn" style="display:block;text-align:center;text-decoration:none;margin-top:6px;" href="">⚙ Admin</a>
+          <button class="btn-new-event" onclick="openAdminGate()" style="margin-top:6px;width:100%;">⚙ Admin</button>
         </div>
       </div>
 
@@ -2840,6 +2952,80 @@ document.getElementById('qrZoomModal')?.addEventListener('click', e => {
   if (e.target === document.getElementById('qrZoomModal')) closeQrZoom();
 });
 
+// ─── ADMIN PIN GATE (from DJ booth → admin page)
+const ADMIN_PIN = '2424';
+let adminGateEntry = '';
+
+function openAdminGate() {
+  adminGateEntry = '';
+  updateAdminGateDots();
+  document.getElementById('adminPinGateError').classList.remove('show');
+  const gate = document.getElementById('adminPinGate');
+  gate.classList.remove('hidden');
+  gate.style.display = 'flex';
+}
+
+function closeAdminGate() {
+  const gate = document.getElementById('adminPinGate');
+  gate.classList.add('hidden');
+  gate.style.display = 'none';
+  adminGateEntry = '';
+  updateAdminGateDots();
+}
+
+function adminGatePress(digit) {
+  if (adminGateEntry.length >= 4) return;
+  adminGateEntry += digit;
+  updateAdminGateDots();
+  if (adminGateEntry.length === 4) checkAdminGatePin();
+}
+
+function adminGateBack() {
+  adminGateEntry = adminGateEntry.slice(0, -1);
+  updateAdminGateDots();
+  document.getElementById('adminPinGateError').classList.remove('show');
+}
+
+function updateAdminGateDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('apd' + i);
+    if (!dot) return;
+    dot.classList.toggle('filled', i < adminGateEntry.length);
+    dot.classList.remove('error');
+  }
+}
+
+function checkAdminGatePin() {
+  if (adminGateEntry === ADMIN_PIN) {
+    const adminUrl = window.location.origin +
+      window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
+    window.open(adminUrl, '_blank');
+    closeAdminGate();
+  } else {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('apd' + i);
+      dot.classList.remove('filled');
+      dot.classList.add('error');
+    }
+    document.getElementById('adminPinGateError').classList.add('show');
+    setTimeout(() => {
+      adminGateEntry = '';
+      updateAdminGateDots();
+      document.getElementById('adminPinGateError').classList.remove('show');
+    }, 700);
+  }
+}
+
+// Physical keyboard for admin gate
+document.addEventListener('keydown', e => {
+  const gate = document.getElementById('adminPinGate');
+  if (gate && gate.style.display !== 'none' && !gate.classList.contains('hidden')) {
+    if (e.key >= '0' && e.key <= '9') adminGatePress(e.key);
+    if (e.key === 'Backspace') adminGateBack();
+    if (e.key === 'Escape') closeAdminGate();
+  }
+});
+
 // ─── EVENT PIN OVERLAY (DJ Booth)
 let eventPinEntry  = '';
 let eventPinTarget = ''; // the correct PIN loaded from Firebase
@@ -2985,13 +3171,6 @@ function startDJCountdown(scheduledAt) {
 function openDJBooth(eventId) {
   initRefs(eventId);
   djView.classList.remove('hidden');
-
-  // Set admin link
-  const adminLink = document.getElementById('adminLinkBtn');
-  if (adminLink) {
-    adminLink.href = window.location.origin +
-      window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
-  }
 
   // Build request page URL
   const base = window.location.href.split('?')[0];
