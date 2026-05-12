@@ -2558,10 +2558,14 @@ if (mode === 'admin') {
   loadAdminEvents();
 
 } else if (mode === 'dj') {
-  const savedEvent = localStorage.getItem('djCurrentEvent');
+  // Event can come from URL (?mode=dj&event=CODE) or localStorage fallback
+  const urlEvent   = new URLSearchParams(window.location.search).get('event');
+  const savedEvent = urlEvent || localStorage.getItem('djCurrentEvent');
 
   if (savedEvent) {
-    // Load event name first for the PIN overlay label
+    // Keep localStorage in sync so legacy flow still works
+    if (urlEvent) localStorage.setItem('djCurrentEvent', urlEvent);
+
     db.ref('events/' + savedEvent + '/name').get().then(snap => {
       const eventName = snap.val() || 'Event';
       showEventPinOverlay(savedEvent, eventName);
@@ -3171,6 +3175,12 @@ function startDJCountdown(scheduledAt) {
 function openDJBooth(eventId) {
   initRefs(eventId);
   djView.classList.remove('hidden');
+
+  // Put event code in the URL so the page is bookmarkable and shareable
+  const boothUrl = new URL(window.location.href);
+  boothUrl.searchParams.set('mode', 'dj');
+  boothUrl.searchParams.set('event', eventId);
+  window.history.replaceState({}, '', boothUrl.toString());
 
   // Build request page URL
   const base = window.location.href.split('?')[0];
