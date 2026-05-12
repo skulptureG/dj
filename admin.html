@@ -426,6 +426,47 @@
   .theme-badge.midnight { color: #4fc3f7; border-color: rgba(79,195,247,0.3); background: rgba(79,195,247,0.08); }
   .theme-badge.light  { color: #6d28d9; border-color: rgba(109,40,217,0.3); background: rgba(109,40,217,0.08); }
 
+  /* ─── EVENT PIN ROW ─── */
+  .event-pin-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .event-pin-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .event-pin-value {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .pin-toggle-btn {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-bright);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .pin-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+
   /* ─── INLINE EDIT PANEL ─── */
   .edit-panel {
     display: none;
@@ -1464,6 +1505,15 @@
       </div>
     </div>
 
+    <span class="theme-picker-label">Event PIN <span style="opacity:.5;font-size:.85em">(4 digits — protects the DJ Booth)</span></span>
+    <div class="create-row" style="margin-bottom:14px;">
+      <input id="newEventPin" class="create-input" type="text" inputmode="numeric" maxlength="4"
+        pattern="[0-9]{4}" placeholder="e.g. 1234" autocomplete="off"
+        style="letter-spacing:.2em;font-size:1.4rem;text-align:center;max-width:160px;"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+      <button class="btn-create" type="button" onclick="document.getElementById('newEventPin').value=String(Math.floor(1000+Math.random()*9000))" style="white-space:nowrap;padding:14px 18px;font-size:1rem;">🎲 Random</button>
+    </div>
+
     <span class="theme-picker-label">Theme</span>
     <div class="theme-swatches" id="createThemeSwatches">
       <label class="theme-swatch selected" onclick="selectTheme('neon', this)">
@@ -1695,6 +1745,7 @@ function createNewEvent() {
   if (!name) { document.getElementById('newEventName').focus(); return; }
   const desc      = document.getElementById('newEventDesc').value.trim();
   const theme     = getSelectedTheme('createTheme');
+  const pin       = document.getElementById('newEventPin').value.trim();
   const scheduled = document.getElementById('scheduleCheck').checked;
 
   let scheduledAt = null;
@@ -1713,12 +1764,14 @@ function createNewEvent() {
   const eventId = genEventId();
   const payload = { name, theme };
   if (desc) payload.description = desc;
+  if (pin)  payload.pin = pin;
   if (scheduledAt) payload.scheduledAt = scheduledAt;
 
   db.ref('events/' + eventId).update(payload)
     .then(() => {
       document.getElementById('newEventName').value = '';
       document.getElementById('newEventDesc').value = '';
+      document.getElementById('newEventPin').value  = '';
       document.getElementById('scheduleCheck').checked = false;
       document.getElementById('scheduleFields').classList.add('hidden');
       // Reset theme swatch to neon
@@ -1818,6 +1871,13 @@ function loadEvents() {
           ${locked ? '<div style="font-size:1.4rem;padding-top:4px;" title="Requests locked">🔒</div>' : ''}
         </div>
         ${event.description ? `<div class="event-desc">${escHtml(event.description)}</div>` : ''}
+        <div class="event-pin-row">
+          <span class="event-pin-label">🔐 Booth PIN:</span>
+          ${event.pin
+            ? `<span class="event-pin-value" id="pin-val-${event.id}" data-pin="${escHtml(event.pin)}" style="filter:blur(5px);cursor:pointer;transition:filter .2s;" onclick="togglePinVisibility('${event.id}')" title="Click to reveal">••••</span>
+               <button class="pin-toggle-btn" id="pin-btn-${event.id}" onclick="togglePinVisibility('${event.id}')">👁 Show</button>`
+            : `<span style="opacity:.45;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:.1em;">Not set</span>`}
+        </div>
         <div class="event-meta">
           <div class="meta-item"><div class="meta-dot"></div>${pending} pending</div>
           <div class="meta-item"><div class="meta-dot"></div>${played} played</div>
@@ -1849,6 +1909,15 @@ function loadEvents() {
               <label class="edit-field-label">Time</label>
               <input class="edit-input" id="edit-time-${event.id}" type="time" value="${event.scheduledAt ? new Date(event.scheduledAt).toTimeString().slice(0,5) : ''}">
             </div>
+          </div>
+          <label class="edit-field-label">Booth PIN <span style="opacity:.5;font-size:.9em">(4 digits, optional)</span></label>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <input class="edit-input" id="edit-pin-${event.id}" type="text" inputmode="numeric"
+              maxlength="4" placeholder="e.g. 5678" value="${escHtml(event.pin || '')}"
+              style="letter-spacing:.2em;font-size:1.2rem;text-align:center;max-width:130px;"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+            <button class="btn-cancel-edit" type="button" style="font-size:.65rem;padding:8px 12px;"
+              onclick="document.getElementById('edit-pin-${event.id}').value=String(Math.floor(1000+Math.random()*9000))">🎲 New Random</button>
           </div>
           <label class="edit-field-label">Theme</label>
           <div class="theme-swatches" id="edit-theme-swatches-${event.id}">
@@ -1972,9 +2041,11 @@ function saveEdit(eventId) {
   const dateVal  = document.getElementById('edit-date-' + eventId)?.value;
   const timeVal  = document.getElementById('edit-time-' + eventId)?.value;
   const theme    = getSelectedTheme('editTheme-' + eventId);
+  const pin      = document.getElementById('edit-pin-' + eventId)?.value.trim();
 
   const updates = { name, theme };
   updates.description = desc || null;
+  updates.pin         = pin  || null;
 
   if (dateVal && timeVal) {
     const ts = new Date(dateVal + 'T' + timeVal).getTime();
@@ -2064,6 +2135,23 @@ function updateSummary() {
       `<div class="state-msg"><div class="icon">♫</div><p>No events found</p></div>`;
     document.getElementById('totalRequests').textContent = '0';
     document.getElementById('totalPlayed').textContent   = '0';
+  }
+}
+
+// ─── PIN VISIBILITY TOGGLE
+function togglePinVisibility(eventId) {
+  const val = document.getElementById('pin-val-' + eventId);
+  const btn = document.getElementById('pin-btn-' + eventId);
+  if (!val) return;
+  const shown = val.style.filter === 'none' || val.style.filter === '';
+  if (shown) {
+    val.style.filter = 'blur(5px)';
+    val.textContent  = '••••';
+    if (btn) btn.textContent = '👁 Show';
+  } else {
+    val.style.filter = 'none';
+    val.textContent  = val.dataset.pin;
+    if (btn) btn.textContent = '🙈 Hide';
   }
 }
 
