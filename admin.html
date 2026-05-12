@@ -467,6 +467,68 @@
 
   .pin-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+  /* ─── SHARE URL ROWS ─── */
+  .event-urls {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .url-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+
+  .url-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .url-val {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .url-copy-btn {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-bright);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .url-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .url-copy-btn.copied { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
   /* ─── INLINE EDIT PANEL ─── */
   .edit-panel {
     display: none;
@@ -1796,7 +1858,7 @@ document.getElementById('newEventName').addEventListener('keydown', e => {
 // ─── OPEN IN BOOTH
 function openInBooth(eventId) {
   localStorage.setItem('djCurrentEvent', eventId);
-  window.open(indexUrl + '?mode=dj', '_blank');
+  window.open(indexUrl + '?mode=dj&event=' + eventId, '_blank');
 }
 function loadEvents() {
   db.ref('events').get().then(snap => {
@@ -1891,6 +1953,20 @@ function loadEvents() {
           <button class="btn-edit" onclick="openPrintView('${event.id}', '${escAttr(event.name || '')}', ${event.scheduledAt || 0}, '${escAttr(event.description || '')}', '${guestUrl}')">🖨 Print QR</button>
           ${requests.length > 0 ? `<button class="btn-expand" onclick="toggleRequests('${event.id}')">▾ ${pending} Pending</button>` : ''}
           <button class="btn-delete" onclick="confirmDelete('${event.id}', '${escAttr(event.name || 'Unnamed Event')}')">🗑 Delete</button>
+        </div>
+
+        <!-- SHARE URLS -->
+        <div class="event-urls">
+          <div class="url-row">
+            <span class="url-label">🎵 Guest</span>
+            <span class="url-val" id="gurl-${event.id}">${guestUrl}</span>
+            <button class="url-copy-btn" onclick="copyUrl('${guestUrl}', this)">Copy</button>
+          </div>
+          <div class="url-row">
+            <span class="url-label">🎧 Booth</span>
+            <span class="url-val" id="burl-${event.id}">${baseUrl}?mode=dj&event=${event.id}</span>
+            <button class="url-copy-btn" onclick="copyUrl('${baseUrl}?mode=dj&event=${event.id}', this)">Copy</button>
+          </div>
         </div>
 
         <!-- INLINE EDIT PANEL -->
@@ -2136,6 +2212,15 @@ function updateSummary() {
     document.getElementById('totalRequests').textContent = '0';
     document.getElementById('totalPlayed').textContent   = '0';
   }
+}
+
+// ─── COPY URL
+function copyUrl(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
 }
 
 // ─── PIN VISIBILITY TOGGLE
