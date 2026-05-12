@@ -2231,6 +2231,38 @@
   </div>
 </div>
 
+<!-- ═══ EVENT PIN OVERLAY (DJ booth) ═══ -->
+<div id="eventPinOverlay" class="hidden" style="
+  position:fixed;inset:0;background:var(--bg);z-index:800;
+  display:flex;align-items:center;justify-content:center;padding:30px;
+  flex-direction:column;gap:0;">
+  <div style="width:100%;max-width:320px;text-align:center;">
+    <div style="font-family:var(--font-display);font-size:2.6rem;color:var(--accent);letter-spacing:.05em;margin-bottom:4px;">DJ<span style="color:var(--pink)">:</span>Booth</div>
+    <div style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:36px;" id="eventPinEventName">Enter event PIN to continue</div>
+    <div style="display:flex;justify-content:center;gap:14px;margin-bottom:10px;">
+      <div class="pin-dot" id="epd0"></div>
+      <div class="pin-dot" id="epd1"></div>
+      <div class="pin-dot" id="epd2"></div>
+      <div class="pin-dot" id="epd3"></div>
+    </div>
+    <div class="pin-error" id="eventPinError">Incorrect PIN — try again</div>
+    <div class="pin-grid" style="margin-top:8px;">
+      <button class="pin-key" onclick="eventPinPress('1')">1</button>
+      <button class="pin-key" onclick="eventPinPress('2')">2</button>
+      <button class="pin-key" onclick="eventPinPress('3')">3</button>
+      <button class="pin-key" onclick="eventPinPress('4')">4</button>
+      <button class="pin-key" onclick="eventPinPress('5')">5</button>
+      <button class="pin-key" onclick="eventPinPress('6')">6</button>
+      <button class="pin-key" onclick="eventPinPress('7')">7</button>
+      <button class="pin-key" onclick="eventPinPress('8')">8</button>
+      <button class="pin-key" onclick="eventPinPress('9')">9</button>
+      <div></div>
+      <button class="pin-key" onclick="eventPinPress('0')">0</button>
+      <button class="pin-key pin-back" onclick="eventPinBack()">⌫</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ DJ VIEW ═══ -->
 <div id="djView" class="panel hidden">
   <!-- EMOJI CORNER FLASH -->
@@ -2269,7 +2301,8 @@
           <div class="qr-code-badge" id="qrCodeBadge">CODE: —</div>
           <div id="qrEventDesc" style="font-size:0.85rem;color:rgba(240,240,248,0.55);font-style:italic;margin-bottom:10px;line-height:1.5;display:none;"></div>
           <div class="qr-url" id="qrUrl"></div>
-          <button class="btn-new-event" onclick="startNewEvent()">⟳ New Event</button>
+          <button class="btn-new-event" onclick="lockBoothWithPin()" id="btnLockBooth">🔒 Lock Booth</button>
+          <a class="btn-new-event" id="adminLinkBtn" style="display:block;text-align:center;text-decoration:none;margin-top:6px;" href="">⚙ Admin</a>
         </div>
       </div>
 
@@ -2416,9 +2449,12 @@ if (mode === 'admin') {
   const savedEvent = localStorage.getItem('djCurrentEvent');
 
   if (savedEvent) {
-    openDJBooth(savedEvent);
+    // Load event name first for the PIN overlay label
+    db.ref('events/' + savedEvent + '/name').get().then(snap => {
+      const eventName = snap.val() || 'Event';
+      showEventPinOverlay(savedEvent, eventName);
+    }).catch(() => showEventPinOverlay(savedEvent, 'Event'));
   } else {
-    // No event — send to admin to create/pick one
     window.location.href = window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
   }
 
@@ -2804,6 +2840,110 @@ document.getElementById('qrZoomModal')?.addEventListener('click', e => {
   if (e.target === document.getElementById('qrZoomModal')) closeQrZoom();
 });
 
+// ─── EVENT PIN OVERLAY (DJ Booth)
+let eventPinEntry  = '';
+let eventPinTarget = ''; // the correct PIN loaded from Firebase
+let eventPinId     = ''; // the event ID being unlocked
+
+function showEventPinOverlay(eventId, eventName) {
+  eventPinId    = eventId;
+  eventPinEntry = '';
+
+  // Load the PIN for this event
+  db.ref('events/' + eventId + '/pin').get().then(snap => {
+    eventPinTarget = String(snap.val() || '');
+
+    const overlay = document.getElementById('eventPinOverlay');
+    overlay.classList.remove('hidden');
+    overlay.style.display = 'flex';
+
+    document.getElementById('eventPinEventName').textContent =
+      eventPinTarget ? `"${eventName}" — Enter PIN` : eventName;
+
+    // If no PIN set, just go straight in
+    if (!eventPinTarget) {
+      unlockDJBooth(eventId);
+      return;
+    }
+
+    updateEventPinDots();
+  });
+}
+
+function eventPinPress(digit) {
+  if (eventPinEntry.length >= 4) return;
+  eventPinEntry += digit;
+  updateEventPinDots();
+  if (eventPinEntry.length === 4) checkEventPin();
+}
+
+function eventPinBack() {
+  eventPinEntry = eventPinEntry.slice(0, -1);
+  updateEventPinDots();
+  document.getElementById('eventPinError').classList.remove('show');
+}
+
+function updateEventPinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('epd' + i);
+    dot.classList.toggle('filled', i < eventPinEntry.length);
+    dot.classList.remove('error');
+  }
+}
+
+function checkEventPin() {
+  if (eventPinEntry === eventPinTarget) {
+    unlockDJBooth(eventPinId);
+  } else {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('epd' + i);
+      dot.classList.remove('filled');
+      dot.classList.add('error');
+    }
+    document.getElementById('eventPinError').classList.add('show');
+    setTimeout(() => {
+      eventPinEntry = '';
+      updateEventPinDots();
+      document.getElementById('eventPinError').classList.remove('show');
+    }, 700);
+  }
+}
+
+function unlockDJBooth(eventId) {
+  const overlay = document.getElementById('eventPinOverlay');
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity 0.3s';
+  setTimeout(() => { overlay.style.display = 'none'; }, 320);
+  openDJBooth(eventId);
+}
+
+function lockBoothWithPin() {
+  // Detach listeners
+  if (requestsRef) requestsRef.off();
+  if (lockedRef)   lockedRef.off();
+  if (statsRef)    statsRef.off();
+
+  djView.classList.add('hidden');
+
+  // Reset and show PIN overlay again
+  eventPinEntry = '';
+  updateEventPinDots();
+  document.getElementById('eventPinError').classList.remove('show');
+  const overlay = document.getElementById('eventPinOverlay');
+  overlay.style.opacity = '1';
+  overlay.style.transition = '';
+  overlay.style.display = 'flex';
+}
+
+// Physical keyboard for event PIN
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('eventPinOverlay');
+  if (overlay && overlay.style.display !== 'none' && !overlay.classList.contains('hidden')) {
+    if (e.key >= '0' && e.key <= '9') eventPinPress(e.key);
+    if (e.key === 'Backspace') eventPinBack();
+  }
+});
+
 // ─── DJ BOOTH COUNTDOWN
 let djCountdownTimer = null;
 
@@ -2841,20 +2981,17 @@ function startDJCountdown(scheduledAt) {
   djCountdownTimer = setInterval(tick, 1000);
 }
 
-function startNewEvent() {
-  if (!confirm('Go to admin to switch event? This won\'t delete the current one.')) return;
-  localStorage.removeItem('djCurrentEvent');
-  if (requestsRef) requestsRef.off();
-  if (lockedRef)   lockedRef.off();
-  if (statsRef)    statsRef.off();
-  const adminUrl = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
-  window.location.href = adminUrl;
-}
-
 // ─── OPEN DJ BOOTH
 function openDJBooth(eventId) {
   initRefs(eventId);
   djView.classList.remove('hidden');
+
+  // Set admin link
+  const adminLink = document.getElementById('adminLinkBtn');
+  if (adminLink) {
+    adminLink.href = window.location.origin +
+      window.location.pathname.replace(/\/index\.html$/, '/') + 'admin.html';
+  }
 
   // Build request page URL
   const base = window.location.href.split('?')[0];
