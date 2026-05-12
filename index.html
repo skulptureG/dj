@@ -980,20 +980,27 @@
     width: 100%;
     margin-top: 10px;
     margin-bottom: 30px;
-    padding: 16px;
-    background: transparent;
-    border: 1px solid var(--border-bright);
+    padding: 18px;
+    background: var(--pink-dim);
+    border: 2px solid var(--pink);
     border-radius: var(--radius);
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    color: var(--pink);
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
     cursor: pointer;
     transition: all 0.2s;
+    box-shadow: 0 0 20px rgba(255,62,127,0.25);
   }
 
-  .btn-view-queue:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-view-queue:hover {
+    background: var(--pink);
+    color: #fff;
+    box-shadow: 0 0 36px rgba(255,62,127,0.55);
+    transform: translateY(-1px);
+  }
+
+  .btn-view-queue:active { transform: scale(0.98); }
 
   /* ─── QUEUE OVERLAY ─── */
   .queue-overlay {
