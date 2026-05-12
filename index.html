@@ -1890,6 +1890,13 @@
   }
 
   .btn-new-event:hover { border-color: var(--pink); color: var(--pink); }
+  .btn-new-event:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: var(--border-bright);
+    color: var(--muted);
+    pointer-events: none;
+  }
 
   .caps-indicator.on { opacity: 1; }
   /* ─── ADMIN VIEW ─── */
@@ -2413,7 +2420,7 @@
           <div class="qr-code-badge" id="qrCodeBadge">CODE: —</div>
           <div id="qrEventDesc" style="font-size:0.85rem;color:rgba(240,240,248,0.55);font-style:italic;margin-bottom:10px;line-height:1.5;display:none;"></div>
           <div class="qr-url" id="qrUrl"></div>
-          <button class="btn-new-event" onclick="lockBoothWithPin()" id="btnLockBooth">🔒 Lock Booth</button>
+          <button class="btn-new-event" onclick="lockBoothWithPin()" id="btnLockBooth" disabled title="No PIN set — add one in Admin to enable locking">🔒 Lock Booth</button>
           <button class="btn-new-event" onclick="openAdminGate()" style="margin-top:6px;width:100%;">⚙ Admin</button>
         </div>
       </div>
@@ -3108,6 +3115,9 @@ function unlockDJBooth(eventId) {
 }
 
 function lockBoothWithPin() {
+  // Button should already be disabled if no PIN, but guard here too
+  if (!eventPinTarget) return;
+
   // Detach listeners
   if (requestsRef) requestsRef.off();
   if (lockedRef)   lockedRef.off();
@@ -3222,6 +3232,15 @@ function openDJBooth(eventId) {
       const qrEl = document.getElementById('qrCode');
       if (qrEl) qrEl.onclick = () => openQrZoom(guestUrl, data.name || '');
     }, 600);
+
+    // Enable Lock Booth only if a PIN is set
+    const lockBtn = document.getElementById('btnLockBooth');
+    if (lockBtn) {
+      const hasPIN = !!(data.pin && String(data.pin).trim().length === 4);
+      lockBtn.disabled = !hasPIN;
+      lockBtn.title    = hasPIN ? 'Lock the booth' : 'No PIN set — add one in Admin to enable locking';
+      lockBtn.style.pointerEvents = hasPIN ? '' : 'none';
+    }
 
     // DJ countdown banner
     if (data.scheduledAt && data.scheduledAt > Date.now()) {
