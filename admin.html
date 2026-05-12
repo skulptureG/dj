@@ -328,6 +328,104 @@
 
   .btn-create:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+  /* ─── THEME PICKER ─── */
+  .theme-picker-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 14px 0 10px;
+    display: block;
+  }
+
+  .theme-swatches {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .theme-swatch {
+    flex: 1;
+    min-width: 90px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border-bright);
+    padding: 12px 10px 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+    text-align: center;
+  }
+
+  .theme-swatch:hover { transform: translateY(-2px); }
+
+  .theme-swatch.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+
+  .theme-swatch input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .swatch-preview {
+    width: 100%;
+    height: 44px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .swatch-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .swatch-name {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .theme-swatch.selected .swatch-name { color: var(--accent); }
+
+  .selected-tick {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 0.75rem;
+    color: var(--accent);
+    opacity: 0;
+  }
+
+  .theme-swatch.selected .selected-tick { opacity: 1; }
+
+  /* theme badge on event cards */
+  .theme-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-left: 8px;
+    border: 1px solid;
+    vertical-align: middle;
+  }
+
+  .theme-badge.neon   { color: #c6ff00; border-color: rgba(198,255,0,0.3); background: rgba(198,255,0,0.08); }
+  .theme-badge.midnight { color: #4fc3f7; border-color: rgba(79,195,247,0.3); background: rgba(79,195,247,0.08); }
+  .theme-badge.light  { color: #6d28d9; border-color: rgba(109,40,217,0.3); background: rgba(109,40,217,0.08); }
+
   /* ─── INLINE EDIT PANEL ─── */
   .edit-panel {
     display: none;
@@ -1365,6 +1463,37 @@
         </div>
       </div>
     </div>
+
+    <span class="theme-picker-label">Theme</span>
+    <div class="theme-swatches" id="createThemeSwatches">
+      <label class="theme-swatch selected" onclick="selectTheme('neon', this)">
+        <input type="radio" name="createTheme" value="neon" checked>
+        <div class="selected-tick">✓</div>
+        <div class="swatch-preview" style="background:#090b10;">
+          <div class="swatch-dot" style="background:#c6ff00;"></div>
+          <div class="swatch-dot" style="background:#ff3e7f;"></div>
+        </div>
+        <div class="swatch-name">Neon</div>
+      </label>
+      <label class="theme-swatch" onclick="selectTheme('midnight', this)">
+        <input type="radio" name="createTheme" value="midnight">
+        <div class="selected-tick">✓</div>
+        <div class="swatch-preview" style="background:#07090f;">
+          <div class="swatch-dot" style="background:#4fc3f7;"></div>
+          <div class="swatch-dot" style="background:#c084fc;"></div>
+        </div>
+        <div class="swatch-name">Midnight</div>
+      </label>
+      <label class="theme-swatch" onclick="selectTheme('light', this)">
+        <input type="radio" name="createTheme" value="light">
+        <div class="selected-tick">✓</div>
+        <div class="swatch-preview" style="background:#f1f5f9;border:1px solid rgba(0,0,0,0.08);">
+          <div class="swatch-dot" style="background:#6d28d9;"></div>
+          <div class="swatch-dot" style="background:#db2777;"></div>
+        </div>
+        <div class="swatch-name">Light</div>
+      </label>
+    </div>
   </div>
 
   <div class="summary">
@@ -1529,13 +1658,30 @@ function genEventId() {
   return id;
 }
 
+// ─── THEME PICKER
+function selectTheme(value, clickedLabel) {
+  document.querySelectorAll('#createThemeSwatches .theme-swatch').forEach(s => s.classList.remove('selected'));
+  clickedLabel.classList.add('selected');
+  clickedLabel.querySelector('input').checked = true;
+}
+
+function selectEditTheme(eventId, value, clickedLabel) {
+  const container = document.getElementById('edit-theme-swatches-' + eventId);
+  container?.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('selected'));
+  clickedLabel.classList.add('selected');
+  clickedLabel.querySelector('input').checked = true;
+}
+
+function getSelectedTheme(radioName) {
+  return document.querySelector(`input[name="${radioName}"]:checked`)?.value || 'neon';
+}
+
 // ─── CREATE NEW EVENT
 function toggleScheduleInputs() {
   const fields = document.getElementById('scheduleFields');
   const checked = document.getElementById('scheduleCheck').checked;
   fields.classList.toggle('hidden', !checked);
   if (checked) {
-    // Default to tomorrow at 19:00
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     document.getElementById('scheduleDate').value = tomorrow.toISOString().slice(0, 10);
@@ -1547,17 +1693,15 @@ function toggleScheduleInputs() {
 function createNewEvent() {
   const name = document.getElementById('newEventName').value.trim();
   if (!name) { document.getElementById('newEventName').focus(); return; }
-  const desc     = document.getElementById('newEventDesc').value.trim();
+  const desc      = document.getElementById('newEventDesc').value.trim();
+  const theme     = getSelectedTheme('createTheme');
   const scheduled = document.getElementById('scheduleCheck').checked;
 
   let scheduledAt = null;
   if (scheduled) {
     const d = document.getElementById('scheduleDate').value;
     const t = document.getElementById('scheduleTime').value;
-    if (!d || !t) {
-      alert('Please set both a date and time for the scheduled event.');
-      return;
-    }
+    if (!d || !t) { alert('Please set both a date and time for the scheduled event.'); return; }
     scheduledAt = new Date(d + 'T' + t).getTime();
     if (isNaN(scheduledAt)) { alert('Invalid date or time.'); return; }
   }
@@ -1567,7 +1711,7 @@ function createNewEvent() {
   btn.disabled = true;
 
   const eventId = genEventId();
-  const payload = { name };
+  const payload = { name, theme };
   if (desc) payload.description = desc;
   if (scheduledAt) payload.scheduledAt = scheduledAt;
 
@@ -1577,6 +1721,10 @@ function createNewEvent() {
       document.getElementById('newEventDesc').value = '';
       document.getElementById('scheduleCheck').checked = false;
       document.getElementById('scheduleFields').classList.add('hidden');
+      // Reset theme swatch to neon
+      document.querySelectorAll('#createThemeSwatches .theme-swatch').forEach(s => s.classList.remove('selected'));
+      document.querySelector('#createThemeSwatches .theme-swatch').classList.add('selected');
+      document.querySelector('input[name="createTheme"]').checked = true;
       btn.textContent = 'Create →';
       btn.disabled = false;
       openInBooth(eventId);
@@ -1661,7 +1809,7 @@ function loadEvents() {
       card.innerHTML = `
         <div class="event-top">
           <div>
-            <div class="event-name">${escHtml(event.name || 'Unnamed Event')}</div>
+            <div class="event-name">${escHtml(event.name || 'Unnamed Event')}<span class="theme-badge ${event.theme || 'neon'}">${event.theme || 'neon'}</span></div>
             <div class="event-code">CODE: ${event.id}</div>
             ${event.scheduledAt ? `<div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.1em;color:var(--muted);margin-top:4px;">📅 ${new Date(event.scheduledAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}</div>` : ''}
             ${statusHtml}
@@ -1701,6 +1849,27 @@ function loadEvents() {
               <label class="edit-field-label">Time</label>
               <input class="edit-input" id="edit-time-${event.id}" type="time" value="${event.scheduledAt ? new Date(event.scheduledAt).toTimeString().slice(0,5) : ''}">
             </div>
+          </div>
+          <label class="edit-field-label">Theme</label>
+          <div class="theme-swatches" id="edit-theme-swatches-${event.id}">
+            <label class="theme-swatch ${!event.theme || event.theme === 'neon' ? 'selected' : ''}" onclick="selectEditTheme('${event.id}', 'neon', this)">
+              <input type="radio" name="editTheme-${event.id}" value="neon" ${!event.theme || event.theme === 'neon' ? 'checked' : ''}>
+              <div class="selected-tick">✓</div>
+              <div class="swatch-preview" style="background:#090b10;"><div class="swatch-dot" style="background:#c6ff00;"></div><div class="swatch-dot" style="background:#ff3e7f;"></div></div>
+              <div class="swatch-name">Neon</div>
+            </label>
+            <label class="theme-swatch ${event.theme === 'midnight' ? 'selected' : ''}" onclick="selectEditTheme('${event.id}', 'midnight', this)">
+              <input type="radio" name="editTheme-${event.id}" value="midnight" ${event.theme === 'midnight' ? 'checked' : ''}>
+              <div class="selected-tick">✓</div>
+              <div class="swatch-preview" style="background:#07090f;"><div class="swatch-dot" style="background:#4fc3f7;"></div><div class="swatch-dot" style="background:#c084fc;"></div></div>
+              <div class="swatch-name">Midnight</div>
+            </label>
+            <label class="theme-swatch ${event.theme === 'light' ? 'selected' : ''}" onclick="selectEditTheme('${event.id}', 'light', this)">
+              <input type="radio" name="editTheme-${event.id}" value="light" ${event.theme === 'light' ? 'checked' : ''}>
+              <div class="selected-tick">✓</div>
+              <div class="swatch-preview" style="background:#f1f5f9;border:1px solid rgba(0,0,0,0.08);"><div class="swatch-dot" style="background:#6d28d9;"></div><div class="swatch-dot" style="background:#db2777;"></div></div>
+              <div class="swatch-name">Light</div>
+            </label>
           </div>
           <div class="edit-actions">
             <button class="btn-save" onclick="saveEdit('${event.id}')">Save Changes</button>
@@ -1802,8 +1971,9 @@ function saveEdit(eventId) {
   const desc     = document.getElementById('edit-desc-' + eventId)?.value.trim();
   const dateVal  = document.getElementById('edit-date-' + eventId)?.value;
   const timeVal  = document.getElementById('edit-time-' + eventId)?.value;
+  const theme    = getSelectedTheme('editTheme-' + eventId);
 
-  const updates = { name };
+  const updates = { name, theme };
   updates.description = desc || null;
 
   if (dateVal && timeVal) {
@@ -1819,7 +1989,7 @@ function saveEdit(eventId) {
   db.ref('events/' + eventId).update(updates)
     .then(() => {
       document.getElementById('edit-' + eventId)?.classList.remove('open');
-      loadEvents(); // refresh cards
+      loadEvents();
     })
     .catch(err => {
       if (btn) { btn.textContent = 'Save Changes'; btn.disabled = false; }
