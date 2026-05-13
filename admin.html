@@ -475,6 +475,85 @@
 
   .color-swatch-input:hover { border-color: var(--accent); }
 
+  /* ─── MOBILE ONLY TOGGLE ─── */
+  .mobile-only-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    margin-bottom: 14px;
+    transition: border-color 0.15s;
+  }
+
+  .mobile-only-toggle:hover { border-color: var(--accent); }
+
+  .mobile-only-toggle input[type="checkbox"] { display: none; }
+
+  .mot-track {
+    flex-shrink: 0;
+    width: 44px;
+    height: 26px;
+    background: var(--border-bright);
+    border-radius: 13px;
+    position: relative;
+    transition: background 0.2s;
+    margin-top: 2px;
+  }
+
+  .mot-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
+  .mobile-only-toggle input:checked ~ .mot-track { background: var(--accent); }
+  .mobile-only-toggle input:checked ~ .mot-track .mot-thumb { transform: translateX(18px); }
+
+  .mot-info { display: flex; flex-direction: column; gap: 3px; }
+
+  .mot-title {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .mot-desc {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* Mobile Only badge on event card */
+  .mob-only-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(79,195,247,0.35);
+    background: rgba(79,195,247,0.08);
+    color: #4fc3f7;
+    margin-top: 6px;
+    white-space: nowrap;
+  }
+
   /* ─── EVENT PIN ROW ─── */
   .event-pin-row {
     display: flex;
@@ -1625,6 +1704,18 @@
       <button class="btn-create" type="button" onclick="document.getElementById('newEventPin').value=String(Math.floor(1000+Math.random()*9000))" style="white-space:nowrap;padding:14px 18px;font-size:1rem;">🎲 Random</button>
     </div>
 
+    <span class="theme-picker-label">Display Mode</span>
+    <label class="mobile-only-toggle">
+      <input type="checkbox" id="newMobileOnly">
+      <div class="mot-track">
+        <div class="mot-thumb"></div>
+      </div>
+      <div class="mot-info">
+        <span class="mot-title">📱 Mobile Only Mode</span>
+        <span class="mot-desc">Hides the form — shows QR code and live request list on screen. Guests submit from their own phones.</span>
+      </div>
+    </label>
+
     <span class="theme-picker-label">Theme</span>
     <div class="theme-swatches" id="createThemeSwatches">
       <label class="theme-swatch selected" onclick="selectTheme('neon', this)">
@@ -1899,6 +1990,7 @@ function createNewEvent() {
   const payload = { name, theme };
   if (desc) payload.description = desc;
   if (pin)  payload.pin = pin;
+  payload.mobileOnly = document.getElementById('newMobileOnly')?.checked || false;
   if (theme === 'custom') {
     payload.customColors = {
       bg:        document.getElementById('cc-bg')?.value        || '#090b10',
@@ -1915,6 +2007,7 @@ function createNewEvent() {
       document.getElementById('newEventName').value = '';
       document.getElementById('newEventDesc').value = '';
       document.getElementById('newEventPin').value  = '';
+      document.getElementById('newMobileOnly').checked = false;
       document.getElementById('scheduleCheck').checked = false;
       document.getElementById('scheduleFields').classList.add('hidden');
       // Reset theme swatch to neon
@@ -2014,6 +2107,7 @@ function loadEvents() {
           ${locked ? '<div style="font-size:1.4rem;padding-top:4px;" title="Requests locked">🔒</div>' : ''}
         </div>
         ${event.description ? `<div class="event-desc">${escHtml(event.description)}</div>` : ''}
+        ${event.mobileOnly ? `<div class="mob-only-badge">📱 Mobile Only Mode</div>` : ''}
         <div class="event-pin-row">
           <span class="event-pin-label">🔐 Booth PIN:</span>
           ${event.pin
@@ -2067,6 +2161,15 @@ function loadEvents() {
               <input class="edit-input" id="edit-time-${event.id}" type="time" value="${event.scheduledAt ? new Date(event.scheduledAt).toTimeString().slice(0,5) : ''}">
             </div>
           </div>
+          <label class="edit-field-label">Display Mode</label>
+          <label class="mobile-only-toggle" style="margin-bottom:12px;">
+            <input type="checkbox" id="edit-mobile-${event.id}" ${event.mobileOnly ? 'checked' : ''}>
+            <div class="mot-track"><div class="mot-thumb"></div></div>
+            <div class="mot-info">
+              <span class="mot-title">📱 Mobile Only Mode</span>
+              <span class="mot-desc">Hides the form — shows QR and live list only.</span>
+            </div>
+          </label>
           <label class="edit-field-label">Booth PIN <span style="opacity:.5;font-size:.9em">(4 digits, optional)</span></label>
           <div style="display:flex;gap:8px;margin-bottom:10px;">
             <input class="edit-input" id="edit-pin-${event.id}" type="text" inputmode="numeric"
@@ -2218,6 +2321,7 @@ function saveEdit(eventId) {
   const updates = { name, theme };
   updates.description = desc || null;
   updates.pin         = pin  || null;
+  updates.mobileOnly  = document.getElementById('edit-mobile-' + eventId)?.checked || false;
   if (theme === 'custom') {
     updates.customColors = {
       bg:        document.getElementById('ecc-bg-'        + eventId)?.value || '#090b10',
