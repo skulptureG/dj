@@ -425,6 +425,55 @@
   .theme-badge.neon   { color: #c6ff00; border-color: rgba(198,255,0,0.3); background: rgba(198,255,0,0.08); }
   .theme-badge.midnight { color: #4fc3f7; border-color: rgba(79,195,247,0.3); background: rgba(79,195,247,0.08); }
   .theme-badge.light  { color: #6d28d9; border-color: rgba(109,40,217,0.3); background: rgba(109,40,217,0.08); }
+  .theme-badge.custom { color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.08); }
+
+  /* ─── CUSTOM COLOUR PICKER ─── */
+  .custom-color-panel {
+    display: none;
+    margin-top: 14px;
+    padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+  }
+
+  .custom-color-panel.open { display: block; }
+
+  .color-picker-grid {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .color-picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .color-picker-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .color-swatch-input {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    border: 2px solid var(--border-bright);
+    padding: 2px;
+    background: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .color-swatch-input:hover { border-color: var(--accent); }
 
   /* ─── EVENT PIN ROW ─── */
   .event-pin-row {
@@ -1605,6 +1654,24 @@
         </div>
         <div class="swatch-name">Light</div>
       </label>
+      <label class="theme-swatch" onclick="selectTheme('custom', this)">
+        <input type="radio" name="createTheme" value="custom">
+        <div class="selected-tick">✓</div>
+        <div class="swatch-preview" style="background:linear-gradient(135deg,#1a0533,#2d1b69);">
+          <span style="font-size:1.1rem;">🎨</span>
+        </div>
+        <div class="swatch-name">Custom</div>
+      </label>
+    </div>
+
+    <div id="createCustomColors" class="custom-color-panel">
+      <div class="color-picker-grid">
+        <label class="color-picker-item"><span class="color-picker-label">Background</span><input type="color" id="cc-bg"        value="#090b10" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Surface</span><input type="color"   id="cc-surface"   value="#111420" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Accent</span><input type="color"    id="cc-accent"    value="#c6ff00" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Secondary</span><input type="color" id="cc-secondary" value="#ff3e7f" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Text</span><input type="color"      id="cc-text"      value="#f0f0f8" class="color-swatch-input"></label>
+      </div>
     </div>
   </div>
 
@@ -1775,6 +1842,9 @@ function selectTheme(value, clickedLabel) {
   document.querySelectorAll('#createThemeSwatches .theme-swatch').forEach(s => s.classList.remove('selected'));
   clickedLabel.classList.add('selected');
   clickedLabel.querySelector('input').checked = true;
+  // Show colour pickers only for custom theme
+  const panel = document.getElementById('createCustomColors');
+  if (panel) panel.classList.toggle('open', value === 'custom');
 }
 
 function selectEditTheme(eventId, value, clickedLabel) {
@@ -1782,6 +1852,8 @@ function selectEditTheme(eventId, value, clickedLabel) {
   container?.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('selected'));
   clickedLabel.classList.add('selected');
   clickedLabel.querySelector('input').checked = true;
+  const panel = document.getElementById('edit-custom-colors-' + eventId);
+  if (panel) panel.classList.toggle('open', value === 'custom');
 }
 
 function getSelectedTheme(radioName) {
@@ -1827,6 +1899,15 @@ function createNewEvent() {
   const payload = { name, theme };
   if (desc) payload.description = desc;
   if (pin)  payload.pin = pin;
+  if (theme === 'custom') {
+    payload.customColors = {
+      bg:        document.getElementById('cc-bg')?.value        || '#090b10',
+      surface:   document.getElementById('cc-surface')?.value   || '#111420',
+      accent:    document.getElementById('cc-accent')?.value    || '#c6ff00',
+      secondary: document.getElementById('cc-secondary')?.value || '#ff3e7f',
+      text:      document.getElementById('cc-text')?.value      || '#f0f0f8',
+    };
+  }
   if (scheduledAt) payload.scheduledAt = scheduledAt;
 
   db.ref('events/' + eventId).update(payload)
@@ -2015,6 +2096,21 @@ function loadEvents() {
               <div class="swatch-preview" style="background:#f1f5f9;border:1px solid rgba(0,0,0,0.08);"><div class="swatch-dot" style="background:#6d28d9;"></div><div class="swatch-dot" style="background:#db2777;"></div></div>
               <div class="swatch-name">Light</div>
             </label>
+            <label class="theme-swatch ${event.theme === 'custom' ? 'selected' : ''}" onclick="selectEditTheme('${event.id}', 'custom', this)">
+              <input type="radio" name="editTheme-${event.id}" value="custom" ${event.theme === 'custom' ? 'checked' : ''}>
+              <div class="selected-tick">✓</div>
+              <div class="swatch-preview" style="background:linear-gradient(135deg,#1a0533,#2d1b69);"><span style="font-size:1.1rem;">🎨</span></div>
+              <div class="swatch-name">Custom</div>
+            </label>
+          </div>
+          <div id="edit-custom-colors-${event.id}" class="custom-color-panel ${event.theme === 'custom' ? 'open' : ''}">
+            <div class="color-picker-grid">
+              <label class="color-picker-item"><span class="color-picker-label">Background</span><input type="color" id="ecc-bg-${event.id}"        value="${event.customColors?.bg        || '#090b10'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Surface</span><input type="color"   id="ecc-surface-${event.id}"   value="${event.customColors?.surface   || '#111420'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Accent</span><input type="color"    id="ecc-accent-${event.id}"    value="${event.customColors?.accent    || '#c6ff00'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Secondary</span><input type="color" id="ecc-secondary-${event.id}" value="${event.customColors?.secondary || '#ff3e7f'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Text</span><input type="color"      id="ecc-text-${event.id}"      value="${event.customColors?.text      || '#f0f0f8'}" class="color-swatch-input"></label>
+            </div>
           </div>
           <div class="edit-actions">
             <button class="btn-save" onclick="saveEdit('${event.id}')">Save Changes</button>
@@ -2122,6 +2218,17 @@ function saveEdit(eventId) {
   const updates = { name, theme };
   updates.description = desc || null;
   updates.pin         = pin  || null;
+  if (theme === 'custom') {
+    updates.customColors = {
+      bg:        document.getElementById('ecc-bg-'        + eventId)?.value || '#090b10',
+      surface:   document.getElementById('ecc-surface-'   + eventId)?.value || '#111420',
+      accent:    document.getElementById('ecc-accent-'    + eventId)?.value || '#c6ff00',
+      secondary: document.getElementById('ecc-secondary-' + eventId)?.value || '#ff3e7f',
+      text:      document.getElementById('ecc-text-'      + eventId)?.value || '#f0f0f8',
+    };
+  } else {
+    updates.customColors = null;
+  }
 
   if (dateVal && timeVal) {
     const ts = new Date(dateVal + 'T' + timeVal).getTime();
