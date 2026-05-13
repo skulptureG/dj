@@ -34,6 +34,176 @@
     --radius-sm: 8px;
   }
 
+  /* ══ MOBILE ONLY DISPLAY VIEW ══ */
+  #mobileOnlyView {
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    z-index: 1;
+  }
+
+  .mob-display-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 32px 60px;
+  }
+
+  .mob-display-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+    margin-bottom: 36px;
+  }
+
+  .mob-only-live {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border-bright);
+    padding: 5px 10px;
+    border-radius: 100px;
+  }
+
+  .mob-display-event-name {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 8vw, 6rem);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .mob-display-desc {
+    font-size: 1.1rem;
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+    margin-bottom: 36px;
+    line-height: 1.5;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .mob-display-qr-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 48px;
+  }
+
+  .mob-display-qr-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    line-height: 0;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin-bottom: 18px;
+  }
+
+  .mob-display-qr-box:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 40px var(--accent-glow);
+  }
+
+  .mob-display-qr-cta {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .mob-display-qr-url {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    word-break: break-all;
+    max-width: 400px;
+    text-align: center;
+  }
+
+  .mob-display-queue-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .mob-display-queue {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mob-queue-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    animation: slideIn 0.3s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .mob-queue-song {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  .mob-queue-meta {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .mob-queue-votes {
+    flex-shrink: 0;
+    background: var(--pink);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    letter-spacing: 0.04em;
+    padding: 4px 12px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+
+  .mob-queue-empty {
+    text-align: center;
+    padding: 60px 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0.5;
+  }
+
   /* ══ MIDNIGHT THEME (navy / electric blue) ══ */
   html[data-theme="midnight"] {
     --bg: #07090f;
@@ -2435,6 +2605,30 @@
   </div>
 </div>
 
+<!-- ═══ MOBILE ONLY DISPLAY VIEW ═══ -->
+<div id="mobileOnlyView" class="hidden">
+  <div class="mob-display-inner">
+    <div class="mob-display-header">
+      <div class="logo">DJ<span>:</span>Request</div>
+      <div class="badge mob-only-live"><span class="live-dot"></span>Live Requests</div>
+    </div>
+
+    <div class="mob-display-event-name" id="mobEventName"></div>
+    <div class="mob-display-desc" id="mobEventDesc"></div>
+
+    <div class="mob-display-qr-wrap">
+      <div class="mob-display-qr-box" id="mobQrCode"></div>
+      <div class="mob-display-qr-cta">Scan to request a song</div>
+      <div class="mob-display-qr-url" id="mobQrUrl"></div>
+    </div>
+
+    <div class="mob-display-queue-label">Current Requests</div>
+    <div class="mob-display-queue" id="mobQueue">
+      <div class="mob-queue-empty">No requests yet — be the first to scan!</div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ ADMIN PIN GATE (from DJ booth) ═══ -->
 <div id="adminPinGate" class="hidden" style="
   position:fixed;inset:0;background:var(--bg);z-index:900;
@@ -2709,8 +2903,6 @@ if (mode === 'admin') {
     db.ref('events/' + eventParam).get().then(snap => {
       const data = snap.val();
       if (data && data.name) {
-        document.getElementById('eventNameTitle').textContent = data.name;
-        document.getElementById('eventNameDisplay').style.display = 'block';
         document.title = data.name + ' — Song Requests';
 
         // Apply theme
@@ -2727,32 +2919,71 @@ if (mode === 'admin') {
           if (c.text)      r.style.setProperty('--custom-text',      c.text);
         }
 
-        if (data.description) {
-          document.getElementById('eventDescDisplay').textContent = data.description;
-        }
+        if (data.mobileOnly) {
+          // ── MOBILE ONLY DISPLAY MODE ──
+          requestView.classList.add('hidden');
+          const mobView = document.getElementById('mobileOnlyView');
+          mobView.classList.remove('hidden');
 
-        const guestUrl = window.location.href;
-        new QRCode(document.getElementById('guestQr'), {
-          text: guestUrl,
-          width: 120,
-          height: 120,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M
-        });
+          document.getElementById('mobEventName').textContent = data.name;
+          if (data.description) document.getElementById('mobEventDesc').textContent = data.description;
 
-        // Make guest QR clickable to zoom — same modal as DJ booth
-        setTimeout(() => {
-          const guestQrEl = document.getElementById('guestQr');
-          if (guestQrEl) {
-            guestQrEl.style.cursor = 'pointer';
-            guestQrEl.onclick = () => openQrZoom(guestUrl, data.name || '');
+          const guestUrl = window.location.href;
+          document.getElementById('mobQrUrl').textContent = guestUrl;
+
+          new QRCode(document.getElementById('mobQrCode'), {
+            text: guestUrl,
+            width: 280,
+            height: 280,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+
+          // Clickable zoom on display QR
+          setTimeout(() => {
+            const qrEl = document.getElementById('mobQrCode');
+            if (qrEl) qrEl.onclick = () => openQrZoom(guestUrl, data.name || '');
+          }, 400);
+
+          // Live request feed
+          db.ref('events/' + eventParam + '/requests').on('value', snap => {
+            const requests = snap.val()
+              ? Object.values(snap.val()).sort((a, b) => b.time - a.time)
+              : [];
+            renderMobQueue(requests);
+          });
+
+        } else {
+          // ── NORMAL REQUEST MODE ──
+          requestView.classList.remove('hidden');
+          document.getElementById('eventNameTitle').textContent = data.name;
+          document.getElementById('eventNameDisplay').style.display = 'block';
+
+          if (data.description) {
+            document.getElementById('eventDescDisplay').textContent = data.description;
           }
-        }, 400);
 
-        // Scheduled event countdown
-        if (data.scheduledAt && data.scheduledAt > Date.now()) {
-          startCountdown(data.scheduledAt);
+          new QRCode(document.getElementById('guestQr'), {
+            text: window.location.href,
+            width: 120,
+            height: 120,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+
+          setTimeout(() => {
+            const guestQrEl = document.getElementById('guestQr');
+            if (guestQrEl) {
+              guestQrEl.style.cursor = 'pointer';
+              guestQrEl.onclick = () => openQrZoom(window.location.href, data.name || '');
+            }
+          }, 400);
+
+          if (data.scheduledAt && data.scheduledAt > Date.now()) {
+            startCountdown(data.scheduledAt);
+          }
         }
       }
     }).catch(() => {});
@@ -3431,6 +3662,30 @@ function toggleSort() {
   btn.textContent   = sortNewestFirst ? '↓ Newest First' : '↑ Oldest First';
   btn.classList.toggle('active', !sortNewestFirst);
   renderDJ();
+}
+
+// ─── MOBILE ONLY DISPLAY — render live queue
+function renderMobQueue(requests) {
+  const queue = document.getElementById('mobQueue');
+  if (!queue) return;
+
+  if (!requests || requests.length === 0) {
+    queue.innerHTML = '<div class="mob-queue-empty">No requests yet — be the first to scan!</div>';
+    return;
+  }
+
+  queue.innerHTML = '';
+  requests.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'mob-queue-card';
+    card.innerHTML = `
+      <div>
+        <div class="mob-queue-song">${escapeHtml(r.song)}</div>
+        <div class="mob-queue-meta">${escapeHtml(r.name)}${r.genre ? ' · ' + escapeHtml(r.genre) : ''}</div>
+      </div>
+      ${r.votes && r.votes > 1 ? `<div class="mob-queue-votes">♥ ${r.votes}</div>` : ''}`;
+    queue.appendChild(card);
+  });
 }
 
 // ─── SEND EMOJI (guest)
