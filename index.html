@@ -125,10 +125,25 @@
   html[data-theme="light"] .dj-body { --border: rgba(0,0,0,0.08); }
   html[data-theme="light"] .lockedOverlay { background: rgba(241,245,249,0.96); }
 
+  /* ══ CUSTOM THEME (colours set as CSS props via JS) ══ */
+  html[data-theme="custom"] {
+    --bg:            var(--custom-bg,        #090b10);
+    --surface:       var(--custom-surface,   #111420);
+    --surface2:      var(--custom-surface2,  #181c2a);
+    --accent:        var(--custom-accent,    #c6ff00);
+    --accent-dim:    color-mix(in srgb, var(--custom-accent,    #c6ff00) 15%, transparent);
+    --accent-glow:   color-mix(in srgb, var(--custom-accent,    #c6ff00) 40%, transparent);
+    --pink:          var(--custom-secondary, #ff3e7f);
+    --pink-dim:      color-mix(in srgb, var(--custom-secondary, #ff3e7f) 15%, transparent);
+    --text:          var(--custom-text,      #f0f0f8);
+    --muted:         color-mix(in srgb, var(--custom-text, #f0f0f8) 45%, transparent);
+    --border:        color-mix(in srgb, var(--custom-text, #f0f0f8) 7%,  transparent);
+    --border-bright: color-mix(in srgb, var(--custom-text, #f0f0f8) 14%, transparent);
+  }
+
   html, body { height: 100%; }
 
-  body {
-    font-family: var(--font-body);
+  body {    font-family: var(--font-body);
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -2070,78 +2085,180 @@
 
   /* ════════════════════════════════════════════════
      RESPONSIVE — LARGE / 16:9  (≥ 1100px, non-touch)
+     Goal: everything on ONE screen, no scrolling
   ════════════════════════════════════════════════ */
   @media (min-width: 1100px) and (hover: hover) {
-    .panel { max-width: 1600px; padding: 0 48px 60px; }
+    html, body { height: 100%; overflow: hidden; }
 
-    /* REQUEST PAGE: 2-column */
-    #requestView { max-width: 1600px; margin: 0 auto; }
+    .panel { max-width: 100%; padding: 0 40px; }
 
+    /* ── REQUEST PAGE ── */
+    #requestView {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+      padding: 0 40px;
+    }
+
+    /* Header row */
+    #requestView .header { margin-bottom: 10px; flex-shrink: 0; }
+
+    /* Event name — compact on desktop */
+    .event-name-display { margin-bottom: 10px; margin-top: 0; }
+    .event-name-display .event-title { font-size: clamp(1.6rem, 3vw, 2.4rem); }
+    .event-name-display .event-label { margin-bottom: 2px; }
+    #guestQr { margin-top: 8px !important; }
+    #guestQr canvas, #guestQr img { width: 80px !important; height: 80px !important; }
+
+    /* Countdown compact */
+    #countdownSection { padding: 0 0 12px; }
+    .cd-num { font-size: 2rem; }
+    .cd-unit { padding: 10px 14px; min-width: 70px; }
+    .cd-label-top { margin-bottom: 10px; }
+
+    /* Two-column body: left=form, right=keyboard+emoji */
     #formWrap {
       display: grid;
-      grid-template-columns: 1fr 440px;
-      column-gap: 40px;
-      align-items: start;
+      grid-template-columns: 1fr 400px;
+      grid-template-rows: auto;
+      column-gap: 32px;
+      align-content: start;
+      overflow: hidden;
+      min-height: 0;
     }
 
+    /* All form children go left by default */
     #formWrap > * { grid-column: 1; }
 
+    /* Input fields — compact */
+    .input-group { margin-bottom: 8px; }
+    .input-group label { margin-bottom: 4px; }
+    input[type="text"] { font-size: 1rem; padding: 12px 16px 12px 44px; }
+    .input-icon { font-size: 1rem; left: 14px; }
+    textarea.text-input { font-size: 1rem; height: 60px; padding: 10px 16px 10px 44px; }
+
+    /* Submit + view queue buttons compact */
+    .btn-submit { font-size: 1.3rem; padding: 14px; margin-bottom: 0; }
+    .btn-view-queue { padding: 12px; font-size: 1.2rem; margin-top: 8px; margin-bottom: 0; }
+    #duplicateNotice { margin-bottom: 8px; }
+
+    /* Keyboard: right column, spans all rows */
     #formWrap > .keyboard-wrap {
       grid-column: 2;
-      grid-row: 1 / 8;
-      position: sticky;
-      top: 24px;
+      grid-row: 1 / 10;
+      position: relative;
+      top: 0;
     }
 
-    #formWrap > .emoji-section { grid-column: 1 / -1; }
+    /* Keyboard compact */
+    .keyboard { gap: 5px; }
+    .key { font-size: 0.85rem; padding: 11px 0; border-radius: 8px; }
+    .keyboard-wrap { padding: 10px; }
+    .kb-toggle { padding: 7px; font-size: 0.62rem; }
+    .kb-field-toggle { gap: 5px; margin-bottom: 10px; }
+    .caps-indicator { margin-bottom: 3px; height: 12px; font-size: 0.58rem; }
 
-    /* Tighter inputs on desktop */
-    input[type="text"] { font-size: 1.1rem; padding: 16px 18px 16px 48px; }
-    textarea.text-input { font-size: 1.1rem; }
-    .key { font-size: 0.95rem; padding: 14px 0; }
-    .keyboard { gap: 6px; }
-    .keyboard-wrap { padding: 14px; }
+    /* Emoji: right column, below keyboard */
+    #formWrap > .emoji-section {
+      grid-column: 2;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+      padding-top: 10px;
+    }
 
-    /* DJ BOOTH: sidebar */
-    #djView { max-width: 1600px; margin: 0 auto; }
-    #djView .header { margin-bottom: 24px; }
+    .emoji-section .emoji-label { margin-bottom: 8px; }
+    .emoji-btn { width: 46px; height: 46px; font-size: 1.5rem; border-radius: 10px; }
+    .emoji-grid { gap: 6px; }
+    .emoji-cooldown { margin-top: 6px; font-size: 0.58rem; }
+
+    /* ── DJ BOOTH ── */
+    #djView {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      overflow: hidden;
+      padding: 0 40px;
+    }
+
+    #djView .header { margin-bottom: 12px; }
+
+    #djCountdownBanner { margin-bottom: 12px; }
 
     .dj-body {
       display: grid;
-      grid-template-columns: 360px 1fr;
-      column-gap: 32px;
+      grid-template-columns: 320px 1fr;
+      column-gap: 28px;
       align-items: start;
+      overflow: hidden;
+      min-height: 0;
     }
 
-    .dj-sidebar { position: sticky; top: 24px; }
-    .qr-panel { flex-direction: column; margin-bottom: 20px; }
-    .qr-canvas-wrap { align-self: center; }
-    .dj-stats { grid-template-columns: 1fr; margin-bottom: 0; }
-    .dj-main { min-height: calc(100vh - 160px); }
+    .dj-sidebar {
+      position: relative;
+      top: 0;
+      overflow-y: auto;
+      max-height: calc(100vh - 140px);
+    }
 
-    /* Bigger cards */
-    .song-name { font-size: 2.2rem; }
-    .request { padding: 24px 28px; }
-    .event-title { font-size: 4.5rem; }
-    .cd-num { font-size: 4rem; }
-    .cd-unit { padding: 24px 28px; min-width: 110px; }
+    .qr-panel { flex-direction: column; margin-bottom: 14px; padding: 16px; }
+    .qr-canvas-wrap { align-self: center; }
+    .qr-canvas-wrap canvas, .qr-canvas-wrap img { width: 120px !important; height: 120px !important; }
+    .qr-event-name { font-size: 1.4rem; }
+    .qr-code-badge { font-size: 0.6rem; padding: 4px 8px; margin-bottom: 8px; }
+    .qr-url { font-size: 0.58rem; margin-bottom: 8px; }
+    .btn-new-event { padding: 6px 10px; font-size: 0.58rem; }
+
+    .dj-stats { grid-template-columns: repeat(3, 1fr); margin-bottom: 14px; gap: 8px; }
+    .stat-card { padding: 12px 14px; }
+    .stat-card .val { font-size: 1.8rem; }
+    .stat-card .lbl { font-size: 0.55rem; }
+
+    .dj-main {
+      overflow-y: auto;
+      max-height: calc(100vh - 140px);
+      padding-right: 4px;
+    }
+
+    /* Scrollbar styling for dj-main */
+    .dj-main::-webkit-scrollbar { width: 4px; }
+    .dj-main::-webkit-scrollbar-track { background: transparent; }
+    .dj-main::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+    .dj-toolbar { margin-bottom: 14px; }
+    .song-name { font-size: 1.8rem; }
+    .request { padding: 16px 20px; margin-bottom: 10px; }
+    .req-meta { font-size: 0.85rem; }
+    .req-note { font-size: 0.85rem; padding: 7px 10px; }
+    .dj-actions { margin-top: 12px; gap: 8px; }
+    .btn-played, .btn-reject, .btn-copy { padding: 10px 14px; font-size: 0.68rem; }
+
+    .event-title { font-size: 3rem; }
+    .cd-num { font-size: 3rem; }
+    .cd-unit { padding: 18px 22px; min-width: 90px; }
   }
 
   /* ════════════════════════════════════════════════
      4K / 2K  (≥ 1800px)
   ════════════════════════════════════════════════ */
   @media (min-width: 1800px) {
-    .panel { padding: 0 80px 80px; }
-    .dj-body { grid-template-columns: 420px 1fr; column-gap: 48px; }
-    .logo { font-size: 3rem; }
-    .song-name { font-size: 2.6rem; }
-    .stat-card .val { font-size: 3.2rem; }
-    #formWrap { grid-template-columns: 1fr 520px; column-gap: 56px; }
-    .key { font-size: 1.1rem; padding: 16px 0; }
-    input[type="text"] { font-size: 1.25rem; padding: 20px 22px 20px 54px; }
-    textarea.text-input { font-size: 1.25rem; }
-    .request { padding: 28px 32px; }
-    .dj-stats { gap: 16px; }
+    .panel { padding: 0 80px; }
+
+    #requestView { padding: 0 80px; }
+    #djView { padding: 0 80px; }
+
+    #formWrap { grid-template-columns: 1fr 500px; column-gap: 48px; }
+    .key { font-size: 1rem; padding: 14px 0; }
+    input[type="text"] { font-size: 1.15rem; padding: 15px 20px 15px 50px; }
+    textarea.text-input { font-size: 1.15rem; }
+    .btn-submit { font-size: 1.5rem; padding: 18px; }
+    .emoji-btn { width: 54px; height: 54px; font-size: 1.8rem; }
+
+    .dj-body { grid-template-columns: 380px 1fr; column-gap: 40px; }
+    .song-name { font-size: 2.2rem; }
+    .request { padding: 20px 26px; }
+    .stat-card .val { font-size: 2.4rem; }
+    .qr-canvas-wrap canvas, .qr-canvas-wrap img { width: 160px !important; height: 160px !important; }
   }
 </style>
 </head>
@@ -2599,6 +2716,16 @@ if (mode === 'admin') {
         // Apply theme
         const theme = data.theme || 'neon';
         document.documentElement.setAttribute('data-theme', theme === 'neon' ? '' : theme);
+        if (theme === 'custom' && data.customColors) {
+          const r = document.documentElement;
+          const c = data.customColors;
+          if (c.bg)        r.style.setProperty('--custom-bg',        c.bg);
+          if (c.surface)   r.style.setProperty('--custom-surface',   c.surface);
+          if (c.surface2)  r.style.setProperty('--custom-surface2',  c.surface2);
+          if (c.accent)    r.style.setProperty('--custom-accent',    c.accent);
+          if (c.secondary) r.style.setProperty('--custom-secondary', c.secondary);
+          if (c.text)      r.style.setProperty('--custom-text',      c.text);
+        }
 
         if (data.description) {
           document.getElementById('eventDescDisplay').textContent = data.description;
@@ -3204,6 +3331,16 @@ function openDJBooth(eventId) {
     // Apply theme
     const theme = data.theme || 'neon';
     document.documentElement.setAttribute('data-theme', theme === 'neon' ? '' : theme);
+    if (theme === 'custom' && data.customColors) {
+      const r = document.documentElement;
+      const c = data.customColors;
+      if (c.bg)        r.style.setProperty('--custom-bg',        c.bg);
+      if (c.surface)   r.style.setProperty('--custom-surface',   c.surface);
+      if (c.surface2)  r.style.setProperty('--custom-surface2',  c.surface2);
+      if (c.accent)    r.style.setProperty('--custom-accent',    c.accent);
+      if (c.secondary) r.style.setProperty('--custom-secondary', c.secondary);
+      if (c.text)      r.style.setProperty('--custom-text',      c.text);
+    }
 
     document.getElementById('qrEventName').textContent = name;
     document.getElementById('qrCodeBadge').textContent = 'CODE: ' + eventId;
