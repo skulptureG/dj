@@ -2859,6 +2859,7 @@ function initRefs(eventId) {
 // ─── DOM REFS
 const mode         = new URLSearchParams(window.location.search).get('mode');
 const eventParam   = new URLSearchParams(window.location.search).get('event');
+const requestMode  = new URLSearchParams(window.location.search).get('request'); // '1' = show form
 const requestView  = document.getElementById('requestView');
 const djView       = document.getElementById('djView');
 const eventSetup   = document.getElementById('eventSetup');
@@ -2919,8 +2920,8 @@ if (mode === 'admin') {
           if (c.text)      r.style.setProperty('--custom-text',      c.text);
         }
 
-        if (data.mobileOnly) {
-          // ── MOBILE ONLY DISPLAY MODE ──
+        if (data.mobileOnly && requestMode !== '1') {
+          // ── DISPLAY SCREEN (put this on a monitor/tablet at the venue) ──
           requestView.classList.add('hidden');
           const mobView = document.getElementById('mobileOnlyView');
           mobView.classList.remove('hidden');
@@ -2928,11 +2929,16 @@ if (mode === 'admin') {
           document.getElementById('mobEventName').textContent = data.name;
           if (data.description) document.getElementById('mobEventDesc').textContent = data.description;
 
-          const guestUrl = window.location.href;
-          document.getElementById('mobQrUrl').textContent = guestUrl;
+          // QR encodes the REQUEST URL (not the display URL)
+          const displayUrl = window.location.href;
+          const requestUrl = displayUrl.includes('?')
+            ? displayUrl + '&request=1'
+            : displayUrl + '?request=1';
+
+          document.getElementById('mobQrUrl').textContent = requestUrl;
 
           new QRCode(document.getElementById('mobQrCode'), {
-            text: guestUrl,
+            text: requestUrl,
             width: 280,
             height: 280,
             colorDark: '#000000',
@@ -2940,13 +2946,13 @@ if (mode === 'admin') {
             correctLevel: QRCode.CorrectLevel.H
           });
 
-          // Clickable zoom on display QR
+          // Clickable zoom shows the request URL
           setTimeout(() => {
             const qrEl = document.getElementById('mobQrCode');
-            if (qrEl) qrEl.onclick = () => openQrZoom(guestUrl, data.name || '');
+            if (qrEl) qrEl.onclick = () => openQrZoom(requestUrl, data.name || '');
           }, 400);
 
-          // Live request feed
+          // Live request feed on display screen
           db.ref('events/' + eventParam + '/requests').on('value', snap => {
             const requests = snap.val()
               ? Object.values(snap.val()).sort((a, b) => b.time - a.time)
@@ -2955,13 +2961,22 @@ if (mode === 'admin') {
           });
 
         } else {
-          // ── NORMAL REQUEST MODE ──
+          // ── NORMAL REQUEST FORM (or Mobile Only + &request=1 from phone) ──
           requestView.classList.remove('hidden');
           document.getElementById('eventNameTitle').textContent = data.name;
           document.getElementById('eventNameDisplay').style.display = 'block';
 
           if (data.description) {
             document.getElementById('eventDescDisplay').textContent = data.description;
+          }
+
+          // If arrived via mobile only scan, show a subtle back hint
+          if (data.mobileOnly && requestMode === '1') {
+            const displayUrl = window.location.href.replace('&request=1', '');
+            const hint = document.createElement('div');
+            hint.style.cssText = 'text-align:center;font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:8px 0 4px;';
+            hint.textContent = '← Back to display screen after submitting';
+            document.getElementById('eventNameDisplay').appendChild(hint);
           }
 
           new QRCode(document.getElementById('guestQr'), {
@@ -4027,7 +4042,16 @@ function submitRequest() {
   document.getElementById('tyText').textContent = m.text;
   document.getElementById('tySub').textContent  = m.sub;
   thankYou.classList.add('show');
-  setTimeout(() => thankYou.classList.remove('show'), 3200);
+
+  // If in mobile only request mode, redirect back to display screen after thank you
+  if (requestMode === '1') {
+    setTimeout(() => {
+      thankYou.classList.remove('show');
+      window.location.href = window.location.href.replace('&request=1', '');
+    }, 2800);
+  } else {
+    setTimeout(() => thankYou.classList.remove('show'), 3200);
+  }
 }
 
 // ─── FIELD SWITCHING
