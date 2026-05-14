@@ -2139,9 +2139,15 @@ function loadEvents() {
           </div>
           <div class="url-row">
             <span class="url-label">🎧 Booth</span>
-            <span class="url-val" id="burl-${event.id}">${baseUrl}?mode=dj&event=${event.id}</span>
+            <span class="url-val">${baseUrl}?mode=dj&event=${event.id}</span>
             <button class="url-copy-btn" onclick="copyUrl('${baseUrl}?mode=dj&event=${event.id}', this)">Copy</button>
           </div>
+          ${event.mobileOnly ? `
+          <div class="url-row" style="border-color:rgba(79,195,247,0.25);">
+            <span class="url-label" style="color:#4fc3f7;">📺 Display</span>
+            <span class="url-val">${guestUrl}&display=1</span>
+            <button class="url-copy-btn" onclick="copyUrl('${guestUrl}&display=1', this)">Copy</button>
+          </div>` : ''}
         </div>
 
         <!-- INLINE EDIT PANEL -->
