@@ -145,6 +145,23 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    max-height: 40vh;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .mob-display-queue::-webkit-scrollbar { width: 4px; }
+  .mob-display-queue::-webkit-scrollbar-track { background: transparent; }
+  .mob-display-queue::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+  /* QR idle pulse */
+  .mob-display-qr-box.qr-pulse {
+    animation: qrPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes qrPulse {
+    0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); transform: scale(1); }
+    50%       { box-shadow: 0 0 40px 12px var(--accent-glow); transform: scale(1.02); }
   }
 
   .mob-queue-card {
@@ -2610,7 +2627,10 @@
   <div class="mob-display-inner">
     <div class="mob-display-header">
       <div class="logo">DJ<span>:</span>Request</div>
-      <div class="badge mob-only-live"><span class="live-dot"></span>Live Requests</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="badge mob-only-live"><span class="live-dot"></span>Live Requests</div>
+        <button onclick="toggleFullScreen()" style="background:transparent;border:1px solid var(--border-bright);border-radius:8px;color:var(--muted);font-family:var(--font-mono);font-size:0.6rem;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;cursor:pointer;" title="Full screen">⛶ Full Screen</button>
+      </div>
     </div>
 
     <div class="mob-display-event-name" id="mobEventName"></div>
@@ -2859,7 +2879,7 @@ function initRefs(eventId) {
 // ─── DOM REFS
 const mode         = new URLSearchParams(window.location.search).get('mode');
 const eventParam   = new URLSearchParams(window.location.search).get('event');
-const requestMode  = new URLSearchParams(window.location.search).get('request'); // '1' = show form
+const displayMode  = new URLSearchParams(window.location.search).get('display'); // '1' = display screen
 const requestView  = document.getElementById('requestView');
 const djView       = document.getElementById('djView');
 const eventSetup   = document.getElementById('eventSetup');
@@ -2920,8 +2940,8 @@ if (mode === 'admin') {
           if (c.text)      r.style.setProperty('--custom-text',      c.text);
         }
 
-        if (data.mobileOnly && requestMode !== '1') {
-          // ── DISPLAY SCREEN (put this on a monitor/tablet at the venue) ──
+        if (data.mobileOnly && displayMode === '1') {
+          // ── DISPLAY SCREEN (?event=CODE&display=1) — put this on a monitor/tablet ──
           requestView.classList.add('hidden');
           const mobView = document.getElementById('mobileOnlyView');
           mobView.classList.remove('hidden');
@@ -2929,16 +2949,14 @@ if (mode === 'admin') {
           document.getElementById('mobEventName').textContent = data.name;
           if (data.description) document.getElementById('mobEventDesc').textContent = data.description;
 
-          // QR encodes the REQUEST URL (not the display URL)
-          const displayUrl = window.location.href;
-          const requestUrl = displayUrl.includes('?')
-            ? displayUrl + '&request=1'
-            : displayUrl + '?request=1';
+          // QR encodes ?event=CODE — the clean guest form URL
+          const base = window.location.href.split('?')[0];
+          const formUrl = base + '?event=' + eventParam;
 
-          document.getElementById('mobQrUrl').textContent = requestUrl;
+          document.getElementById('mobQrUrl').textContent = formUrl;
 
           new QRCode(document.getElementById('mobQrCode'), {
-            text: requestUrl,
+            text: formUrl,
             width: 280,
             height: 280,
             colorDark: '#000000',
@@ -2946,22 +2964,26 @@ if (mode === 'admin') {
             correctLevel: QRCode.CorrectLevel.H
           });
 
-          // Clickable zoom shows the request URL
           setTimeout(() => {
             const qrEl = document.getElementById('mobQrCode');
-            if (qrEl) qrEl.onclick = () => openQrZoom(requestUrl, data.name || '');
+            if (qrEl) qrEl.onclick = () => openQrZoom(formUrl, data.name || '');
           }, 400);
 
-          // Live request feed on display screen
+          // Live request feed + auto-scroll + idle detection
           db.ref('events/' + eventParam + '/requests').on('value', snap => {
             const requests = snap.val()
               ? Object.values(snap.val()).sort((a, b) => b.time - a.time)
               : [];
             renderMobQueue(requests);
+            resetIdleTimer();
           });
 
+          startAutoScroll();
+          startIdleTimer();
+
         } else {
-          // ── NORMAL REQUEST FORM (or Mobile Only + &request=1 from phone) ──
+          // ── NORMAL REQUEST FORM (?event=CODE) ──
+          // Used by all guests (including mobile-only events after scanning QR)
           requestView.classList.remove('hidden');
           document.getElementById('eventNameTitle').textContent = data.name;
           document.getElementById('eventNameDisplay').style.display = 'block';
@@ -2970,31 +2992,28 @@ if (mode === 'admin') {
             document.getElementById('eventDescDisplay').textContent = data.description;
           }
 
-          // If arrived via mobile only scan, show a subtle back hint
-          if (data.mobileOnly && requestMode === '1') {
-            const displayUrl = window.location.href.replace('&request=1', '');
-            const hint = document.createElement('div');
-            hint.style.cssText = 'text-align:center;font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:8px 0 4px;';
-            hint.textContent = '← Back to display screen after submitting';
-            document.getElementById('eventNameDisplay').appendChild(hint);
-          }
-
-          new QRCode(document.getElementById('guestQr'), {
-            text: window.location.href,
-            width: 120,
-            height: 120,
-            colorDark: '#000000',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.M
-          });
-
-          setTimeout(() => {
+          // Hide QR on form if this is a mobile-only event — guest is already on mobile
+          if (data.mobileOnly) {
             const guestQrEl = document.getElementById('guestQr');
-            if (guestQrEl) {
-              guestQrEl.style.cursor = 'pointer';
-              guestQrEl.onclick = () => openQrZoom(window.location.href, data.name || '');
-            }
-          }, 400);
+            if (guestQrEl) guestQrEl.style.display = 'none';
+          } else {
+            new QRCode(document.getElementById('guestQr'), {
+              text: window.location.href,
+              width: 120,
+              height: 120,
+              colorDark: '#000000',
+              colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.M
+            });
+
+            setTimeout(() => {
+              const guestQrEl = document.getElementById('guestQr');
+              if (guestQrEl) {
+                guestQrEl.style.cursor = 'pointer';
+                guestQrEl.onclick = () => openQrZoom(window.location.href, data.name || '');
+              }
+            }, 400);
+          }
 
           if (data.scheduledAt && data.scheduledAt > Date.now()) {
             startCountdown(data.scheduledAt);
@@ -3703,6 +3722,67 @@ function renderMobQueue(requests) {
   });
 }
 
+// ─── AUTO-SCROLL (display screen)
+let autoScrollTimer = null;
+let autoScrollDir   = 1;
+
+function startAutoScroll() {
+  const queue = document.getElementById('mobQueue');
+  if (!queue) return;
+  stopAutoScroll();
+  autoScrollTimer = setInterval(() => {
+    const maxScroll = queue.scrollHeight - queue.clientHeight;
+    if (maxScroll <= 0) return;
+    queue.scrollTop += autoScrollDir * 1.2;
+    if (queue.scrollTop >= maxScroll - 2)  autoScrollDir = -1;
+    if (queue.scrollTop <= 0)              autoScrollDir =  1;
+  }, 40);
+}
+
+function stopAutoScroll() {
+  if (autoScrollTimer) { clearInterval(autoScrollTimer); autoScrollTimer = null; }
+}
+
+// ─── IDLE DETECTION (display screen) — pulse QR after 30s no new request
+let idleTimer   = null;
+let qrPulsing   = false;
+
+function startIdleTimer() {
+  resetIdleTimer();
+}
+
+function resetIdleTimer() {
+  clearIdleTimer();
+  stopQrPulse();
+  idleTimer = setTimeout(() => { startQrPulse(); }, 30000);
+}
+
+function clearIdleTimer() {
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+}
+
+function startQrPulse() {
+  if (qrPulsing) return;
+  qrPulsing = true;
+  const box = document.getElementById('mobQrCode');
+  if (box) box.classList.add('qr-pulse');
+}
+
+function stopQrPulse() {
+  qrPulsing = false;
+  const box = document.getElementById('mobQrCode');
+  if (box) box.classList.remove('qr-pulse');
+}
+
+// Full-screen toggle
+function toggleFullScreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+
 // ─── SEND EMOJI (guest)
 let emojiCooldownActive = false;
 
@@ -4042,16 +4122,7 @@ function submitRequest() {
   document.getElementById('tyText').textContent = m.text;
   document.getElementById('tySub').textContent  = m.sub;
   thankYou.classList.add('show');
-
-  // If in mobile only request mode, redirect back to display screen after thank you
-  if (requestMode === '1') {
-    setTimeout(() => {
-      thankYou.classList.remove('show');
-      window.location.href = window.location.href.replace('&request=1', '');
-    }, 2800);
-  } else {
-    setTimeout(() => thankYou.classList.remove('show'), 3200);
-  }
+  setTimeout(() => thankYou.classList.remove('show'), 3200);
 }
 
 // ─── FIELD SWITCHING
