@@ -1049,6 +1049,56 @@
     box-shadow: 0 0 20px var(--accent-glow);
   }
 
+  /* ─── SEARCH LINK BUTTONS (Beatport / Spotify) ─── */
+  .btn-search-link {
+    flex: 0 0 auto;
+    padding: 13px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-bright);
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-search-link.beatport:hover {
+    border-color: #01ff95;
+    color: #01ff95;
+    background: rgba(1,255,149,0.08);
+  }
+
+  .btn-search-link.spotify:hover {
+    border-color: #1db954;
+    color: #1db954;
+    background: rgba(29,185,84,0.08);
+  }
+
+  /* ─── M3U EXPORT BUTTON ─── */
+  .btn-m3u {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid rgba(126,184,255,0.3);
+    background: rgba(126,184,255,0.06);
+    color: #7eb8ff;
+  }
+
+  .btn-m3u:hover { background: rgba(126,184,255,0.15); border-color: #7eb8ff; }
+
   /* ─── LOCK BUTTON ─── */
   .btn-lock {
     font-family: var(--font-mono);
@@ -2778,6 +2828,7 @@
         <div class="section-label">Request queue</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn-sort" id="sortBtn" onclick="toggleSort()">↓ Oldest First</button>
+          <button class="btn-m3u" onclick="exportM3U()">↓ M3U Playlist</button>
           <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
           <button class="btn-lock" id="lockBtn" onclick="toggleLock()">⛔ Lock Requests</button>
           <button class="btn-clear" onclick="clearAll()">Clear All</button>
@@ -4222,6 +4273,9 @@ function renderDJ() {
     div.className   = 'request';
     div.dataset.key = r.key;
 
+    const bpUrl  = 'https://www.beatport.com/search?q=' + encodeURIComponent(r.song);
+    const spUrl  = 'https://open.spotify.com/search/' + encodeURIComponent(r.song);
+
     div.innerHTML = `
       <div class="request-num">${String(i + 1).padStart(2, '0')}</div>
       <div class="song-name">${escapeHtml(r.song)}</div>
@@ -4237,6 +4291,8 @@ function renderDJ() {
         <button class="btn-played" onclick="markPlayed('${r.key}')">✓ Played</button>
         <button class="btn-reject" onclick="markRejected('${r.key}')">✕ Reject</button>
         <button class="btn-copy" data-song="${escapeHtml(r.song)}" onclick="copyRequest(this)">Copy</button>
+        <a class="btn-search-link beatport" href="${bpUrl}" target="_blank" title="Search on Beatport">🎛 BP</a>
+        <a class="btn-search-link spotify" href="${spUrl}" target="_blank" title="Search on Spotify">🎵 SP</a>
       </div>`;
     requestList.appendChild(div);
   });
@@ -4423,7 +4479,39 @@ function exportCSV() {
   });
 }
 
-// ─── LOCK
+// ─── EXPORT M3U PLAYLIST (played songs → Traktor / DJ software)
+function exportM3U() {
+  historyRef.get().then(snap => {
+    const history = snap.val() ? Object.values(snap.val()) : [];
+    const played  = history
+      .filter(r => r.status === 'Played')
+      .sort((a, b) => (a.resolvedAt || 0) - (b.resolvedAt || 0));
+
+    if (played.length === 0) {
+      alert('No played tracks yet — mark songs as Played to build the playlist.');
+      return;
+    }
+
+    const lines = ['#EXTM3U', ''];
+    played.forEach(r => {
+      const artist = ''; // we don't store artist separately, song field may contain both
+      const title  = r.song;
+      lines.push(`#EXTINF:-1,${title}`);
+      lines.push(title); // no file path — Traktor shows as title reference
+      lines.push('');
+    });
+
+    const eventName = document.getElementById('qrEventName')?.textContent || 'dj-set';
+    const date      = new Date().toISOString().slice(0, 10);
+    const blob      = new Blob([lines.join('\n')], { type: 'audio/x-mpegurl' });
+    const url       = URL.createObjectURL(blob);
+    const a         = document.createElement('a');
+    a.href          = url;
+    a.download      = `${eventName.replace(/[^a-z0-9]/gi, '-')}-${date}.m3u`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
 function toggleLock() {
   lockedRef.get().then(snap => lockedRef.set(snap.val() === true ? false : true));
 }
