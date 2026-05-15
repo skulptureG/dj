@@ -1914,6 +1914,14 @@ const db = firebase.database();
 const indexUrl = window.location.origin + window.location.pathname.replace(/\/admin\.html$/, '/index.html');
 document.getElementById('boothLink').href = indexUrl + '?mode=dj';
 
+// ─── AUTO-REFRESH: listen for any changes to events node
+// Debounced so rapid Firebase writes don't cause multiple reloads
+let eventsRefreshTimer = null;
+db.ref('events').on('value', () => {
+  clearTimeout(eventsRefreshTimer);
+  eventsRefreshTimer = setTimeout(loadEvents, 300);
+});
+
 // ─── CONNECTION DOT
 db.ref('.info/connected').on('value', snap => {
   const dot = document.getElementById('connDot');
@@ -2014,8 +2022,10 @@ function createNewEvent() {
       document.querySelectorAll('#createThemeSwatches .theme-swatch').forEach(s => s.classList.remove('selected'));
       document.querySelector('#createThemeSwatches .theme-swatch').classList.add('selected');
       document.querySelector('input[name="createTheme"]').checked = true;
+      document.getElementById('createCustomColors')?.classList.remove('open');
       btn.textContent = 'Create →';
       btn.disabled = false;
+      loadEvents(); // refresh the list immediately
       openInBooth(eventId);
     })
     .catch(err => {
