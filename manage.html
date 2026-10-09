@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manage Your Event</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #090b10;
+    --surface: #111420;
+    --surface2: #181c2a;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.14);
+    --accent: #c6ff00;
+    --accent-dim: rgba(198,255,0,0.12);
+    --accent-glow: rgba(198,255,0,0.35);
+    --pink: #ff3e7f;
+    --pink-dim: rgba(255,62,127,0.12);
+    --text: #f0f0f8;
+    --muted: rgba(240,240,248,0.45);
+    --font-display: 'Bebas Neue', Impact, sans-serif;
+    --font-mono: 'DM Mono', 'Courier New', monospace;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .panel {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .logo span { color: var(--pink); }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border-bright);
+    padding: 5px 10px;
+    border-radius: 100px;
+  }
+
+  /* ─── PIN OVERLAY ─── */
+  #pinOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+  }
+
+  .pin-box {
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+  }
+
+  .pin-logo {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+
+  .pin-logo span { color: var(--pink); }
+
+  .pin-event-name {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 36px;
+    min-height: 18px;
+  }
+
+  .pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+
+  .pin-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.18);
+    background: transparent;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  }
+
+  .pin-dot.filled {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.15);
+  }
+
+  .pin-dot.error {
+    background: var(--pink);
+    border-color: var(--pink);
+    animation: pinShake 0.4s ease;
+  }
+
+  @keyframes pinShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  .pin-error {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pink);
+    height: 18px;
+    margin-bottom: 28px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .pin-error.show { opacity: 1; }
+
+  .pin-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .pin-key {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-bottom: 3px solid rgba(0,0,0,0.4);
+    border-radius: 14px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    padding: 22px 0;
+    cursor: pointer;
+    transition: background 0.08s, transform 0.06s, border-color 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .pin-key:hover { background: var(--surface2); border-color: var(--accent); }
+  .pin-key:active { transform: translateY(2px); border-bottom-width: 1px; background: var(--surface2); }
+  .pin-back { font-size: 1.4rem; color: var(--muted); }
+
+  /* ─── SECTION LABEL ─── */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ─── FORM FIELDS ─── */
+  .field-group {
+    margin-bottom: 18px;
+  }
+
+  .field-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .field-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    font-weight: 500;
+    padding: 16px 18px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+  }
+
+  .field-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .field-input::placeholder { color: var(--muted); font-weight: 400; }
+
+  textarea.field-input {
+    resize: none;
+    height: 100px;
+    line-height: 1.5;
+  }
+
+  /* PIN field */
+  .pin-field-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .pin-field-row .field-input {
+    max-width: 140px;
+    letter-spacing: 0.2em;
+    font-size: 1.3rem;
+    text-align: center;
+    font-family: var(--font-mono);
+  }
+
+  .btn-random-pin {
+    padding: 0 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-random-pin:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── THEME SWATCHES ─── */
+  .theme-swatches {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .theme-swatch {
+    flex: 1;
+    min-width: 80px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border-bright);
+    padding: 10px 8px 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+    text-align: center;
+  }
+
+  .theme-swatch:hover { transform: translateY(-2px); }
+  .theme-swatch.selected { border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); }
+  .theme-swatch input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+
+  .swatch-preview {
+    width: 100%;
+    height: 36px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .swatch-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .swatch-name {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .theme-swatch.selected .swatch-name { color: var(--accent); }
+
+  .selected-tick {
+    position: absolute;
+    top: 5px;
+    right: 7px;
+    font-size: 0.7rem;
+    color: var(--accent);
+    opacity: 0;
+  }
+
+  .theme-swatch.selected .selected-tick { opacity: 1; }
+
+  /* Custom colours */
+  .custom-color-panel {
+    display: none;
+    margin-top: 12px;
+    padding: 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+  }
+
+  .custom-color-panel.open { display: block; }
+
+  .color-picker-grid {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .color-picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+  }
+
+  .color-picker-label {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .color-swatch-input {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 2px solid var(--border-bright);
+    padding: 2px;
+    background: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .color-swatch-input:hover { border-color: var(--accent); }
+
+  /* ─── SAVE BUTTON ─── */
+  .btn-save {
+    width: 100%;
+    padding: 20px;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    box-shadow: 0 0 28px var(--accent-glow);
+    transition: box-shadow 0.2s, transform 0.1s;
+    margin-top: 8px;
+  }
+
+  .btn-save:hover { box-shadow: 0 0 44px rgba(198,255,0,0.55); transform: translateY(-1px); }
+  .btn-save:active { transform: scale(0.98); }
+  .btn-save:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .save-status {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-top: 12px;
+    height: 16px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .save-status.show { opacity: 1; }
+
+  /* ─── QR / SHARE PANEL ─── */
+  .share-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 32px;
+  }
+
+  .share-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .share-row:last-child { margin-bottom: 0; }
+
+  .share-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex-shrink: 0;
+    width: 52px;
+  }
+
+  .share-url {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text);
+    word-break: break-all;
+    min-width: 0;
+  }
+
+  .btn-url-copy {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-bright);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-url-copy:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-url-copy.copied { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  .qr-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .qr-thumb {
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    line-height: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  .qr-thumb:hover { transform: scale(1.06); }
+  .qr-thumb canvas, .qr-thumb img { display: block; }
+
+  .qr-hint {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    line-height: 1.6;
+    padding-top: 4px;
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 28px 0;
+  }
+
+  /* ─── NO EVENT ─── */
+  .no-event {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* ─── ZOOM MODAL (reused from main) ─── */
+  #qrZoomModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,11,16,0.94);
+    backdrop-filter: blur(10px);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+  }
+
+  #qrZoomModal.open { display: flex; }
+
+  .qr-zoom-box {
+    position: relative;
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px 28px 22px;
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+    animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.7); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .qr-zoom-timer { position: absolute; top: 14px; left: 18px; font-family: monospace; font-size: 0.62rem; color: #aaa; }
+  .qr-zoom-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; border: none; background: #eee; color: #333; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
+  .qr-zoom-close:hover { background: #ddd; }
+  .qr-zoom-canvas { line-height: 0; margin: 8px 0 14px; }
+  .qr-zoom-canvas canvas, .qr-zoom-canvas img { display: block; margin: 0 auto; }
+  .qr-zoom-name { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 1.4rem; color: #0a0a0f; margin-bottom: 4px; }
+  .qr-zoom-url { font-family: monospace; font-size: 0.6rem; color: #888; word-break: break-all; }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    input[type="text"], input[type="date"], input[type="time"], textarea { font-size: 1rem !important; }
+    .panel { padding: 0 16px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PIN OVERLAY -->
+<div id="pinOverlay">
+  <div class="pin-box">
+    <div class="pin-logo">DJ<span>:</span>Manage</div>
+    <div class="pin-event-name" id="pinEventLabel">Loading event…</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-error" id="pinError">Incorrect PIN — try again</div>
+    <div class="pin-grid">
+      <button class="pin-key" onclick="pinPress('1')">1</button>
+      <button class="pin-key" onclick="pinPress('2')">2</button>
+      <button class="pin-key" onclick="pinPress('3')">3</button>
+      <button class="pin-key" onclick="pinPress('4')">4</button>
+      <button class="pin-key" onclick="pinPress('5')">5</button>
+      <button class="pin-key" onclick="pinPress('6')">6</button>
+      <button class="pin-key" onclick="pinPress('7')">7</button>
+      <button class="pin-key" onclick="pinPress('8')">8</button>
+      <button class="pin-key" onclick="pinPress('9')">9</button>
+      <div></div>
+      <button class="pin-key" onclick="pinPress('0')">0</button>
+      <button class="pin-key pin-back" onclick="pinBack()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR ZOOM MODAL -->
+<div id="qrZoomModal">
+  <div class="qr-zoom-box">
+    <div class="qr-zoom-timer" id="qrZoomTimer"></div>
+    <button class="qr-zoom-close" onclick="closeQrZoom()">✕</button>
+    <div class="qr-zoom-canvas" id="qrZoomCanvas"></div>
+    <div class="qr-zoom-name" id="qrZoomName"></div>
+    <div class="qr-zoom-url" id="qrZoomUrl"></div>
+  </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div class="panel">
+  <div class="header">
+    <div class="logo">DJ<span>:</span>Manage</div>
+    <div class="badge" id="headerEventName">Your Event</div>
+  </div>
+
+  <div id="mainContent">
+    <div class="no-event">Loading…</div>
+  </div>
+</div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBOdgG_AE1Rng88eoH5bLue1eY9VMwAsOc",
+  authDomain:        "dj-request-gt.firebaseapp.com",
+  databaseURL:       "https://dj-request-gt-default-rtdb.firebaseio.com",
+  projectId:         "dj-request-gt",
+  storageBucket:     "dj-request-gt.firebasestorage.app",
+  messagingSenderId: "793216376391",
+  appId:             "1:793216376391:web:6cf9f0b7cfa0fbc5ec9b62"
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+
+// ─── URL PARAMS
+const eventId = new URLSearchParams(window.location.search).get('event');
+let correctPin = '';
+let eventData  = {};
+
+// ─── COMPUTE BASE URLS
+const base     = window.location.origin + window.location.pathname.replace(/\/manage\.html$/, '/');
+const guestUrl = base + 'index.html?event=' + eventId;
+const boothUrl = base + 'index.html?mode=dj&event=' + eventId;
+const manageUrl = window.location.href;
+
+// ─── PIN LOGIC
+let pinEntry = '';
+
+function pinPress(d) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += d;
+  updateDots();
+  if (pinEntry.length === 4) checkPin();
+}
+
+function pinBack() {
+  pinEntry = pinEntry.slice(0, -1);
+  updateDots();
+  document.getElementById('pinError').classList.remove('show');
+}
+
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('pd' + i);
+    dot.classList.toggle('filled', i < pinEntry.length);
+    dot.classList.remove('error');
+  }
+}
+
+function checkPin() {
+  if (pinEntry === correctPin) {
+    const overlay = document.getElementById('pinOverlay');
+    overlay.style.transition = 'opacity 0.3s';
+    overlay.style.opacity    = '0';
+    setTimeout(() => overlay.remove(), 320);
+    renderManagePanel();
+  } else {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('pd' + i);
+      dot.classList.remove('filled');
+      dot.classList.add('error');
+    }
+    document.getElementById('pinError').classList.add('show');
+    setTimeout(() => {
+      pinEntry = '';
+      updateDots();
+      document.getElementById('pinError').classList.remove('show');
+    }, 700);
+  }
+}
+
+// Physical keyboard
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('pinOverlay');
+  if (overlay) {
+    if (e.key >= '0' && e.key <= '9') pinPress(e.key);
+    if (e.key === 'Backspace') pinBack();
+  }
+});
+
+// ─── INIT: load event, validate it exists and has a PIN
+if (!eventId) {
+  document.getElementById('pinOverlay').remove();
+  document.getElementById('mainContent').innerHTML =
+    '<div class="no-event">No event code in URL.<br>Check your link and try again.</div>';
+} else {
+  db.ref('events/' + eventId).get().then(snap => {
+    const data = snap.val();
+    if (!data) {
+      document.getElementById('pinOverlay').remove();
+      document.getElementById('mainContent').innerHTML =
+        '<div class="no-event">Event not found.<br>This event may have been deleted by the admin.</div>';
+      return;
+    }
+    if (!data.pin) {
+      document.getElementById('pinOverlay').remove();
+      document.getElementById('mainContent').innerHTML =
+        '<div class="no-event">No PIN is set for this event.<br>Ask the admin to set one so you can manage it.</div>';
+      return;
+    }
+
+    eventData  = data;
+    correctPin = String(data.pin);
+    document.getElementById('pinEventLabel').textContent =
+      `"${data.name || 'Your Event'}" — Enter PIN`;
+    document.title = `Manage — ${data.name || 'Event'}`;
+
+  }).catch(() => {
+    document.getElementById('pinOverlay').remove();
+    document.getElementById('mainContent').innerHTML =
+      '<div class="no-event">Could not load event.<br>Check your internet connection.</div>';
+  });
+}
+
+// ─── RENDER MANAGE PANEL
+function renderManagePanel() {
+  document.getElementById('headerEventName').textContent = eventData.name || 'Your Event';
+  document.title = `Manage — ${eventData.name || 'Event'}`;
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+
+  // ── SHARE LINKS ──
+  const shareSection = document.createElement('div');
+  shareSection.innerHTML = `
+    <div class="section-label">Share Links</div>
+    <div class="share-panel">
+      <div class="share-row">
+        <span class="share-label">🎵 Guest</span>
+        <span class="share-url">${guestUrl}</span>
+        <button class="btn-url-copy" onclick="copyUrl('${guestUrl}', this)">Copy</button>
+      </div>
+      <div class="share-row">
+        <span class="share-label">🎧 Booth</span>
+        <span class="share-url">${boothUrl}</span>
+        <button class="btn-url-copy" onclick="copyUrl('${boothUrl}', this)">Copy</button>
+      </div>
+      <div class="share-row">
+        <span class="share-label">⚙ Manage</span>
+        <span class="share-url">${manageUrl}</span>
+        <button class="btn-url-copy" onclick="copyUrl('${manageUrl}', this)">Copy</button>
+      </div>
+      <div class="qr-row">
+        <div class="qr-thumb" id="guestQrThumb" title="Click to zoom"></div>
+        <div class="qr-hint">This QR takes guests directly to the request form.<br>Click the QR to zoom in for printing or sharing.</div>
+      </div>
+    </div>
+    <div class="divider"></div>`;
+  main.appendChild(shareSection);
+
+  // Generate QR
+  setTimeout(() => {
+    new QRCode(document.getElementById('guestQrThumb'), {
+      text: guestUrl, width: 80, height: 80,
+      colorDark: '#000', colorLight: '#fff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    document.getElementById('guestQrThumb').onclick =
+      () => openQrZoom(guestUrl, eventData.name || '');
+  }, 100);
+
+  // ── EDIT FORM ──
+  const editSection = document.createElement('div');
+  editSection.innerHTML = `
+    <div class="section-label">Edit Your Event</div>
+
+    <div class="field-group">
+      <label class="field-label">Event Name</label>
+      <input class="field-input" id="editName" type="text" maxlength="60"
+        value="${escHtml(eventData.name || '')}" placeholder="Your event name">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Description <span style="opacity:.5;font-size:.9em">(optional)</span></label>
+      <textarea class="field-input" id="editDesc" maxlength="500"
+        placeholder="e.g. No dubstep please! / Welcome everyone 🎉">${escHtml(eventData.description || '')}</textarea>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Your PIN <span style="opacity:.5;font-size:.9em">(4 digits)</span></label>
+      <div class="pin-field-row">
+        <input class="field-input" id="editPin" type="text" inputmode="numeric"
+          maxlength="4" value="${escHtml(eventData.pin || '')}"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)"
+          placeholder="1234">
+        <button class="btn-random-pin" onclick="document.getElementById('editPin').value=String(Math.floor(1000+Math.random()*9000))">🎲 Random</button>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:.08em;color:var(--muted);margin-top:6px;line-height:1.5;">
+        Changing your PIN takes effect immediately. Make a note of the new PIN before saving.
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-label">Theme</div>
+
+    <div class="theme-swatches" id="themeSwatches">
+      ${themeSwatchHtml('neon',     !eventData.theme || eventData.theme === 'neon')}
+      ${themeSwatchHtml('midnight', eventData.theme === 'midnight')}
+      ${themeSwatchHtml('light',    eventData.theme === 'light')}
+      ${themeSwatchHtml('custom',   eventData.theme === 'custom')}
+    </div>
+
+    <div id="customColors" class="custom-color-panel ${eventData.theme === 'custom' ? 'open' : ''}">
+      <div class="color-picker-grid">
+        <label class="color-picker-item"><span class="color-picker-label">Background</span>
+          <input type="color" id="cc-bg"        value="${eventData.customColors?.bg        || '#090b10'}" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Surface</span>
+          <input type="color" id="cc-surface"   value="${eventData.customColors?.surface   || '#111420'}" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Accent</span>
+          <input type="color" id="cc-accent"    value="${eventData.customColors?.accent    || '#c6ff00'}" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Secondary</span>
+          <input type="color" id="cc-secondary" value="${eventData.customColors?.secondary || '#ff3e7f'}" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Text</span>
+          <input type="color" id="cc-text"      value="${eventData.customColors?.text      || '#f0f0f8'}" class="color-swatch-input"></label>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;">
+      <button class="btn-save" id="saveBtn" onclick="saveChanges()">Save Changes →</button>
+      <div class="save-status" id="saveStatus">✓ Saved successfully</div>
+    </div>`;
+
+  main.appendChild(editSection);
+}
+
+function themeSwatchHtml(value, selected) {
+  const swatches = {
+    neon:     { bg: '#090b10', d1: '#c6ff00', d2: '#ff3e7f', label: 'Neon' },
+    midnight: { bg: '#07090f', d1: '#4fc3f7', d2: '#c084fc', label: 'Midnight' },
+    light:    { bg: '#f1f5f9', d1: '#6d28d9', d2: '#db2777', label: 'Light', border: '1px solid rgba(0,0,0,.08)' },
+    custom:   { bg: 'linear-gradient(135deg,#1a0533,#2d1b69)', d1: null, d2: null, label: 'Custom', emoji: '🎨' }
+  };
+  const s = swatches[value];
+  const preview = s.emoji
+    ? `<span style="font-size:1rem;">${s.emoji}</span>`
+    : `<div class="swatch-dot" style="background:${s.d1}"></div><div class="swatch-dot" style="background:${s.d2}"></div>`;
+
+  return `
+    <label class="theme-swatch ${selected ? 'selected' : ''}" onclick="selectTheme('${value}', this)">
+      <input type="radio" name="theme" value="${value}" ${selected ? 'checked' : ''}>
+      <div class="selected-tick">✓</div>
+      <div class="swatch-preview" style="background:${s.bg};${s.border ? 'border:' + s.border : ''}">${preview}</div>
+      <div class="swatch-name">${s.label}</div>
+    </label>`;
+}
+
+// ─── THEME PICKER
+function selectTheme(value, label) {
+  document.querySelectorAll('#themeSwatches .theme-swatch').forEach(s => s.classList.remove('selected'));
+  label.classList.add('selected');
+  label.querySelector('input').checked = true;
+  document.getElementById('customColors')?.classList.toggle('open', value === 'custom');
+}
+
+// ─── SAVE
+function saveChanges() {
+  const name = document.getElementById('editName')?.value.trim();
+  if (!name) { document.getElementById('editName')?.focus(); return; }
+
+  const pin = document.getElementById('editPin')?.value.trim();
+  if (!pin || pin.length !== 4) {
+    alert('PIN must be exactly 4 digits.');
+    document.getElementById('editPin')?.focus();
+    return;
+  }
+
+  const theme = document.querySelector('input[name="theme"]:checked')?.value || 'neon';
+  const desc  = document.getElementById('editDesc')?.value.trim();
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+
+  const updates = { name, pin, theme };
+  if (desc) updates.description = desc; else updates.description = null;
+
+  if (theme === 'custom') {
+    updates.customColors = {
+      bg:        document.getElementById('cc-bg')?.value        || '#090b10',
+      surface:   document.getElementById('cc-surface')?.value   || '#111420',
+      accent:    document.getElementById('cc-accent')?.value    || '#c6ff00',
+      secondary: document.getElementById('cc-secondary')?.value || '#ff3e7f',
+      text:      document.getElementById('cc-text')?.value      || '#f0f0f8',
+    };
+  } else {
+    updates.customColors = null;
+  }
+
+  db.ref('events/' + eventId).update(updates)
+    .then(() => {
+      eventData = { ...eventData, ...updates };
+      correctPin = pin; // update in-session so they don't get locked out
+      document.getElementById('headerEventName').textContent = name;
+      btn.disabled    = false;
+      btn.textContent = 'Save Changes →';
+      const status = document.getElementById('saveStatus');
+      status.classList.add('show');
+      setTimeout(() => status.classList.remove('show'), 3000);
+    })
+    .catch(err => {
+      btn.disabled    = false;
+      btn.textContent = 'Save Changes →';
+      alert('Save failed: ' + err.message);
+    });
+}
+
+// ─── COPY URL
+function copyUrl(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ─── QR ZOOM
+let qrZoomTimer = null;
+
+function openQrZoom(url, name) {
+  const modal  = document.getElementById('qrZoomModal');
+  const canvas = document.getElementById('qrZoomCanvas');
+  canvas.innerHTML = '';
+  new QRCode(canvas, { text: url, width: 300, height: 300,
+    colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.H });
+  document.getElementById('qrZoomName').textContent = name;
+  document.getElementById('qrZoomUrl').textContent  = url;
+  modal.classList.add('open');
+  startZoomTimer();
+  modal.addEventListener('pointermove', resetZoomTimer, { passive: true });
+  modal.addEventListener('touchstart',  resetZoomTimer, { passive: true });
+}
+
+function closeQrZoom() {
+  document.getElementById('qrZoomModal').classList.remove('open');
+  clearTimeout(qrZoomTimer);
+}
+
+function startZoomTimer() {
+  let r = 30;
+  const el = document.getElementById('qrZoomTimer');
+  clearInterval(qrZoomTimer);
+  qrZoomTimer = setInterval(() => {
+    if (el) el.textContent = `Closes in ${r}s`;
+    if (r-- <= 0) { clearInterval(qrZoomTimer); closeQrZoom(); }
+  }, 1000);
+}
+
+function resetZoomTimer() { startZoomTimer(); }
+
+document.getElementById('qrZoomModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('qrZoomModal')) closeQrZoom();
+});
+
+// ─── HELPER
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

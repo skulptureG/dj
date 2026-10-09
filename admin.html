@@ -2158,6 +2158,12 @@ function loadEvents() {
             <span class="url-val">${guestUrl}&display=1</span>
             <button class="url-copy-btn" onclick="copyUrl('${guestUrl}&display=1', this)">Copy</button>
           </div>` : ''}
+          ${event.pin ? `
+          <div class="url-row" style="border-color:rgba(167,139,250,0.25);">
+            <span class="url-label" style="color:#a78bfa;">⚙ Manage</span>
+            <span class="url-val">${baseUrl.replace('index.html', '')}manage.html?event=${event.id}</span>
+            <button class="url-copy-btn" onclick="copyUrl('${baseUrl.replace('index.html', '')}manage.html?event=${event.id}', this)">Copy</button>
+          </div>` : ''}
         </div>
 
         <!-- INLINE EDIT PANEL -->
