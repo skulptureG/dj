@@ -1,0 +1,33 @@
+{
+  "name": "DJ:Request",
+  "short_name": "DJ:Request",
+  "description": "Real-time song requests for live events",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#090b10",
+  "theme_color": "#090b10",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "music"],
+  "shortcuts": [
+    {
+      "name": "Request a Song",
+      "short_name": "Request",
+      "description": "Go to the song request page",
+      "url": "./index.html"
+    }
+  ]
+}
