@@ -579,6 +579,53 @@
   .qr-zoom-name { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 1.4rem; color: #0a0a0f; margin-bottom: 4px; }
   .qr-zoom-url { font-family: monospace; font-size: 0.6rem; color: #888; word-break: break-all; }
 
+  /* ─── SAVE CONFIRMATION OVERLAY ─── */
+  #saveConfirm {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,11,16,0.88);
+    backdrop-filter: blur(8px);
+    z-index: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  #saveConfirm.show { opacity: 1; pointer-events: all; }
+
+  .save-confirm-box {
+    text-align: center;
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  .save-confirm-icon {
+    font-size: 4rem;
+    line-height: 1;
+  }
+
+  .save-confirm-title {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+
+  .save-confirm-sub {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
   /* Mobile */
   @media (max-width: 600px) {
     input[type="text"], input[type="date"], input[type="time"], textarea { font-size: 1rem !important; }
@@ -625,6 +672,15 @@
     <div class="qr-zoom-canvas" id="qrZoomCanvas"></div>
     <div class="qr-zoom-name" id="qrZoomName"></div>
     <div class="qr-zoom-url" id="qrZoomUrl"></div>
+  </div>
+</div>
+
+<!-- SAVE CONFIRMATION -->
+<div id="saveConfirm">
+  <div class="save-confirm-box">
+    <div class="save-confirm-icon">✅</div>
+    <div class="save-confirm-title">Changes Saved!</div>
+    <div class="save-confirm-sub">Your event has been updated</div>
   </div>
 </div>
 
@@ -832,6 +888,26 @@ function renderManagePanel() {
       </div>
     </div>
 
+    <div class="field-group">
+      <label class="field-label">DJ Link <span style="opacity:.5;font-size:.9em">(website, SoundCloud, YouTube etc.)</span></label>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="editLinkEnabled" ${eventData.djLinkEnabled ? 'checked' : ''}
+            style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;">
+          <span style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);">
+            Show link on request page
+          </span>
+        </label>
+      </div>
+      <input class="field-input" id="editDjLink" type="url"
+        placeholder="https://soundcloud.com/yourname"
+        value="${escHtml(eventData.djLink || '')}">
+      <input class="field-input" id="editDjLinkLabel" type="text"
+        placeholder="Link label, e.g. Listen on SoundCloud"
+        value="${escHtml(eventData.djLinkLabel || '')}"
+        style="margin-top:8px;">
+    </div>
+
     <div class="divider"></div>
     <div class="section-label">Theme</div>
 
@@ -913,8 +989,14 @@ function saveChanges() {
   btn.disabled    = true;
   btn.textContent = 'Saving…';
 
-  const updates = { name, pin, theme };
-  if (desc) updates.description = desc; else updates.description = null;
+  const djLink        = document.getElementById('editDjLink')?.value.trim();
+  const djLinkLabel   = document.getElementById('editDjLinkLabel')?.value.trim();
+  const djLinkEnabled = document.getElementById('editLinkEnabled')?.checked || false;
+
+  const updates = { name, pin, theme, djLinkEnabled };
+  if (desc)         updates.description  = desc;         else updates.description  = null;
+  if (djLink)       updates.djLink       = djLink;       else updates.djLink       = null;
+  if (djLinkLabel)  updates.djLinkLabel  = djLinkLabel;  else updates.djLinkLabel  = null;
 
   if (theme === 'custom') {
     updates.customColors = {
@@ -930,14 +1012,15 @@ function saveChanges() {
 
   db.ref('events/' + eventId).update(updates)
     .then(() => {
-      eventData = { ...eventData, ...updates };
-      correctPin = pin; // update in-session so they don't get locked out
+      eventData  = { ...eventData, ...updates };
+      correctPin = pin;
       document.getElementById('headerEventName').textContent = name;
       btn.disabled    = false;
       btn.textContent = 'Save Changes →';
-      const status = document.getElementById('saveStatus');
-      status.classList.add('show');
-      setTimeout(() => status.classList.remove('show'), 3000);
+      // Show overlay confirmation
+      const confirm = document.getElementById('saveConfirm');
+      confirm.classList.add('show');
+      setTimeout(() => confirm.classList.remove('show'), 2400);
     })
     .catch(err => {
       btn.disabled    = false;
