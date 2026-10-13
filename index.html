@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#080a0d" />
+    <meta name="description" content="DJRequest.it makes live event song requests simple, social, and beautifully under control." />
+    <title>DJRequest.it — Keep the music moving</title>
+    <meta property="og:image" content="https://bolt.new/static/og_default.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+      :root {
+        font-family: 'DM Sans', sans-serif;
+        color: #f4f7ef;
+        background: #080a0d;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; min-width: 320px; background: #080a0d; }
+      button, a { font: inherit; }
+      button { cursor: pointer; }
+
+      .site-shell {
+        min-height: 100vh;
+        overflow: hidden;
+        position: relative;
+        isolation: isolate;
+        padding: 0 6vw;
+        background: radial-gradient(circle at 50% 28%, #11151a 0, #080a0d 44%, #07080a 100%);
+      }
+
+      .ambient { position: absolute; pointer-events: none; z-index: -1; filter: blur(100px); opacity: .16; border-radius: 50%; }
+      .ambient-lime { width: 400px; height: 400px; left: -230px; top: 140px; background: #b9ff2c; }
+      .ambient-pink { width: 450px; height: 450px; right: -230px; bottom: 120px; background: #ed356c; opacity: .11; }
+
+      .topbar { max-width: 1120px; margin: 0 auto; min-height: 88px; display: flex; align-items: center; justify-content: space-between; }
+      .wordmark { color: #d1ff32; font-family: 'Barlow Condensed', sans-serif; font-size: 25px; font-weight: 700; letter-spacing: .08em; text-decoration: none; }
+      .wordmark b { color: #ff3d79; font-size: 31px; line-height: 0; margin: 0 2px; }
+      .topbar-note { display: flex; align-items: center; gap: 9px; color: #747b82; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+      .topbar-note svg { color: #d1ff32; }
+      .topbar-actions { display: flex; align-items: center; gap: 24px; }
+      .nav-link { color: #b2b8bc; font-size: 12px; text-decoration: none; transition: color .2s ease; }
+      .nav-link:hover { color: #d1ff32; }
+      .nav-button { padding: 0; border: 0; background: transparent; cursor: pointer; }
+      .admin-button { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #4c5e23; border-radius: 4px; padding: 10px 13px; background: rgba(197,255,50,.08); color: #d1ff32; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; transition: background .2s ease, border-color .2s ease, transform .2s ease; text-decoration: none; }
+      .admin-button:hover { border-color: #c5ff32; background: rgba(197,255,50,.16); transform: translateY(-1px); }
+
+      .hero { max-width: 760px; margin: 0 auto; padding: 74px 0 96px; text-align: center; }
+      .eyebrow { display: flex; align-items: center; justify-content: center; gap: 14px; color: #7c838a; font-size: 10px; letter-spacing: .23em; line-height: 1.5; text-transform: uppercase; }
+      .eyebrow-line { width: 36px; height: 1px; background: #343941; }
+      h1 { margin: 27px 0 18px; color: #f5f7f1; font-family: 'Barlow Condensed', sans-serif; font-size: clamp(58px, 9vw, 112px); font-weight: 600; letter-spacing: -.035em; line-height: .83; text-transform: uppercase; }
+      h1 span { display: block; color: #c5ff33; }
+      .hero-copy { max-width: 470px; margin: 0 auto; color: #9da4aa; font-size: 15px; line-height: 1.7; }
+      .hero-actions { display: flex; align-items: center; justify-content: center; gap: 23px; margin-top: 40px; }
+      .primary-button { display: inline-flex; align-items: center; gap: 13px; border: 1px solid #cbff34; border-radius: 4px; padding: 16px 23px; background: #c5ff32; box-shadow: 0 0 34px rgba(197,255,50,.19); color: #0c1008; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
+      .primary-button:hover { background: #d3ff60; box-shadow: 0 0 45px rgba(197,255,50,.35); transform: translateY(-2px); }
+      .secondary-button { display: inline-flex; align-items: center; gap: 10px; color: #a9b0b4; font-size: 13px; text-decoration: none; transition: color .2s ease; }
+      .secondary-button:hover { color: #e7f7d2; }
+      .button-dot { width: 6px; height: 6px; border-radius: 50%; background: #ff3d79; box-shadow: 0 0 8px #ff3d79; }
+      .status-note { display: inline-flex; align-items: center; gap: 8px; margin-top: 30px; color: #8d9699; font-size: 14px; font-weight: 500; letter-spacing: .01em; }
+      .status-note svg { color: #ff3d79; }
+
+      .feature-panel { max-width: 880px; margin: 0 auto; padding: 31px 0 29px; border-top: 1px solid #252a2f; border-bottom: 1px solid #252a2f; }
+      .panel-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 19px; }
+      .section-kicker { color: #c6ff36; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; letter-spacing: .12em; text-transform: uppercase; }
+      .panel-rule { height: 1px; flex: 1; background: linear-gradient(90deg, #3c4b1e, transparent); }
+      .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .feature-card { position: relative; display: flex; align-items: center; gap: 16px; min-height: 88px; padding: 16px 20px; overflow: hidden; border: 1px solid #252a30; border-radius: 9px; background: linear-gradient(110deg, rgba(25,28,32,.96), rgba(16,18,22,.9)); transition: border-color .2s ease, transform .2s ease, background .2s ease; }
+      .feature-card:hover { border-color: #53631f; background: linear-gradient(110deg, rgba(30,35,34,.98), rgba(18,20,24,.95)); transform: translateY(-2px); }
+      .feature-icon { display: grid; flex: 0 0 40px; height: 40px; place-items: center; border-radius: 7px; color: #c5ff32; background: #1f2919; }
+      .feature-icon svg { width: 22px; height: 22px; }
+      .icon-1 { color: #f2f4ed; background: #282a2c; }
+      .icon-2 { color: #ff5b8e; background: #321d28; }
+      .icon-3 { color: #b695ff; background: #262034; }
+      .feature-card h2 { margin: 0 0 5px; color: #eef1eb; font-size: 13px; font-weight: 700; }
+      .feature-card p { margin: 0; color: #7b8288; font-size: 11px; line-height: 1.45; }
+      .card-number { position: absolute; top: 12px; right: 15px; color: #343a3d; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: .1em; }
+
+      .testimonial-panel { max-width: 880px; margin: 0 auto; padding: 72px 0 0; }
+      .testimonial-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+      .testimonial-heading p { margin: 6px 0 0; color: #70777c; font-size: 12px; }
+      .testimonial-controls { display: flex; gap: 8px; }
+      .testimonial-controls button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #30353a; border-radius: 50%; background: #14171a; color: #bec6ca; transition: color .2s ease, border-color .2s ease; }
+      .testimonial-controls button:hover { border-color: #c5ff32; color: #c5ff32; }
+      .testimonial-controls svg { width: 17px; height: 17px; }
+      .testimonial-card { position: relative; margin-top: 21px; padding: 31px 36px 27px; border: 1px solid #2a3035; border-radius: 9px; background: linear-gradient(112deg, rgba(23,27,30,.95), rgba(13,15,18,.95)); }
+      .quote-icon { color: #c5ff32; opacity: .65; width: 27px; height: 27px; }
+      .testimonial-card blockquote { max-width: 730px; margin: 14px 0 21px; color: #e6ebe4; font-family: 'Barlow Condensed', sans-serif; font-size: clamp(24px, 3.2vw, 35px); letter-spacing: .02em; line-height: 1.08; }
+      .testimonial-author { display: flex; align-items: baseline; gap: 11px; }
+      .testimonial-author span { color: #c5ff32; font-size: 12px; font-weight: 700; }
+      .testimonial-author small { color: #737b80; font-size: 11px; }
+      .testimonial-dots { display: flex; justify-content: center; gap: 7px; margin-top: 15px; }
+      .testimonial-dots button { width: 5px; height: 5px; padding: 0; border: 0; border-radius: 50%; background: #3b4145; transition: width .2s ease, border-radius .2s ease, background .2s ease; }
+      .testimonial-dots button.active { width: 20px; border-radius: 4px; background: #c5ff32; }
+
+      .reaction-panel { max-width: 880px; margin: 0 auto; padding: 28px 0 0; display: flex; align-items: center; justify-content: space-between; gap: 30px; }
+      .reaction-panel p { margin: 6px 0 0; color: #70777c; font-size: 12px; }
+      .reaction-stream { display: flex; align-items: center; gap: 8px; }
+      .reaction-bubble { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #363a3e; border-radius: 50%; background: #181b1f; font-size: 15px; }
+      .reaction-love { color: #ff5b8e; }
+      .reaction-party { color: #c5ff32; }
+      .reaction-poo { color: #a6825a; }
+      .reaction-fire { color: #ffad4a; box-shadow: 0 0 10px rgba(255,173,74,.2); }
+      .reaction-hug { color: #ff9ecf; }
+      .reaction-thumbsup { color: #6dd4f0; }
+      .reaction-live { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; color: #6d7479; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: .12em; }
+      .reaction-live span { width: 6px; height: 6px; border-radius: 50%; background: #ff3d79; box-shadow: 0 0 8px #ff3d79; }
+
+      .pricing-panel { max-width: 880px; margin: 72px auto 0; padding: 28px 31px; display: flex; align-items: center; justify-content: space-between; gap: 25px; border: 1px solid #35431f; border-radius: 9px; background: linear-gradient(100deg, rgba(26,35,18,.72), rgba(19,22,24,.8)); }
+      .pricing-panel h2 { margin: 7px 0 0; color: #eef2e9; font-family: 'Barlow Condensed', sans-serif; font-size: 28px; letter-spacing: .02em; text-transform: uppercase; }
+      .pricing-panel p { margin: 5px 0 0; color: #8b938e; font-size: 12px; }
+      .buy-button { display: inline-flex; flex-shrink: 0; align-items: center; gap: 12px; border: 1px solid #c5ff32; border-radius: 4px; padding: 14px 19px; background: #c5ff32; color: #0c1008; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; transition: background .2s ease, box-shadow .2s ease, transform .2s ease; }
+      .buy-button:hover { background: #d3ff60; box-shadow: 0 0 28px rgba(197,255,50,.2); transform: translateY(-2px); }
+      .buy-button svg { width: 18px; height: 18px; }
+
+      .closing-panel { display: flex; flex-direction: column; align-items: center; padding: 73px 0 65px; text-align: center; }
+      .closing-mark { display: grid; width: 34px; height: 34px; margin-bottom: 15px; place-items: center; border: 1px solid #43581b; border-radius: 50%; color: #c5ff32; background: #182311; }
+      .closing-mark svg { width: 18px; height: 18px; }
+      .closing-panel p { margin: 0; color: #e8ece5; font-family: 'Barlow Condensed', sans-serif; font-size: 23px; letter-spacing: .05em; text-transform: uppercase; }
+      .closing-panel span { margin-top: 6px; color: #62696e; font-size: 12px; }
+      .footer { max-width: 1120px; margin: 0 auto; padding: 18px 0 27px; display: flex; justify-content: space-between; color: #4e555a; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: .13em; text-transform: uppercase; }
+      .footer-dot { color: #ff3d79; }
+
+      .toast { position: fixed; right: 24px; bottom: 24px; display: flex; align-items: center; gap: 10px; padding: 13px 16px; border: 1px solid #394c1c; border-radius: 6px; background: #141a12; box-shadow: 0 12px 34px rgba(0,0,0,.35); color: #d8e2cc; font-size: 13px; animation: slide-in .3s ease both; }
+      .toast-pulse { width: 7px; height: 7px; border-radius: 50%; background: #c5ff32; box-shadow: 0 0 9px #c5ff32; }
+
+      .modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; padding: 24px; place-items: center; background: rgba(3,5,6,.78); backdrop-filter: blur(7px); animation: fade-in .2s ease both; }
+      .pricing-modal { width: min(100%, 620px); padding: 29px; border: 1px solid #3c4b22; border-radius: 10px; background: linear-gradient(145deg, #171c19, #0d1013); box-shadow: 0 25px 80px rgba(0,0,0,.5); }
+      .modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+      .modal-header h2 { margin: 7px 0 0; color: #f0f4eb; font-family: 'Barlow Condensed', sans-serif; font-size: 31px; letter-spacing: .02em; text-transform: uppercase; }
+      .modal-close { display: grid; width: 34px; height: 34px; flex-shrink: 0; place-items: center; border: 1px solid #394039; border-radius: 50%; background: #141916; color: #9da69f; transition: color .2s ease, border-color .2s ease; }
+      .modal-close:hover { border-color: #c5ff32; color: #c5ff32; }
+      .modal-close svg { width: 19px; height: 19px; }
+      .pricing-options { display: grid; gap: 9px; margin-top: 25px; }
+      .pricing-option { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 17px 17px 17px 19px; border: 1px solid #2b3230; border-radius: 7px; background: rgba(25,29,29,.88); transition: border-color .2s ease, background .2s ease; }
+      .pricing-option:hover { border-color: #687f2a; background: rgba(34,41,31,.9); }
+      .pricing-option strong { color: #c5ff32; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; letter-spacing: .03em; }
+      .pricing-option h3 { margin: 1px 0 3px; color: #eef2eb; font-size: 13px; }
+      .pricing-option p { margin: 0; color: #78817d; font-size: 11px; }
+      .pricing-option button { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; border: 1px solid #4b5c27; border-radius: 4px; padding: 9px 12px; background: transparent; color: #d1ff32; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: .07em; text-transform: uppercase; }
+      .pricing-option button:hover { background: #c5ff32; color: #0c1008; }
+      .pricing-option button svg { width: 15px; height: 15px; }
+
+      @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slide-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+      .toast.hidden, .modal-backdrop.hidden { display: none; }
+
+      @media (max-width: 650px) {
+        .site-shell { padding: 0 20px; }
+        .topbar { min-height: 72px; }
+        .topbar-note { display: none; }
+        .topbar-actions { gap: 12px; }
+        .nav-link { display: none; }
+        .admin-button { padding: 9px 10px; font-size: 12px; }
+        .hero { padding: 65px 0 78px; }
+        .eyebrow { gap: 8px; font-size: 8px; letter-spacing: .16em; }
+        .eyebrow-line { width: 22px; }
+        h1 { font-size: clamp(60px, 19vw, 96px); }
+        .hero-copy { font-size: 14px; }
+        .hero-actions { flex-direction: column; gap: 21px; }
+        .primary-button { width: min(100%, 280px); justify-content: center; }
+        .feature-grid { grid-template-columns: 1fr; }
+        .feature-card { min-height: 82px; }
+        .reaction-panel { align-items: flex-start; flex-direction: column; gap: 18px; }
+        .reaction-stream { flex-wrap: wrap; }
+        .testimonial-panel { padding-top: 58px; }
+        .testimonial-heading { align-items: flex-start; }
+        .testimonial-heading p { max-width: 220px; }
+        .testimonial-card { padding: 25px 22px 23px; }
+        .testimonial-author { align-items: flex-start; flex-direction: column; gap: 4px; }
+        .pricing-panel { align-items: flex-start; flex-direction: column; margin-top: 58px; padding: 25px 22px; }
+        .buy-button { width: 100%; justify-content: center; }
+        .pricing-modal { padding: 23px 18px; }
+        .modal-header h2 { font-size: 27px; }
+        .pricing-option { align-items: flex-start; flex-direction: column; }
+        .pricing-option button { width: 100%; justify-content: center; }
+        .footer { flex-direction: column; align-items: center; gap: 10px; }
+        .toast { right: 15px; bottom: 15px; left: 15px; justify-content: center; font-size: 12px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="site-shell">
+      <div class="ambient ambient-lime"></div>
+      <div class="ambient ambient-pink"></div>
+
+      <header class="topbar">
+        <a class="wordmark" href="#top" aria-label="DJRequest.it home">
+          <span>DJREQUEST</span>
+          <b>.</b>
+          <span>IT</span>
+        </a>
+        <div class="topbar-actions">
+          <div class="topbar-note">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
+            <span>Live event requests, simplified</span>
+          </div>
+          <button class="nav-link nav-button" type="button" onclick="openPricing()">See pricing</button>
+          <a class="admin-button" href="https://www.djrequest.it/admin.html">
+            Go to DJ admin
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+        </div>
+      </header>
+
+      <section class="hero" id="top">
+        <div class="eyebrow">
+          <span class="eyebrow-line"></span>
+          <span>Real-time song requests for live events</span>
+          <span class="eyebrow-line"></span>
+        </div>
+
+        <h1>
+          Let the crowd
+          <span>pick the vibe.</span>
+        </h1>
+        <p class="hero-copy">
+          A simple, beautiful way for guests to request the songs they love —
+          while you stay in control of the night.
+        </p>
+
+        <div class="hero-actions">
+          <button class="primary-button" type="button" onclick="openPricing()">
+            <span>See pricing</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </button>
+          <button class="secondary-button" type="button">
+            See how it works
+            <span class="button-dot"></span>
+          </button>
+        </div>
+
+        <div class="status-note">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
+          <span>Built for weddings, parties, clubs, and everything in between</span>
+        </div>
+      </section>
+
+      <section class="feature-panel" id="how-it-works" aria-label="DJRequest.it features">
+        <div class="panel-heading">
+          <span class="section-kicker">One link. Every request.</span>
+          <span class="panel-rule"></span>
+        </div>
+        <div class="feature-grid" id="feature-grid"></div>
+      </section>
+
+      <section class="testimonial-panel" aria-label="DJ testimonials">
+        <div class="testimonial-heading">
+          <div>
+            <span class="section-kicker">From the booth</span>
+            <p>Real words from DJs who keep the music moving.</p>
+          </div>
+          <div class="testimonial-controls">
+            <button type="button" aria-label="Previous testimonial" onclick="changeTestimonial(-1)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <button type="button" aria-label="Next testimonial" onclick="changeTestimonial(1)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v1a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v1a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg>
+          <blockquote id="testimonial-quote"></blockquote>
+          <div class="testimonial-author">
+            <span id="testimonial-name"></span>
+            <small id="testimonial-role"></small>
+          </div>
+        </div>
+        <div class="testimonial-dots" id="testimonial-dots" aria-label="Choose testimonial"></div>
+      </section>
+
+      <section class="reaction-panel" aria-label="Live DJ reactions">
+        <div>
+          <span class="section-kicker">A little love from the crowd</span>
+          <p>Keep guests in the moment with one-tap reactions.</p>
+        </div>
+        <div class="reaction-stream" aria-label="Recent guest reactions">
+          <span class="reaction-bubble reaction-love">💕</span>
+          <span class="reaction-bubble reaction-party">🎉</span>
+          <span class="reaction-bubble reaction-poo">💩</span>
+          <span class="reaction-bubble reaction-fire">🔥</span>
+          <span class="reaction-bubble reaction-hug">🤗</span>
+          <span class="reaction-bubble reaction-thumbsup">👍</span>
+          <span class="reaction-live"><span></span> LIVE</span>
+        </div>
+      </section>
+
+      <section class="pricing-panel" id="pricing">
+        <div>
+          <span class="section-kicker">Simple pricing</span>
+          <h2>One great night starts here.</h2>
+          <p>Bring your own crowd, your own sound, and a better way to take requests.</p>
+        </div>
+        <button class="buy-button" type="button">
+          See how it works
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </section>
+
+      <section class="closing-panel">
+        <div class="closing-mark">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <p>Keep the music moving.</p>
+        <span>Make every guest part of the set.</span>
+      </section>
+
+      <footer class="footer">
+        <span>DJREQUEST<span class="footer-dot">.</span>IT</span>
+        <span>Made for DJs, by DJs</span>
+      </footer>
+
+      <div class="toast hidden" id="toast" role="status">
+        <span class="toast-pulse"></span>
+        <span id="toast-text"></span>
+      </div>
+
+      <div class="modal-backdrop hidden" id="pricing-modal" role="presentation" onclick="closePricing()">
+        <section role="dialog" aria-modal="true" aria-labelledby="pricing-title" onclick="event.stopPropagation()">
+          <div class="pricing-modal">
+            <div class="modal-header">
+              <div>
+                <span class="section-kicker">Pick your event</span>
+                <h2 id="pricing-title">Simple pricing. No surprises.</h2>
+              </div>
+              <button class="modal-close" type="button" aria-label="Close pricing" onclick="closePricing()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+            <div class="pricing-options" id="pricing-options"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      var features = [
+        { title: 'No app needed', description: 'Guests scan one QR code and request from any phone, instantly', icon: 'smartphone' },
+        { title: 'Live DJ dashboard', description: 'See requests in real time, mark as played or rejected', icon: 'headphones' },
+        { title: 'Pause requests anytime', description: 'Take a breather between sets without losing your queue', icon: 'pause' },
+        { title: 'Send live reactions', description: 'Guests can send cute little reactions straight to the DJ', icon: 'message' },
+        { title: 'Build the playlist early', description: 'Schedule ahead and let your playlist grow before the event', icon: 'calendar' },
+        { title: 'iTunes track search', description: 'Guests search for tracks with album art and auto-filled genre', icon: 'music' }
+      ];
+
+      var icons = {
+        smartphone: '<path d="M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/><path d="M12 18h.01"/>',
+        headphones: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4a1 1 0 0 1-1-1v-6a9 9 0 0 1 18 0v6a1 1 0 0 1-1 1h-2a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+        pause: '<path d="M16 16V4"/><path d="M8 20v-8"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="8" r="2"/>',
+        message: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>',
+        calendar: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+        music: '<circle cx="12" cy="17" r="3"/><path d="M15 17V5l4-2v12"/><path d="M15 5 9 7"/>'
+      };
+
+      var testimonials = [
+        { quote: 'DJRequest.it is what I have always wanted and needed.', name: 'Thorne G.', role: 'DJ · UK' },
+        { quote: 'The pause button is a lifesaver when dinner starts. Then I turn requests back on and the dance floor fills up again.', name: 'Jordan K.', role: 'Event DJ · Chicago, IL' },
+        { quote: 'Guests love sending reactions almost as much as requesting songs. It keeps the energy high all night.', name: 'Alex T.', role: 'Club resident · Miami, FL' }
+      ];
+
+      var pricingOptions = [
+        { price: '£5.99', name: 'Single Event', duration: 'Lasts 7 days once activated' },
+        { price: '£8.99', name: 'Extended Event', duration: 'Lasts 15 days once activated' },
+        { price: '£14.99', name: 'Super Extended Event', duration: 'Lasts 45 days once activated' }
+      ];
+
+      var activeTestimonial = 0;
+      var carouselInterval = null;
+
+      function renderFeatures() {
+        var grid = document.getElementById('feature-grid');
+        var html = '';
+        for (var i = 0; i < features.length; i++) {
+          var f = features[i];
+          html += '<article class="feature-card">' +
+            '<div class="feature-icon icon-' + i + '">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + icons[f.icon] + '</svg>' +
+            '</div>' +
+            '<div><h2>' + f.title + '</h2><p>' + f.description + '</p></div>' +
+            '<span class="card-number">0' + (i + 1) + '</span>' +
+            '</article>';
+        }
+        grid.innerHTML = html;
+      }
+
+      function renderTestimonial() {
+        var t = testimonials[activeTestimonial];
+        document.getElementById('testimonial-quote').textContent = '\u201C' + t.quote + '\u201D';
+        document.getElementById('testimonial-name').textContent = t.name;
+        document.getElementById('testimonial-role').textContent = t.role;
+        var dots = document.getElementById('testimonial-dots').children;
+        for (var i = 0; i < dots.length; i++) {
+          dots[i].className = i === activeTestimonial ? 'active' : '';
+        }
+      }
+
+      function renderTestimonialDots() {
+        var container = document.getElementById('testimonial-dots');
+        var html = '';
+        for (var i = 0; i < testimonials.length; i++) {
+          html += '<button type="button" aria-label="Show testimonial ' + (i + 1) + '" onclick="setTestimonial(' + i + ')"></button>';
+        }
+        container.innerHTML = html;
+      }
+
+      function setTestimonial(index) {
+        activeTestimonial = index;
+        renderTestimonial();
+        resetCarousel();
+      }
+
+      function changeTestimonial(direction) {
+        activeTestimonial = (activeTestimonial + direction + testimonials.length) % testimonials.length;
+        renderTestimonial();
+        resetCarousel();
+      }
+
+      function resetCarousel() {
+        if (carouselInterval) clearInterval(carouselInterval);
+        carouselInterval = setInterval(function() {
+          activeTestimonial = (activeTestimonial + 1) % testimonials.length;
+          renderTestimonial();
+        }, 5200);
+      }
+
+      function renderPricingOptions() {
+        var container = document.getElementById('pricing-options');
+        var html = '';
+        for (var i = 0; i < pricingOptions.length; i++) {
+          var o = pricingOptions[i];
+          html += '<article class="pricing-option">' +
+            '<div><strong>' + o.price + '</strong><h3>' + o.name + '</h3><p>' + o.duration + '</p></div>' +
+            '<button type="button" onclick="showToast(\'' + o.name + ' selected.\')">' +
+            'Choose' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>' +
+            '</button>' +
+            '</article>';
+        }
+        container.innerHTML = html;
+      }
+
+      function openPricing() {
+        document.getElementById('pricing-modal').classList.remove('hidden');
+      }
+
+      function closePricing() {
+        document.getElementById('pricing-modal').classList.add('hidden');
+      }
+
+      var toastTimer = null;
+      function showToast(message) {
+        var toast = document.getElementById('toast');
+        document.getElementById('toast-text').textContent = message;
+        toast.classList.remove('hidden');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() { toast.classList.add('hidden'); }, 3200);
+      }
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePricing();
+      });
+
+      renderFeatures();
+      renderTestimonialDots();
+      renderTestimonial();
+      renderPricingOptions();
+      resetCarousel();
+    </script>
+  </body>
+</html>
