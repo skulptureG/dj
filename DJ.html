@@ -2929,7 +2929,8 @@
           <div id="qrEventDesc" style="font-size:0.85rem;color:rgba(240,240,248,0.55);font-style:italic;margin-bottom:10px;line-height:1.5;display:none;"></div>
           <div class="qr-url" id="qrUrl"></div>
           <button class="btn-new-event" onclick="lockBoothWithPin()" id="btnLockBooth" disabled title="No PIN set — add one in Admin to enable locking">🔒 Lock Booth</button>
-          <button class="btn-new-event" onclick="openAdminGate()" style="margin-top:6px;width:100%;">⚙ Manage / Admin</button>
+          <button class="btn-new-event" onclick="openBoothMenu()" id="btnBoothMenu" style="margin-top:6px;width:100%;">⚙ Manage Event</button>
+          <button class="btn-new-event" onclick="openAdminGate()" style="margin-top:4px;width:100%;font-size:0.6rem;padding:6px;opacity:0.5;">Admin (2424)</button>
         </div>
       </div>
 
@@ -3099,9 +3100,11 @@ if (mode === 'admin') {
     songInput.classList.add('active-field');
 
     // Show event name + description + QR + countdown
-    db.ref('events/' + eventParam).get().then(snap => {
+    let guestEventInitDone = false;
+    db.ref('events/' + eventParam).on('value', snap => {
       const data = snap.val();
-      if (data && data.name) {
+      if (!data || !data.name) return;
+      if (true) { // always process — handles both initial load and live updates
         document.title = data.name + ' — Song Requests';
 
         // Apply theme
@@ -3161,75 +3164,68 @@ if (mode === 'admin') {
 
         } else {
           // ── NORMAL REQUEST FORM (?event=CODE) ──
-          // Used by all guests (including mobile-only events after scanning QR)
-          requestView.classList.remove('hidden');
-          document.getElementById('eventNameTitle').textContent = data.name;
-          document.getElementById('eventNameDisplay').style.display = 'block';
-
-          if (data.description) {
-            document.getElementById('eventDescDisplay').textContent = data.description;
+          if (!guestEventInitDone) {
+            requestView.classList.remove('hidden');
           }
 
-          // DJ link bar
-          if (data.djLinkEnabled && data.djLink) {
-            const bar = document.getElementById('djLinkBar');
-            if (bar) {
+          // One-time setup (name, QR, countdown — only on first load)
+          if (!guestEventInitDone) {
+            document.getElementById('eventNameTitle').textContent = data.name;
+            document.getElementById('eventNameDisplay').style.display = 'block';
+            document.title = data.name + ' — Song Requests';
+
+            if (data.description) {
+              document.getElementById('eventDescDisplay').textContent = data.description;
+            }
+
+            if (data.mobileOnly) {
+              const guestQrEl = document.getElementById('guestQr');
+              if (guestQrEl) guestQrEl.style.display = 'none';
+            } else {
+              new QRCode(document.getElementById('guestQr'), {
+                text: window.location.href,
+                width: 120,
+                height: 120,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+              });
+              setTimeout(() => {
+                const guestQrEl = document.getElementById('guestQr');
+                if (guestQrEl) {
+                  guestQrEl.style.cursor = 'pointer';
+                  guestQrEl.onclick = () => openQrZoom(window.location.href, data.name || '');
+                }
+              }, 400);
+            }
+          }
+
+          if (data.scheduledAt && data.scheduledAt > Date.now() && !guestEventInitDone) {
+            startCountdown(data.scheduledAt);
+          }
+
+          // DJ link bar — always re-evaluated on every Firebase update
+          const bar = document.getElementById('djLinkBar');
+          if (bar) {
+            if (data.djLinkEnabled && data.djLink) {
               bar.href = data.djLink;
               document.getElementById('djLinkLabel').textContent =
                 data.djLinkLabel || 'Visit the DJ';
               bar.style.display = 'flex';
+            } else {
+              bar.style.display = 'none';
             }
           }
 
-          // Hide QR on form if this is a mobile-only event — guest is already on mobile
-          if (data.mobileOnly) {
-            const guestQrEl = document.getElementById('guestQr');
-            if (guestQrEl) guestQrEl.style.display = 'none';
-          } else {
-            new QRCode(document.getElementById('guestQr'), {
-              text: window.location.href,
-              width: 120,
-              height: 120,
-              colorDark: '#000000',
-              colorLight: '#ffffff',
-              correctLevel: QRCode.CorrectLevel.M
-            });
-
-            setTimeout(() => {
-              const guestQrEl = document.getElementById('guestQr');
-              if (guestQrEl) {
-                guestQrEl.style.cursor = 'pointer';
-                guestQrEl.onclick = () => openQrZoom(window.location.href, data.name || '');
-              }
-            }, 400);
-          }
-
-          if (data.scheduledAt && data.scheduledAt > Date.now()) {
-            startCountdown(data.scheduledAt);
-          }
+          guestEventInitDone = true;
         }
       }
-    }).catch(() => {});
+    }, () => {});
 
     // Live lock state — only show overlay if explicitly true
     lockedRef.on('value', snap => {
       applyLockState(snap.val() === true);
-    }, () => {}); // ignore permission errors
-
-    // Live DJ link updates (owner can toggle on/off from manage page)
-    db.ref('events/' + eventParam).on('value', snap => {
-      const d = snap.val();
-      if (!d) return;
-      const bar = document.getElementById('djLinkBar');
-      if (!bar) return;
-      if (d.djLinkEnabled && d.djLink) {
-        bar.href = d.djLink;
-        document.getElementById('djLinkLabel').textContent = d.djLinkLabel || 'Visit the DJ';
-        bar.style.display = 'flex';
-      } else {
-        bar.style.display = 'none';
-      }
-    });
+    }, () => {});
 
     // Keep currentRequests live on guest page for duplicate detection
     db.ref('events/' + eventParam + '/requests').on('value', snap => {
@@ -3558,6 +3554,17 @@ function clearQrZoomTimer() {
 document.getElementById('qrZoomModal')?.addEventListener('click', e => {
   if (e.target === document.getElementById('qrZoomModal')) closeQrZoom();
 });
+
+// ─── BOOTH MENU — goes to manage.html for this event
+// DJ is already authenticated (passed the event PIN) so no re-auth needed
+function openBoothMenu() {
+  const eventId = localStorage.getItem('djCurrentEvent')
+    || new URLSearchParams(window.location.search).get('event');
+  if (!eventId) return;
+  const base = window.location.origin +
+    window.location.pathname.replace(/\/index\.html$/, '/');
+  window.open(base + 'manage.html?event=' + eventId, '_blank');
+}
 
 // ─── ADMIN PIN GATE (from DJ booth → admin page)
 const ADMIN_PIN = '2424';
