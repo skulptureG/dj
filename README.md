@@ -7,4 +7,5 @@ This is where users can enter their song requests; either by a touch screen (if 
 <img width="1887" height="1043" alt="DJ-3" src="https://github.com/user-attachments/assets/0eab098c-77e7-4d32-bcb8-7342e1bedb65" />
 
 What visitors see when the requests are locked.
-<img width="1834" height="928" alt="theme" src="https://github.com/user-attachments/assets/e20ce5f0-2f29-45f6-8eba-c49565d45106" />
+<img width="843" height="620" alt="locked" src="https://github.com/user-attachments/assets/bbcf8bfc-e504-493d-847f-81d43e9be7d4" />
+
