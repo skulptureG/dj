@@ -1761,7 +1761,9 @@
         <label class="color-picker-item"><span class="color-picker-label">Surface</span><input type="color"   id="cc-surface"   value="#111420" class="color-swatch-input"></label>
         <label class="color-picker-item"><span class="color-picker-label">Accent</span><input type="color"    id="cc-accent"    value="#c6ff00" class="color-swatch-input"></label>
         <label class="color-picker-item"><span class="color-picker-label">Secondary</span><input type="color" id="cc-secondary" value="#ff3e7f" class="color-swatch-input"></label>
-        <label class="color-picker-item"><span class="color-picker-label">Text</span><input type="color"      id="cc-text"      value="#f0f0f8" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Body Text</span><input type="color" id="cc-text"      value="#f0f0f8" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Headings</span><input type="color"  id="cc-heading"   value="#f0f0f8" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Subtitles</span><input type="color" id="cc-body"      value="#7f8ea3" class="color-swatch-input"></label>
       </div>
     </div>
   </div>
@@ -2006,6 +2008,8 @@ function createNewEvent() {
       accent:    document.getElementById('cc-accent')?.value    || '#c6ff00',
       secondary: document.getElementById('cc-secondary')?.value || '#ff3e7f',
       text:      document.getElementById('cc-text')?.value      || '#f0f0f8',
+      heading:   document.getElementById('cc-heading')?.value   || '#f0f0f8',
+      body:      document.getElementById('cc-body')?.value      || '#7f8ea3',
     };
   }
   if (scheduledAt) payload.scheduledAt = scheduledAt;
@@ -2234,7 +2238,9 @@ function loadEvents() {
               <label class="color-picker-item"><span class="color-picker-label">Surface</span><input type="color"   id="ecc-surface-${event.id}"   value="${event.customColors?.surface   || '#111420'}" class="color-swatch-input"></label>
               <label class="color-picker-item"><span class="color-picker-label">Accent</span><input type="color"    id="ecc-accent-${event.id}"    value="${event.customColors?.accent    || '#c6ff00'}" class="color-swatch-input"></label>
               <label class="color-picker-item"><span class="color-picker-label">Secondary</span><input type="color" id="ecc-secondary-${event.id}" value="${event.customColors?.secondary || '#ff3e7f'}" class="color-swatch-input"></label>
-              <label class="color-picker-item"><span class="color-picker-label">Text</span><input type="color"      id="ecc-text-${event.id}"      value="${event.customColors?.text      || '#f0f0f8'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Body Text</span><input type="color"  id="ecc-text-${event.id}"      value="${event.customColors?.text      || '#f0f0f8'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Headings</span><input type="color"   id="ecc-heading-${event.id}"   value="${event.customColors?.heading   || '#f0f0f8'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Subtitles</span><input type="color"  id="ecc-body-${event.id}"      value="${event.customColors?.body      || '#7f8ea3'}" class="color-swatch-input"></label>
             </div>
           </div>
           <div class="edit-actions">
@@ -2351,6 +2357,8 @@ function saveEdit(eventId) {
       accent:    document.getElementById('ecc-accent-'    + eventId)?.value || '#c6ff00',
       secondary: document.getElementById('ecc-secondary-' + eventId)?.value || '#ff3e7f',
       text:      document.getElementById('ecc-text-'      + eventId)?.value || '#f0f0f8',
+      heading:   document.getElementById('ecc-heading-'   + eventId)?.value || '#f0f0f8',
+      body:      document.getElementById('ecc-body-'      + eventId)?.value || '#7f8ea3',
     };
   } else {
     updates.customColors = null;

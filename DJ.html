@@ -320,18 +320,37 @@
 
   /* ══ CUSTOM THEME (colours set as CSS props via JS) ══ */
   html[data-theme="custom"] {
-    --bg:            var(--custom-bg,        #090b10);
-    --surface:       var(--custom-surface,   #111420);
-    --surface2:      var(--custom-surface2,  #181c2a);
-    --accent:        var(--custom-accent,    #c6ff00);
+    --bg:            var(--custom-bg,          #090b10);
+    --surface:       var(--custom-surface,     #111420);
+    --surface2:      var(--custom-surface2,    #181c2a);
+    --accent:        var(--custom-accent,      #c6ff00);
     --accent-dim:    color-mix(in srgb, var(--custom-accent,    #c6ff00) 15%, transparent);
     --accent-glow:   color-mix(in srgb, var(--custom-accent,    #c6ff00) 40%, transparent);
-    --pink:          var(--custom-secondary, #ff3e7f);
+    --pink:          var(--custom-secondary,   #ff3e7f);
     --pink-dim:      color-mix(in srgb, var(--custom-secondary, #ff3e7f) 15%, transparent);
-    --text:          var(--custom-text,      #f0f0f8);
+    --text:          var(--custom-text,        #f0f0f8);
     --muted:         color-mix(in srgb, var(--custom-text, #f0f0f8) 45%, transparent);
     --border:        color-mix(in srgb, var(--custom-text, #f0f0f8) 7%,  transparent);
     --border-bright: color-mix(in srgb, var(--custom-text, #f0f0f8) 14%, transparent);
+  }
+
+  /* Apply custom font/heading colours when set */
+  html[data-theme="custom"] .song-name,
+  html[data-theme="custom"] .logo,
+  html[data-theme="custom"] .event-title,
+  html[data-theme="custom"] .stat-card .val,
+  html[data-theme="custom"] .qr-event-name,
+  html[data-theme="custom"] .mob-display-event-name,
+  html[data-theme="custom"] .queue-overlay-title {
+    color: var(--custom-heading, var(--text));
+  }
+
+  html[data-theme="custom"] .req-meta,
+  html[data-theme="custom"] .event-desc-guest,
+  html[data-theme="custom"] .mob-display-desc,
+  html[data-theme="custom"] .badge,
+  html[data-theme="custom"] .section-label {
+    color: var(--custom-body, var(--muted));
   }
 
   html, body { height: 100%; }
@@ -3119,6 +3138,8 @@ if (mode === 'admin') {
           if (c.accent)    r.style.setProperty('--custom-accent',    c.accent);
           if (c.secondary) r.style.setProperty('--custom-secondary', c.secondary);
           if (c.text)      r.style.setProperty('--custom-text',      c.text);
+          if (c.heading)   r.style.setProperty('--custom-heading',   c.heading);
+          if (c.body)      r.style.setProperty('--custom-body',      c.body);
         }
 
         if (data.mobileOnly && displayMode === '1') {
@@ -3204,10 +3225,10 @@ if (mode === 'admin') {
             startCountdown(data.scheduledAt);
           }
 
-          // DJ link bar — always re-evaluated on every Firebase update
+          // DJ link bar — re-evaluated on every Firebase update
           const bar = document.getElementById('djLinkBar');
           if (bar) {
-            if (data.djLinkEnabled && data.djLink) {
+            if (data.djLinkEnabled === true && data.djLink) {
               bar.href = data.djLink;
               document.getElementById('djLinkLabel').textContent =
                 data.djLinkLabel || 'Visit the DJ';
@@ -3823,6 +3844,8 @@ function openDJBooth(eventId) {
       if (c.accent)    r.style.setProperty('--custom-accent',    c.accent);
       if (c.secondary) r.style.setProperty('--custom-secondary', c.secondary);
       if (c.text)      r.style.setProperty('--custom-text',      c.text);
+      if (c.heading)   r.style.setProperty('--custom-heading',   c.heading);
+      if (c.body)      r.style.setProperty('--custom-body',      c.body);
     }
 
     document.getElementById('qrEventName').textContent = name;

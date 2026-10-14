@@ -888,24 +888,29 @@ function renderManagePanel() {
       </div>
     </div>
 
-    <div class="field-group">
-      <label class="field-label">DJ Link <span style="opacity:.5;font-size:.9em">(website, SoundCloud, YouTube etc.)</span></label>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+    <div class="field-group" style="background:var(--surface2);border:1px solid var(--border-bright);border-radius:var(--radius);padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <label class="field-label" style="margin-bottom:0;">🔗 DJ Link</label>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" id="editLinkEnabled" ${eventData.djLinkEnabled ? 'checked' : ''}
-            style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;">
+          <input type="checkbox" id="editLinkEnabled" ${eventData.djLinkEnabled === true ? 'checked' : ''}
+            style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;"
+            onchange="document.getElementById('djLinkStatus').textContent=this.checked?'Visible on request page':'Hidden'">
           <span style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);">
-            Show link on request page
+            Show on request page
           </span>
         </label>
       </div>
+      <div id="djLinkStatus" style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:.1em;text-transform:uppercase;color:${eventData.djLinkEnabled === true ? 'var(--accent)' : 'var(--muted)'};margin-bottom:10px;">
+        ${eventData.djLinkEnabled === true ? 'Visible on request page' : 'Hidden'}
+      </div>
+      <label class="field-label">URL</label>
       <input class="field-input" id="editDjLink" type="url"
         placeholder="https://soundcloud.com/yourname"
-        value="${escHtml(eventData.djLink || '')}">
+        value="${escHtml(eventData.djLink || '')}" style="margin-bottom:8px;">
+      <label class="field-label">Button Label</label>
       <input class="field-input" id="editDjLinkLabel" type="text"
-        placeholder="Link label, e.g. Listen on SoundCloud"
-        value="${escHtml(eventData.djLinkLabel || '')}"
-        style="margin-top:8px;">
+        placeholder="e.g. Listen on SoundCloud / Visit my website"
+        value="${escHtml(eventData.djLinkLabel || '')}">
     </div>
 
     <div class="divider"></div>
@@ -928,8 +933,12 @@ function renderManagePanel() {
           <input type="color" id="cc-accent"    value="${eventData.customColors?.accent    || '#c6ff00'}" class="color-swatch-input"></label>
         <label class="color-picker-item"><span class="color-picker-label">Secondary</span>
           <input type="color" id="cc-secondary" value="${eventData.customColors?.secondary || '#ff3e7f'}" class="color-swatch-input"></label>
-        <label class="color-picker-item"><span class="color-picker-label">Text</span>
+        <label class="color-picker-item"><span class="color-picker-label">Body Text</span>
           <input type="color" id="cc-text"      value="${eventData.customColors?.text      || '#f0f0f8'}" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Headings</span>
+          <input type="color" id="cc-heading"   value="${eventData.customColors?.heading   || '#f0f0f8'}" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Subtitles</span>
+          <input type="color" id="cc-body"      value="${eventData.customColors?.body      || '#7f8ea3'}" class="color-swatch-input"></label>
       </div>
     </div>
 
@@ -1005,6 +1014,8 @@ function saveChanges() {
       accent:    document.getElementById('cc-accent')?.value    || '#c6ff00',
       secondary: document.getElementById('cc-secondary')?.value || '#ff3e7f',
       text:      document.getElementById('cc-text')?.value      || '#f0f0f8',
+      heading:   document.getElementById('cc-heading')?.value   || '#f0f0f8',
+      body:      document.getElementById('cc-body')?.value      || '#7f8ea3',
     };
   } else {
     updates.customColors = null;
