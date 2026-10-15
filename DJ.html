@@ -1230,7 +1230,7 @@
 
   /* ─── DJ LINK BAR (guest page) ─── */
   .dj-link-bar {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     gap: 10px;
@@ -1247,6 +1247,10 @@
     text-transform: uppercase;
     text-decoration: none;
     transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .dj-link-bar.visible {
+    display: flex;
   }
 
   .dj-link-bar:hover {
@@ -2640,6 +2644,12 @@
     <div id="guestQr" style="display:inline-block;background:#fff;border-radius:10px;padding:10px;margin-top:16px;line-height:0;"></div>
   </div>
 
+  <!-- DJ LINK BAR — shown directly below event info when enabled -->
+  <a id="djLinkBar" href="#" target="_blank" rel="noopener" class="dj-link-bar">
+    <span class="dj-link-icon">🔗</span>
+    <span id="djLinkLabel">Visit the DJ</span>
+  </a>
+
   <!-- PWA INSTALL BANNER -->
   <div id="installBanner">
     <div class="install-banner-text">
@@ -2654,12 +2664,6 @@
       <button class="btn-install-dismiss" id="btnInstallDismiss">✕</button>
     </div>
   </div>
-
-  <!-- DJ LINK BAR -->
-  <a id="djLinkBar" href="#" target="_blank" rel="noopener" class="dj-link-bar" style="display:none;">
-    <span class="dj-link-icon">🔗</span>
-    <span id="djLinkLabel">Visit the DJ</span>
-  </a>
 
   <div id="countdownSection">
     <div class="cd-label-top">Event starts in</div>
@@ -3228,13 +3232,15 @@ if (mode === 'admin') {
           // DJ link bar — re-evaluated on every Firebase update
           const bar = document.getElementById('djLinkBar');
           if (bar) {
-            if (data.djLinkEnabled === true && data.djLink) {
-              bar.href = data.djLink;
-              document.getElementById('djLinkLabel').textContent =
-                data.djLinkLabel || 'Visit the DJ';
-              bar.style.display = 'flex';
+            const linkEnabled = data.djLinkEnabled === true || data.djLinkEnabled === 'true';
+            const hasLink = data.djLink && String(data.djLink).trim().length > 0;
+            if (linkEnabled && hasLink) {
+              bar.href = String(data.djLink).trim();
+              const labelEl = document.getElementById('djLinkLabel');
+              if (labelEl) labelEl.textContent = data.djLinkLabel || 'Visit the DJ';
+              bar.classList.add('visible');
             } else {
-              bar.style.display = 'none';
+              bar.classList.remove('visible');
             }
           }
 
