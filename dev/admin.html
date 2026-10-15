@@ -1,0 +1,2526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DJ Admin — All Events</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #090b10;
+    --surface: #111420;
+    --surface2: #181c2a;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.14);
+    --accent: #c6ff00;
+    --accent-dim: rgba(198,255,0,0.12);
+    --accent-glow: rgba(198,255,0,0.35);
+    --pink: #ff3e7f;
+    --pink-dim: rgba(255,62,127,0.12);
+    --text: #f0f0f8;
+    --muted: rgba(240,240,248,0.45);
+    --font-display: 'Bebas Neue', Impact, sans-serif;
+    --font-mono: 'DM Mono', 'Courier New', monospace;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .panel {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 22px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .logo span { color: var(--pink); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border-bright);
+    padding: 5px 10px;
+    border-radius: 100px;
+  }
+
+  .live-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: var(--pink);
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ─── CREATE EVENT PANEL ─── */
+  .create-panel {
+    background: var(--surface);
+    border: 1px solid rgba(198,255,0,0.2);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 28px;
+  }
+
+  .create-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .create-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .create-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    font-weight: 500;
+    padding: 14px 18px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    min-width: 0;
+  }
+
+  .create-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .create-input::placeholder { color: var(--muted); font-weight: 400; }
+
+  .btn-create {
+    padding: 14px 24px;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    letter-spacing: 0.06em;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: box-shadow 0.2s, transform 0.1s;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .btn-create:hover { box-shadow: 0 0 36px rgba(198,255,0,0.55); transform: translateY(-1px); }
+  .btn-create:active { transform: scale(0.97); }
+  .create-desc {
+    margin-top: 10px;
+    width: 100%;
+    height: 80px;
+    resize: none;
+    padding: 12px 18px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .create-desc {
+    margin-top: 10px;
+    width: 100%;
+    height: 80px;
+    resize: none;
+    padding: 12px 18px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .schedule-toggle-row {
+    margin-top: 14px;
+  }
+
+  .schedule-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    width: fit-content;
+  }
+
+  .schedule-toggle-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .schedule-toggle-text {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: color 0.15s;
+  }
+
+  .schedule-toggle-label:hover .schedule-toggle-text { color: var(--text); }
+
+  .schedule-fields {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .schedule-fields.hidden { display: none; }
+
+  .schedule-hint {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  .schedule-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .schedule-group {
+    flex: 1;
+  }
+
+  .schedule-field-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .schedule-input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    color-scheme: dark;
+  }
+
+  /* ─── EVENT STATUS BADGES ─── */
+  .event-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 100px;
+    margin-top: 8px;
+    border: 1px solid;
+  }
+
+  .event-status.live {
+    color: var(--accent);
+    border-color: rgba(198,255,0,0.3);
+    background: var(--accent-dim);
+  }
+
+  .event-status.upcoming {
+    color: #7eb8ff;
+    border-color: rgba(126,184,255,0.3);
+    background: rgba(126,184,255,0.08);
+  }
+
+  .event-status.past {
+    color: var(--muted);
+    border-color: var(--border-bright);
+    background: transparent;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: none;
+  }
+
+  .event-status.live .status-dot {
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  .event-countdown-admin {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: #7eb8ff;
+    margin-top: 8px;
+  }
+
+  .btn-create:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ─── THEME PICKER ─── */
+  .theme-picker-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 14px 0 10px;
+    display: block;
+  }
+
+  .theme-swatches {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .theme-swatch {
+    flex: 1;
+    min-width: 90px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border-bright);
+    padding: 12px 10px 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+    text-align: center;
+  }
+
+  .theme-swatch:hover { transform: translateY(-2px); }
+
+  .theme-swatch.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+
+  .theme-swatch input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .swatch-preview {
+    width: 100%;
+    height: 44px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .swatch-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .swatch-name {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .theme-swatch.selected .swatch-name { color: var(--accent); }
+
+  .selected-tick {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 0.75rem;
+    color: var(--accent);
+    opacity: 0;
+  }
+
+  .theme-swatch.selected .selected-tick { opacity: 1; }
+
+  /* theme badge on event cards */
+  .theme-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-left: 8px;
+    border: 1px solid;
+    vertical-align: middle;
+  }
+
+  .theme-badge.neon   { color: #c6ff00; border-color: rgba(198,255,0,0.3); background: rgba(198,255,0,0.08); }
+  .theme-badge.midnight { color: #4fc3f7; border-color: rgba(79,195,247,0.3); background: rgba(79,195,247,0.08); }
+  .theme-badge.light  { color: #6d28d9; border-color: rgba(109,40,217,0.3); background: rgba(109,40,217,0.08); }
+  .theme-badge.custom { color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.08); }
+
+  /* ─── CUSTOM COLOUR PICKER ─── */
+  .custom-color-panel {
+    display: none;
+    margin-top: 14px;
+    padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+  }
+
+  .custom-color-panel.open { display: block; }
+
+  .color-picker-grid {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .color-picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .color-picker-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .color-swatch-input {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    border: 2px solid var(--border-bright);
+    padding: 2px;
+    background: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .color-swatch-input:hover { border-color: var(--accent); }
+
+  /* ─── MOBILE ONLY TOGGLE ─── */
+  .mobile-only-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    margin-bottom: 14px;
+    transition: border-color 0.15s;
+  }
+
+  .mobile-only-toggle:hover { border-color: var(--accent); }
+
+  .mobile-only-toggle input[type="checkbox"] { display: none; }
+
+  .mot-track {
+    flex-shrink: 0;
+    width: 44px;
+    height: 26px;
+    background: var(--border-bright);
+    border-radius: 13px;
+    position: relative;
+    transition: background 0.2s;
+    margin-top: 2px;
+  }
+
+  .mot-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
+  .mobile-only-toggle input:checked ~ .mot-track { background: var(--accent); }
+  .mobile-only-toggle input:checked ~ .mot-track .mot-thumb { transform: translateX(18px); }
+
+  .mot-info { display: flex; flex-direction: column; gap: 3px; }
+
+  .mot-title {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .mot-desc {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* Mobile Only badge on event card */
+  .mob-only-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(79,195,247,0.35);
+    background: rgba(79,195,247,0.08);
+    color: #4fc3f7;
+    margin-top: 6px;
+    white-space: nowrap;
+  }
+
+  /* ─── EVENT PIN ROW ─── */
+  .event-pin-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .event-pin-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .event-pin-value {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .pin-toggle-btn {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-bright);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .pin-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── SHARE URL ROWS ─── */
+  .event-urls {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .url-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+
+  .url-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .url-val {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .url-copy-btn {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-bright);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .url-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .url-copy-btn.copied { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  /* ─── INLINE EDIT PANEL ─── */
+  .edit-panel {
+    display: none;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .edit-panel.open { display: block; }
+
+  .edit-field-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .edit-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 12px 16px;
+    outline: none;
+    margin-bottom: 10px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+  }
+
+  .edit-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .edit-input::placeholder { color: var(--muted); font-weight: 400; }
+
+  textarea.edit-input {
+    height: 80px;
+    resize: none;
+    line-height: 1.5;
+  }
+
+  .edit-schedule-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .edit-schedule-group { flex: 1; }
+
+  .edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .btn-save {
+    padding: 10px 20px;
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+
+  .btn-save:hover { box-shadow: 0 0 16px var(--accent-glow); }
+
+  .btn-cancel-edit {
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-cancel-edit:hover { border-color: var(--text); color: var(--text); }
+
+  .btn-edit {
+    padding: 11px 20px;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── PRINT OVERLAY ─── */
+  #printOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(9,11,16,0.95);
+    z-index: 400;
+    overflow-y: auto;
+    padding: 20px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  #printOverlay.open {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .print-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    z-index: 1;
+  }
+
+  .print-toolbar-btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--border-bright);
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .print-toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .print-toolbar-btn.close:hover { border-color: var(--pink); color: var(--pink); }
+
+  /* A4 PAGE */
+  .print-page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #ffffff;
+    box-shadow: 0 8px 60px rgba(0,0,0,0.6);
+    border-radius: 4px;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .print-inner {
+    width: 100%;
+    padding: 18mm 16mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: #0a0a0f;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  .print-top-rule {
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #c6ff00, #ff3e7f);
+    border-radius: 2px;
+    margin-bottom: 10mm;
+  }
+
+  .print-bottom-rule {
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #c6ff00, #ff3e7f);
+    border-radius: 2px;
+    margin-top: auto;
+    margin-bottom: 6mm;
+  }
+
+  .print-header { margin-bottom: 8mm; }
+
+  .print-brand {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.1em;
+    color: #555;
+  }
+
+  .print-brand span { color: #ff3e7f; }
+
+  .print-event-name {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: clamp(2.8rem, 8vw, 4.8rem);
+    letter-spacing: 0.03em;
+    color: #0a0a0f;
+    line-height: 1;
+    margin-bottom: 4mm;
+  }
+
+  .print-event-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+    color: #444;
+    margin-bottom: 5mm;
+    text-transform: uppercase;
+  }
+
+  .print-event-desc {
+    font-size: 1.05rem;
+    color: #333;
+    line-height: 1.6;
+    max-width: 130mm;
+    margin-bottom: 10mm;
+    font-style: italic;
+    min-height: 0;
+  }
+
+  .print-qr-wrap {
+    margin: 4mm 0 8mm;
+  }
+
+  .print-qr-box {
+    display: inline-block;
+    padding: 6mm;
+    border: 3px solid #0a0a0f;
+    border-radius: 8px;
+    line-height: 0;
+  }
+
+  .print-qr-box canvas, .print-qr-box img { display: block; }
+
+  .print-cta {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.06em;
+    color: #0a0a0f;
+    margin-bottom: 3mm;
+  }
+
+  .print-url {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: #666;
+    word-break: break-all;
+    max-width: 130mm;
+    margin-bottom: 10mm;
+  }
+
+  .print-footer {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #aaa;
+  }
+
+  /* ─── @MEDIA PRINT ─── */
+  @media print {
+    @page { size: A4; margin: 0; }
+
+    body * { visibility: hidden; }
+
+    #printOverlay,
+    #printOverlay * { visibility: visible; }
+
+    #printOverlay {
+      display: block !important;
+      position: fixed;
+      inset: 0;
+      background: none;
+      padding: 0;
+      overflow: visible;
+    }
+
+    .print-toolbar { display: none !important; }
+
+    .print-page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0;
+      box-shadow: none;
+      border-radius: 0;
+      page-break-after: always;
+    }
+  }
+
+  /* ─── SUMMARY BAR ─── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+
+  .summary-card .val {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .summary-card .lbl {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ─── TOOLBAR ─── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .btn-delete-all {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid rgba(255,62,127,0.35);
+    background: rgba(255,62,127,0.06);
+    color: var(--pink);
+  }
+
+  .btn-delete-all:hover { background: var(--pink); color: #fff; }
+
+  /* ─── EVENT CARD ─── */
+  .event-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+
+  .event-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 3px 0 0 3px;
+  }
+
+  .event-card.removing {
+    opacity: 0;
+    transform: translateX(40px);
+    pointer-events: none;
+  }
+
+  .event-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .event-name {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  .event-code {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(198,255,0,0.2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin-top: 6px;
+    display: inline-block;
+  }
+
+  .event-desc {
+    font-size: 0.9rem;
+    color: rgba(240,240,248,0.65);
+    font-style: italic;
+    margin-top: 10px;
+    line-height: 1.5;
+    border-left: 2px solid rgba(198,255,0,0.3);
+    padding-left: 12px;
+  }
+
+  .event-meta {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-top: 10px;
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .event-meta .meta-item { display: flex; gap: 6px; align-items: center; }
+
+  .event-meta .meta-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    opacity: 0.4;
+  }
+
+  .event-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+
+  .btn-open {
+    padding: 11px 20px;
+    border: 1px solid rgba(198,255,0,0.3);
+    border-radius: var(--radius-sm);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    display: inline-block;
+  }
+
+  .btn-open:hover { background: var(--accent); color: #0a0a0f; }
+
+  .btn-delete {
+    padding: 11px 20px;
+    border: 1px solid rgba(255,62,127,0.3);
+    border-radius: var(--radius-sm);
+    background: var(--pink-dim);
+    color: var(--pink);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-delete:hover { background: var(--pink); color: #fff; }
+
+  /* ─── PENDING REQUESTS EXPANDABLE ─── */
+  .btn-expand {
+    padding: 11px 20px;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-expand:hover { border-color: var(--text); color: var(--text); }
+
+  .requests-list {
+    display: none;
+    margin-top: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  .requests-list.open { display: block; }
+
+  .req-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .req-item:last-child { border-bottom: none; }
+
+  .req-song {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .req-who {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  /* ─── EMPTY / LOADING ─── */
+  .state-msg {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--muted);
+  }
+
+  .state-msg .icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+
+  .state-msg p {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* ─── CONFIRM MODAL ─── */
+  #confirmModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,11,16,0.92);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 30px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  #confirmModal.show { opacity: 1; pointer-events: all; }
+
+  .modal-box {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    padding: 32px;
+    max-width: 440px;
+    width: 100%;
+  }
+
+  .modal-box h2 {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    letter-spacing: 0.04em;
+    color: var(--pink);
+    margin-bottom: 10px;
+  }
+
+  .modal-box p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  .modal-box p strong { color: var(--text); }
+
+  .modal-actions { display: flex; gap: 10px; }
+
+  .btn-confirm-delete {
+    flex: 1;
+    padding: 14px;
+    background: var(--pink);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-confirm-delete:hover { background: #ff1a65; }
+
+  .btn-cancel {
+    flex: 1;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE — MOBILE  (≤ 768px)
+  ════════════════════════════════════════════════ */
+  @media (max-width: 768px) {
+    input[type="text"], input[type="date"], input[type="time"],
+    textarea { font-size: 1rem !important; }
+
+    .panel { padding: 0 16px 40px; }
+    .header { padding-top: 18px; }
+
+    .summary { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .summary-card .val { font-size: 1.8rem; }
+    .summary-card .lbl { font-size: 0.55rem; }
+
+    .create-row { flex-direction: column; }
+    .btn-create { width: 100%; }
+
+    .schedule-row { flex-direction: column; }
+
+    .event-actions { flex-wrap: wrap; }
+    .btn-open, .btn-edit, .btn-delete { flex: 1 1 auto; text-align: center; }
+
+    .toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE — LARGE / 16:9  (≥ 1100px)
+  ════════════════════════════════════════════════ */
+  @media (min-width: 1100px) {
+    .panel { max-width: 1600px; padding: 0 48px 80px; }
+
+    /* 2-column event cards */
+    #eventList {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    /* State messages span both columns */
+    #eventList > .state-msg { grid-column: 1 / -1; }
+
+    /* Summary wider */
+    .summary { gap: 16px; }
+    .summary-card .val { font-size: 3rem; }
+
+    /* Create panel side by side */
+    .create-row { align-items: flex-end; }
+    .create-input { font-size: 1.15rem; }
+  }
+
+  /* ════════════════════════════════════════════════
+     4K / 2K  (≥ 1800px)
+  ════════════════════════════════════════════════ */
+  @media (min-width: 1800px) {
+    .panel { padding: 0 100px 100px; }
+
+    #eventList { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+    .summary { gap: 20px; }
+    .summary-card .val { font-size: 3.6rem; }
+    .logo { font-size: 3rem; }
+
+    .event-name { font-size: 2.4rem; }
+    .create-input { font-size: 1.25rem; padding: 16px 22px; }
+  }
+  /* ─── PIN OVERLAY ─── */
+  #pinOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .pin-box {
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+  }
+
+  .pin-logo {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    line-height: 1;
+  }
+
+  .pin-logo span { color: var(--pink); }
+
+  .pin-sub {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .pin-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border-bright);
+    background: transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .pin-dot.filled {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  .pin-dot.error {
+    background: var(--pink);
+    border-color: var(--pink);
+    animation: shake 0.4s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-6px); }
+    40%       { transform: translateX(6px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+  }
+
+  .pin-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  .pin-key {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-bottom: 3px solid rgba(0,0,0,0.35);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    padding: 20px 0;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.08s, transform 0.06s, border-color 0.08s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .pin-key:active {
+    background: var(--surface2);
+    transform: translateY(2px);
+    border-bottom-width: 1px;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .pin-key.wide {
+    grid-column: span 2;
+  }
+
+  .pin-key.del {
+    color: var(--pink);
+    font-size: 1.4rem;
+    letter-spacing: 0;
+  }
+
+  .pin-error-msg {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pink);
+    margin-top: 20px;
+    height: 16px;
+    transition: opacity 0.2s;
+    opacity: 0;
+  }
+
+  .pin-error-msg.show { opacity: 1; }
+  /* ─── PIN OVERLAY ─── */
+  #pinOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+  }
+
+  #pinOverlay.unlocked {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+
+  .pin-box {
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+  }
+
+  .pin-logo {
+    font-family: var(--font-display);
+    font-size: 2.8rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .pin-logo span { color: var(--pink); }
+
+  .pin-sub {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 36px;
+  }
+
+  .pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+
+  .pin-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border-bright);
+    background: transparent;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  }
+
+  .pin-dot.filled {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.15);
+  }
+
+  .pin-dot.error {
+    background: var(--pink);
+    border-color: var(--pink);
+    animation: shake 0.4s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-6px); }
+    40%       { transform: translateX(6px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+  }
+
+  .pin-error {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pink);
+    height: 18px;
+    margin-bottom: 28px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .pin-error.show { opacity: 1; }
+
+  .pin-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .pin-key {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-bottom: 3px solid rgba(0,0,0,0.4);
+    border-radius: 14px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    padding: 22px 0;
+    cursor: pointer;
+    transition: background 0.08s, transform 0.06s, border-color 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .pin-key:hover { background: var(--surface2); border-color: var(--accent); }
+
+  .pin-key:active {
+    transform: translateY(2px);
+    border-bottom-width: 1px;
+    background: var(--surface2);
+  }
+
+  .pin-back {
+    font-size: 1.4rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<!-- ═══ PIN OVERLAY ═══ -->
+<div id="pinOverlay">
+  <div class="pin-box">
+    <div class="pin-logo">DJ<span>:</span>Admin</div>
+    <div class="pin-sub">Enter PIN to continue</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+    <div class="pin-error" id="pinError">Incorrect PIN</div>
+    <div class="pin-grid">
+      <button class="pin-key" onclick="pinPress('1')">1</button>
+      <button class="pin-key" onclick="pinPress('2')">2</button>
+      <button class="pin-key" onclick="pinPress('3')">3</button>
+      <button class="pin-key" onclick="pinPress('4')">4</button>
+      <button class="pin-key" onclick="pinPress('5')">5</button>
+      <button class="pin-key" onclick="pinPress('6')">6</button>
+      <button class="pin-key" onclick="pinPress('7')">7</button>
+      <button class="pin-key" onclick="pinPress('8')">8</button>
+      <button class="pin-key" onclick="pinPress('9')">9</button>
+      <div></div>
+      <button class="pin-key" onclick="pinPress('0')">0</button>
+      <button class="pin-key pin-back" onclick="pinBack()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+
+  <div class="header">
+    <div class="logo">DJ<span>:</span>Admin</div>
+    <div class="header-right">
+      <div class="badge"><span class="live-dot" id="connDot"></span>Event Manager</div>
+      <a id="boothLink" target="_blank" style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">↗ DJ Booth</a>
+    </div>
+  </div>
+
+  <!-- CREATE EVENT -->
+  <div class="create-panel">
+    <div class="create-label">New Event</div>
+    <div class="create-row">
+      <input id="newEventName" class="create-input" type="text" placeholder="e.g. Dave's Wedding, Staff Party…" maxlength="60" autocomplete="off">
+      <button class="btn-create" id="createBtn" onclick="createNewEvent()">Create →</button>
+    </div>
+    <textarea id="newEventDesc" class="create-input create-desc" placeholder="Description (optional) — e.g. No dubstep please! / Welcome to Dave &amp; Sarah's party 🎉" maxlength="500"></textarea>
+    <div class="schedule-toggle-row">
+      <label class="schedule-toggle-label">
+        <input type="checkbox" id="scheduleCheck" onchange="toggleScheduleInputs()">
+        <span class="schedule-toggle-text">Schedule for a future date</span>
+      </label>
+    </div>
+    <div id="scheduleFields" class="schedule-fields hidden">
+      <div class="schedule-hint">Guests can scan the QR code now but the request form opens automatically at the scheduled time.</div>
+      <div class="schedule-row">
+        <div class="schedule-group">
+          <label class="schedule-field-label">Date</label>
+          <input type="date" id="scheduleDate" class="create-input schedule-input">
+        </div>
+        <div class="schedule-group">
+          <label class="schedule-field-label">Time</label>
+          <input type="time" id="scheduleTime" class="create-input schedule-input">
+        </div>
+      </div>
+    </div>
+
+    <span class="theme-picker-label">Event PIN <span style="opacity:.5;font-size:.85em">(4 digits — protects the DJ Booth)</span></span>
+    <div class="create-row" style="margin-bottom:14px;">
+      <input id="newEventPin" class="create-input" type="text" inputmode="numeric" maxlength="4"
+        pattern="[0-9]{4}" placeholder="e.g. 1234" autocomplete="off"
+        style="letter-spacing:.2em;font-size:1.4rem;text-align:center;max-width:160px;"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+      <button class="btn-create" type="button" onclick="document.getElementById('newEventPin').value=String(Math.floor(1000+Math.random()*9000))" style="white-space:nowrap;padding:14px 18px;font-size:1rem;">🎲 Random</button>
+    </div>
+
+    <span class="theme-picker-label">Display Mode</span>
+    <label class="mobile-only-toggle">
+      <input type="checkbox" id="newMobileOnly">
+      <div class="mot-track">
+        <div class="mot-thumb"></div>
+      </div>
+      <div class="mot-info">
+        <span class="mot-title">📱 Mobile Only Mode</span>
+        <span class="mot-desc">Hides the form — shows QR code and live request list on screen. Guests submit from their own phones.</span>
+      </div>
+    </label>
+
+    <span class="theme-picker-label">Theme</span>
+    <div class="theme-swatches" id="createThemeSwatches">
+      <label class="theme-swatch selected" onclick="selectTheme('neon', this)">
+        <input type="radio" name="createTheme" value="neon" checked>
+        <div class="selected-tick">✓</div>
+        <div class="swatch-preview" style="background:#090b10;">
+          <div class="swatch-dot" style="background:#c6ff00;"></div>
+          <div class="swatch-dot" style="background:#ff3e7f;"></div>
+        </div>
+        <div class="swatch-name">Neon</div>
+      </label>
+      <label class="theme-swatch" onclick="selectTheme('midnight', this)">
+        <input type="radio" name="createTheme" value="midnight">
+        <div class="selected-tick">✓</div>
+        <div class="swatch-preview" style="background:#07090f;">
+          <div class="swatch-dot" style="background:#4fc3f7;"></div>
+          <div class="swatch-dot" style="background:#c084fc;"></div>
+        </div>
+        <div class="swatch-name">Midnight</div>
+      </label>
+      <label class="theme-swatch" onclick="selectTheme('light', this)">
+        <input type="radio" name="createTheme" value="light">
+        <div class="selected-tick">✓</div>
+        <div class="swatch-preview" style="background:#f1f5f9;border:1px solid rgba(0,0,0,0.08);">
+          <div class="swatch-dot" style="background:#6d28d9;"></div>
+          <div class="swatch-dot" style="background:#db2777;"></div>
+        </div>
+        <div class="swatch-name">Light</div>
+      </label>
+      <label class="theme-swatch" onclick="selectTheme('custom', this)">
+        <input type="radio" name="createTheme" value="custom">
+        <div class="selected-tick">✓</div>
+        <div class="swatch-preview" style="background:linear-gradient(135deg,#1a0533,#2d1b69);">
+          <span style="font-size:1.1rem;">🎨</span>
+        </div>
+        <div class="swatch-name">Custom</div>
+      </label>
+    </div>
+
+    <div id="createCustomColors" class="custom-color-panel">
+      <div class="color-picker-grid">
+        <label class="color-picker-item"><span class="color-picker-label">Background</span><input type="color" id="cc-bg"        value="#090b10" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Surface</span><input type="color"   id="cc-surface"   value="#111420" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Accent</span><input type="color"    id="cc-accent"    value="#c6ff00" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Secondary</span><input type="color" id="cc-secondary" value="#ff3e7f" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Body Text</span><input type="color" id="cc-text"      value="#f0f0f8" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Headings</span><input type="color"  id="cc-heading"   value="#f0f0f8" class="color-swatch-input"></label>
+        <label class="color-picker-item"><span class="color-picker-label">Subtitles</span><input type="color" id="cc-body"      value="#7f8ea3" class="color-swatch-input"></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-card">
+      <div class="val" id="totalEvents">—</div>
+      <div class="lbl">Total events</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" id="totalRequests">—</div>
+      <div class="lbl">Total requests</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" id="totalPlayed">—</div>
+      <div class="lbl">Songs played</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="section-label">All events</div>
+    <button class="btn-delete-all" onclick="confirmDeleteAll()">🗑 Delete All Events</button>
+  </div>
+
+  <div id="eventList"><div class="state-msg"><div class="icon">⏳</div><p>Loading events…</p></div></div>
+
+</div>
+
+<!-- PRINT QR OVERLAY -->
+<div id="printOverlay">
+  <div class="print-toolbar" id="printToolbar">
+    <button class="print-toolbar-btn" onclick="window.print()">🖨 Print</button>
+    <button class="print-toolbar-btn close" onclick="closePrint()">✕ Close</button>
+  </div>
+  <div class="print-page" id="printPage">
+    <div class="print-inner">
+      <div class="print-top-rule"></div>
+
+      <div class="print-header">
+        <div class="print-brand">DJ<span>:</span>Request</div>
+      </div>
+
+      <div class="print-event-name" id="printEventName"></div>
+      <div class="print-event-date" id="printEventDate"></div>
+      <div class="print-event-desc" id="printEventDesc"></div>
+
+      <div class="print-qr-wrap">
+        <div class="print-qr-box" id="printQrBox"></div>
+      </div>
+
+      <div class="print-cta">Scan to request a song</div>
+      <div class="print-url" id="printUrl"></div>
+
+      <div class="print-bottom-rule"></div>
+      <div class="print-footer">Powered by DJ:Request</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirmModal">
+  <div class="modal-box">
+    <h2 id="modalTitle">Delete Event?</h2>
+    <p id="modalBody">This will permanently delete all requests and history for this event.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm-delete" id="modalConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ PIN ═══
+const CORRECT_PIN = '2424';
+let pinEntry = '';
+
+function pinPress(digit) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += digit;
+  updateDots();
+  if (pinEntry.length === 4) checkPin();
+}
+
+function pinBack() {
+  pinEntry = pinEntry.slice(0, -1);
+  updateDots();
+  clearPinError();
+}
+
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('d' + i);
+    dot.classList.toggle('filled', i < pinEntry.length);
+    dot.classList.remove('error');
+  }
+}
+
+function checkPin() {
+  if (pinEntry === CORRECT_PIN) {
+    sessionStorage.setItem('adminUnlocked', '1');
+    document.getElementById('pinOverlay').classList.add('unlocked');
+    setTimeout(() => document.getElementById('pinOverlay').remove(), 450);
+  } else {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('d' + i);
+      dot.classList.remove('filled');
+      dot.classList.add('error');
+    }
+    document.getElementById('pinError').classList.add('show');
+    setTimeout(() => {
+      pinEntry = '';
+      updateDots();
+      clearPinError();
+    }, 700);
+  }
+}
+
+function clearPinError() {
+  document.getElementById('pinError').classList.remove('show');
+}
+
+// Physical keyboard support for PIN
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('pinOverlay');
+  if (overlay && !overlay.classList.contains('unlocked')) {
+    if (e.key >= '0' && e.key <= '9') pinPress(e.key);
+    if (e.key === 'Backspace') pinBack();
+  }
+});
+
+// Already unlocked this session?
+if (sessionStorage.getItem('adminUnlocked') === '1') {
+  document.getElementById('pinOverlay').remove();
+}
+
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBOdgG_AE1Rng88eoH5bLue1eY9VMwAsOc",
+  authDomain:        "dj-request-gt.firebaseapp.com",
+  databaseURL:       "https://dj-request-gt-default-rtdb.firebaseio.com",
+  projectId:         "dj-request-gt",
+  storageBucket:     "dj-request-gt.firebasestorage.app",
+  messagingSenderId: "793216376391",
+  appId:             "1:793216376391:web:6cf9f0b7cfa0fbc5ec9b62"
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+
+// ─── COMPUTE BASE URL
+const eventUrl = window.location.origin + window.location.pathname.replace(/\/admin(?: \(1\))?\.html$/, '/event.html');
+document.getElementById('boothLink').href = eventUrl + '?mode=dj';
+
+// ─── AUTO-REFRESH: listen for any changes to events node
+// Debounced so rapid Firebase writes don't cause multiple reloads
+let eventsRefreshTimer = null;
+db.ref('events').on('value', () => {
+  clearTimeout(eventsRefreshTimer);
+  eventsRefreshTimer = setTimeout(loadEvents, 300);
+});
+
+// ─── CONNECTION DOT
+db.ref('.info/connected').on('value', snap => {
+  const dot = document.getElementById('connDot');
+  dot.style.background = snap.val() ? 'var(--accent)' : 'var(--pink)';
+});
+
+// ─── HELPERS
+function genEventId() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id = '';
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
+
+// ─── THEME PICKER
+function selectTheme(value, clickedLabel) {
+  document.querySelectorAll('#createThemeSwatches .theme-swatch').forEach(s => s.classList.remove('selected'));
+  clickedLabel.classList.add('selected');
+  clickedLabel.querySelector('input').checked = true;
+  // Show colour pickers only for custom theme
+  const panel = document.getElementById('createCustomColors');
+  if (panel) panel.classList.toggle('open', value === 'custom');
+}
+
+function selectEditTheme(eventId, value, clickedLabel) {
+  const container = document.getElementById('edit-theme-swatches-' + eventId);
+  container?.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('selected'));
+  clickedLabel.classList.add('selected');
+  clickedLabel.querySelector('input').checked = true;
+  const panel = document.getElementById('edit-custom-colors-' + eventId);
+  if (panel) panel.classList.toggle('open', value === 'custom');
+}
+
+function getSelectedTheme(radioName) {
+  return document.querySelector(`input[name="${radioName}"]:checked`)?.value || 'neon';
+}
+
+// ─── CREATE NEW EVENT
+function toggleScheduleInputs() {
+  const fields = document.getElementById('scheduleFields');
+  const checked = document.getElementById('scheduleCheck').checked;
+  fields.classList.toggle('hidden', !checked);
+  if (checked) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('scheduleDate').value = tomorrow.toISOString().slice(0, 10);
+    document.getElementById('scheduleTime').value = '19:00';
+  }
+}
+
+// ─── CREATE NEW EVENT
+function createNewEvent() {
+  const name = document.getElementById('newEventName').value.trim();
+  if (!name) { document.getElementById('newEventName').focus(); return; }
+  const desc      = document.getElementById('newEventDesc').value.trim();
+  const theme     = getSelectedTheme('createTheme');
+  const pin       = document.getElementById('newEventPin').value.trim();
+  const scheduled = document.getElementById('scheduleCheck').checked;
+
+  let scheduledAt = null;
+  if (scheduled) {
+    const d = document.getElementById('scheduleDate').value;
+    const t = document.getElementById('scheduleTime').value;
+    if (!d || !t) { alert('Please set both a date and time for the scheduled event.'); return; }
+    scheduledAt = new Date(d + 'T' + t).getTime();
+    if (isNaN(scheduledAt)) { alert('Invalid date or time.'); return; }
+  }
+
+  const btn = document.getElementById('createBtn');
+  btn.textContent = 'Creating…';
+  btn.disabled = true;
+
+  const eventId = genEventId();
+  const payload = { name, theme };
+  if (desc) payload.description = desc;
+  if (pin)  payload.pin = pin;
+  payload.mobileOnly = document.getElementById('newMobileOnly')?.checked || false;
+  if (theme === 'custom') {
+    payload.customColors = {
+      bg:        document.getElementById('cc-bg')?.value        || '#090b10',
+      surface:   document.getElementById('cc-surface')?.value   || '#111420',
+      accent:    document.getElementById('cc-accent')?.value    || '#c6ff00',
+      secondary: document.getElementById('cc-secondary')?.value || '#ff3e7f',
+      text:      document.getElementById('cc-text')?.value      || '#f0f0f8',
+      heading:   document.getElementById('cc-heading')?.value   || '#f0f0f8',
+      body:      document.getElementById('cc-body')?.value      || '#7f8ea3',
+    };
+  }
+  if (scheduledAt) payload.scheduledAt = scheduledAt;
+
+  db.ref('events/' + eventId).update(payload)
+    .then(() => {
+      document.getElementById('newEventName').value = '';
+      document.getElementById('newEventDesc').value = '';
+      document.getElementById('newEventPin').value  = '';
+      document.getElementById('newMobileOnly').checked = false;
+      document.getElementById('scheduleCheck').checked = false;
+      document.getElementById('scheduleFields').classList.add('hidden');
+      // Reset theme swatch to neon
+      document.querySelectorAll('#createThemeSwatches .theme-swatch').forEach(s => s.classList.remove('selected'));
+      document.querySelector('#createThemeSwatches .theme-swatch').classList.add('selected');
+      document.querySelector('input[name="createTheme"]').checked = true;
+      document.getElementById('createCustomColors')?.classList.remove('open');
+      btn.textContent = 'Create →';
+      btn.disabled = false;
+      loadEvents(); // refresh the list immediately
+      openInBooth(eventId);
+    })
+    .catch(err => {
+      btn.textContent = 'Create →';
+      btn.disabled = false;
+      alert('Could not create event: ' + err.message);
+    });
+}
+
+document.getElementById('newEventName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') createNewEvent();
+});
+
+// ─── OPEN IN BOOTH
+function openInBooth(eventId) {
+  localStorage.setItem('djCurrentEvent', eventId);
+  window.open(eventUrl + '?mode=dj&event=' + eventId, '_blank');
+}
+function loadEvents() {
+  db.ref('events').get().then(snap => {
+    const eventList = document.getElementById('eventList');
+    const data = snap.val();
+
+    if (!data) {
+      eventList.innerHTML = `<div class="state-msg"><div class="icon">♫</div><p>No events found</p></div>`;
+      document.getElementById('totalEvents').textContent = '0';
+      document.getElementById('totalRequests').textContent = '0';
+      document.getElementById('totalPlayed').textContent = '0';
+      return;
+    }
+
+    const events = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+
+    // Sort newest first by checking request timestamps
+    // (approximate — use the id since it's random, fall back to name)
+    eventList.innerHTML = '';
+
+    let grandRequests = 0;
+    let grandPlayed   = 0;
+
+    events.forEach(event => {
+      const requests  = event.requests  ? Object.values(event.requests)  : [];
+      const history   = event.history   ? Object.values(event.history)   : [];
+      const pending   = requests.length;
+      const played    = (event.stats?.played   || 0);
+      const rejected  = (event.stats?.rejected || 0);
+      const locked    = event.locked === true;
+
+      grandRequests += pending + history.length;
+      grandPlayed   += played;
+
+      // Most recent request time
+      const allTimes = requests.map(r => r.time).filter(Boolean);
+      const lastTime = allTimes.length ? Math.max(...allTimes) : null;
+
+      const card = document.createElement('div');
+      card.className   = 'event-card';
+      card.id          = 'card-' + event.id;
+
+      const baseUrl  = window.location.origin + window.location.pathname.replace(/\/admin(?: \(1\))?\.html$/, '/event.html');
+      const guestUrl = baseUrl + '?event=' + event.id;
+      const djUrl    = baseUrl + '?mode=dj';
+
+      // Determine status
+      const now = Date.now();
+      let statusHtml = '';
+      let countdownHtml = '';
+      if (event.scheduledAt) {
+        const diff = event.scheduledAt - now;
+        if (diff > 0) {
+          statusHtml = `<div class="event-status upcoming"><div class="status-dot"></div>Upcoming</div>`;
+          countdownHtml = `<div class="event-countdown-admin" id="acd-${event.id}" data-ts="${event.scheduledAt}">⏱ ${formatCountdown(diff)}</div>`;
+        } else {
+          statusHtml = `<div class="event-status live"><div class="status-dot"></div>Live</div>`;
+        }
+      } else {
+        statusHtml = `<div class="event-status live"><div class="status-dot"></div>Live</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="event-top">
+          <div>
+            <div class="event-name">${escHtml(event.name || 'Unnamed Event')}<span class="theme-badge ${event.theme || 'neon'}">${event.theme || 'neon'}</span></div>
+            <div class="event-code">CODE: ${event.id}</div>
+            ${event.scheduledAt ? `<div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.1em;color:var(--muted);margin-top:4px;">📅 ${new Date(event.scheduledAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}</div>` : ''}
+            ${statusHtml}
+            ${countdownHtml}
+          </div>
+          ${locked ? '<div style="font-size:1.4rem;padding-top:4px;" title="Requests locked">🔒</div>' : ''}
+        </div>
+        ${event.description ? `<div class="event-desc">${escHtml(event.description)}</div>` : ''}
+        ${event.mobileOnly ? `<div class="mob-only-badge">📱 Mobile Only Mode</div>` : ''}
+        <div class="event-pin-row">
+          <span class="event-pin-label">🔐 Booth PIN:</span>
+          ${event.pin
+            ? `<span class="event-pin-value" id="pin-val-${event.id}" data-pin="${escHtml(event.pin)}" style="filter:blur(5px);cursor:pointer;transition:filter .2s;" onclick="togglePinVisibility('${event.id}')" title="Click to reveal">••••</span>
+               <button class="pin-toggle-btn" id="pin-btn-${event.id}" onclick="togglePinVisibility('${event.id}')">👁 Show</button>`
+            : `<span style="opacity:.45;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:.1em;">Not set</span>`}
+        </div>
+        <div class="event-meta">
+          <div class="meta-item"><div class="meta-dot"></div>${pending} pending</div>
+          <div class="meta-item"><div class="meta-dot"></div>${played} played</div>
+          <div class="meta-item"><div class="meta-dot"></div>${rejected} rejected</div>
+          ${lastTime ? `<div class="meta-item"><div class="meta-dot"></div>Last request ${relTime(lastTime)}</div>` : ''}
+        </div>
+        <div class="event-actions">
+          <a class="btn-open" href="${guestUrl}" target="_blank">↗ Guest Page</a>
+          <button class="btn-open" onclick="openInBooth('${event.id}')">🎧 Open in Booth</button>
+          <button class="btn-edit" onclick="toggleEdit('${event.id}')">✎ Edit</button>
+          <button class="btn-edit" onclick="openPrintView('${event.id}', '${escAttr(event.name || '')}', ${event.scheduledAt || 0}, '${escAttr(event.description || '')}', '${guestUrl}')">🖨 Print QR</button>
+          ${requests.length > 0 ? `<button class="btn-expand" onclick="toggleRequests('${event.id}')">▾ ${pending} Pending</button>` : ''}
+          <button class="btn-delete" onclick="confirmDelete('${event.id}', '${escAttr(event.name || 'Unnamed Event')}')">🗑 Delete</button>
+        </div>
+
+        <!-- SHARE URLS -->
+        <div class="event-urls">
+          <div class="url-row">
+            <span class="url-label">🎵 Guest</span>
+            <span class="url-val" id="gurl-${event.id}">${guestUrl}</span>
+            <button class="url-copy-btn" onclick="copyUrl('${guestUrl}', this)">Copy</button>
+          </div>
+          <div class="url-row">
+            <span class="url-label">🎧 Booth</span>
+            <span class="url-val">${baseUrl}?mode=dj&event=${event.id}</span>
+            <button class="url-copy-btn" onclick="copyUrl('${baseUrl}?mode=dj&event=${event.id}', this)">Copy</button>
+          </div>
+          ${event.mobileOnly ? `
+          <div class="url-row" style="border-color:rgba(79,195,247,0.25);">
+            <span class="url-label" style="color:#4fc3f7;">📺 Display</span>
+            <span class="url-val">${guestUrl}&display=1</span>
+            <button class="url-copy-btn" onclick="copyUrl('${guestUrl}&display=1', this)">Copy</button>
+          </div>` : ''}
+          ${event.pin ? `
+          <div class="url-row" style="border-color:rgba(167,139,250,0.25);">
+            <span class="url-label" style="color:#a78bfa;">⚙ Manage</span>
+            <span class="url-val">${baseUrl.replace('event.html', '')}manage.html?event=${event.id}</span>
+            <button class="url-copy-btn" onclick="copyUrl('${baseUrl.replace('event.html', '')}manage.html?event=${event.id}', this)">Copy</button>
+          </div>` : ''}
+        </div>
+
+        <!-- INLINE EDIT PANEL -->
+        <div class="edit-panel" id="edit-${event.id}">
+          <label class="edit-field-label">Event Name</label>
+          <input class="edit-input" id="edit-name-${event.id}" type="text" value="${escHtml(event.name || '')}" maxlength="60">
+          <label class="edit-field-label">Description <span style="opacity:.5;font-size:.9em">(optional)</span></label>
+          <textarea class="edit-input" id="edit-desc-${event.id}" maxlength="500" placeholder="e.g. No dubstep please!">${escHtml(event.description || '')}</textarea>
+          <label class="edit-field-label">Scheduled Date <span style="opacity:.5;font-size:.9em">(optional)</span></label>
+          <div class="edit-schedule-row">
+            <div class="edit-schedule-group">
+              <label class="edit-field-label">Date</label>
+              <input class="edit-input" id="edit-date-${event.id}" type="date" value="${event.scheduledAt ? new Date(event.scheduledAt).toISOString().slice(0,10) : ''}">
+            </div>
+            <div class="edit-schedule-group">
+              <label class="edit-field-label">Time</label>
+              <input class="edit-input" id="edit-time-${event.id}" type="time" value="${event.scheduledAt ? new Date(event.scheduledAt).toTimeString().slice(0,5) : ''}">
+            </div>
+          </div>
+          <label class="edit-field-label">Display Mode</label>
+          <label class="mobile-only-toggle" style="margin-bottom:12px;">
+            <input type="checkbox" id="edit-mobile-${event.id}" ${event.mobileOnly ? 'checked' : ''}>
+            <div class="mot-track"><div class="mot-thumb"></div></div>
+            <div class="mot-info">
+              <span class="mot-title">📱 Mobile Only Mode</span>
+              <span class="mot-desc">Hides the form — shows QR and live list only.</span>
+            </div>
+          </label>
+          <label class="edit-field-label">Booth PIN <span style="opacity:.5;font-size:.9em">(4 digits, optional)</span></label>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <input class="edit-input" id="edit-pin-${event.id}" type="text" inputmode="numeric"
+              maxlength="4" placeholder="e.g. 5678" value="${escHtml(event.pin || '')}"
+              style="letter-spacing:.2em;font-size:1.2rem;text-align:center;max-width:130px;"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+            <button class="btn-cancel-edit" type="button" style="font-size:.65rem;padding:8px 12px;"
+              onclick="document.getElementById('edit-pin-${event.id}').value=String(Math.floor(1000+Math.random()*9000))">🎲 New Random</button>
+          </div>
+          <label class="edit-field-label">Theme</label>
+          <div class="theme-swatches" id="edit-theme-swatches-${event.id}">
+            <label class="theme-swatch ${!event.theme || event.theme === 'neon' ? 'selected' : ''}" onclick="selectEditTheme('${event.id}', 'neon', this)">
+              <input type="radio" name="editTheme-${event.id}" value="neon" ${!event.theme || event.theme === 'neon' ? 'checked' : ''}>
+              <div class="selected-tick">✓</div>
+              <div class="swatch-preview" style="background:#090b10;"><div class="swatch-dot" style="background:#c6ff00;"></div><div class="swatch-dot" style="background:#ff3e7f;"></div></div>
+              <div class="swatch-name">Neon</div>
+            </label>
+            <label class="theme-swatch ${event.theme === 'midnight' ? 'selected' : ''}" onclick="selectEditTheme('${event.id}', 'midnight', this)">
+              <input type="radio" name="editTheme-${event.id}" value="midnight" ${event.theme === 'midnight' ? 'checked' : ''}>
+              <div class="selected-tick">✓</div>
+              <div class="swatch-preview" style="background:#07090f;"><div class="swatch-dot" style="background:#4fc3f7;"></div><div class="swatch-dot" style="background:#c084fc;"></div></div>
+              <div class="swatch-name">Midnight</div>
+            </label>
+            <label class="theme-swatch ${event.theme === 'light' ? 'selected' : ''}" onclick="selectEditTheme('${event.id}', 'light', this)">
+              <input type="radio" name="editTheme-${event.id}" value="light" ${event.theme === 'light' ? 'checked' : ''}>
+              <div class="selected-tick">✓</div>
+              <div class="swatch-preview" style="background:#f1f5f9;border:1px solid rgba(0,0,0,0.08);"><div class="swatch-dot" style="background:#6d28d9;"></div><div class="swatch-dot" style="background:#db2777;"></div></div>
+              <div class="swatch-name">Light</div>
+            </label>
+            <label class="theme-swatch ${event.theme === 'custom' ? 'selected' : ''}" onclick="selectEditTheme('${event.id}', 'custom', this)">
+              <input type="radio" name="editTheme-${event.id}" value="custom" ${event.theme === 'custom' ? 'checked' : ''}>
+              <div class="selected-tick">✓</div>
+              <div class="swatch-preview" style="background:linear-gradient(135deg,#1a0533,#2d1b69);"><span style="font-size:1.1rem;">🎨</span></div>
+              <div class="swatch-name">Custom</div>
+            </label>
+          </div>
+          <div id="edit-custom-colors-${event.id}" class="custom-color-panel ${event.theme === 'custom' ? 'open' : ''}">
+            <div class="color-picker-grid">
+              <label class="color-picker-item"><span class="color-picker-label">Background</span><input type="color" id="ecc-bg-${event.id}"        value="${event.customColors?.bg        || '#090b10'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Surface</span><input type="color"   id="ecc-surface-${event.id}"   value="${event.customColors?.surface   || '#111420'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Accent</span><input type="color"    id="ecc-accent-${event.id}"    value="${event.customColors?.accent    || '#c6ff00'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Secondary</span><input type="color" id="ecc-secondary-${event.id}" value="${event.customColors?.secondary || '#ff3e7f'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Body Text</span><input type="color"  id="ecc-text-${event.id}"      value="${event.customColors?.text      || '#f0f0f8'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Headings</span><input type="color"   id="ecc-heading-${event.id}"   value="${event.customColors?.heading   || '#f0f0f8'}" class="color-swatch-input"></label>
+              <label class="color-picker-item"><span class="color-picker-label">Subtitles</span><input type="color"  id="ecc-body-${event.id}"      value="${event.customColors?.body      || '#7f8ea3'}" class="color-swatch-input"></label>
+            </div>
+          </div>
+          <div class="edit-actions">
+            <button class="btn-save" onclick="saveEdit('${event.id}')">Save Changes</button>
+            <button class="btn-cancel-edit" onclick="toggleEdit('${event.id}')">Cancel</button>
+          </div>
+        </div>
+        ${requests.length > 0 ? `
+        <div class="requests-list" id="reqs-${event.id}">
+          ${requests.map(r => `
+            <div class="req-item">
+              <div>
+                <div class="req-song">${escHtml(r.song)}</div>
+                <div class="req-who">${escHtml(r.name)}${r.note ? ' · ' + escHtml(r.note) : ''}</div>
+              </div>
+              <div class="req-who">${r.time ? relTime(r.time) : ''}</div>
+            </div>`).join('')}
+        </div>` : ''}`;
+
+      eventList.appendChild(card);
+    });
+
+    document.getElementById('totalEvents').textContent   = events.length;
+    document.getElementById('totalRequests').textContent = grandRequests;
+    document.getElementById('totalPlayed').textContent   = grandPlayed;
+
+  }).catch(err => {
+    document.getElementById('eventList').innerHTML =
+      `<div class="state-msg"><div class="icon">⚠️</div><p>Error loading events<br>${err.message}</p></div>`;
+  });
+}
+
+loadEvents();
+
+// ─── PRINT QR
+function openPrintView(eventId, name, scheduledAt, description, guestUrl) {
+  document.getElementById('printEventName').textContent = name || 'Unnamed Event';
+
+  const dateEl = document.getElementById('printEventDate');
+  if (scheduledAt) {
+    dateEl.textContent = new Date(scheduledAt).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' });
+    dateEl.style.display = 'block';
+  } else {
+    dateEl.textContent = '';
+    dateEl.style.display = 'none';
+  }
+
+  const descEl = document.getElementById('printEventDesc');
+  if (description) {
+    descEl.textContent = description;
+    descEl.style.display = 'block';
+  } else {
+    descEl.textContent = '';
+    descEl.style.display = 'none';
+  }
+
+  document.getElementById('printUrl').textContent = guestUrl;
+
+  // Generate QR
+  const qrBox = document.getElementById('printQrBox');
+  qrBox.innerHTML = '';
+  new QRCode(qrBox, {
+    text: guestUrl,
+    width: 260,
+    height: 260,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  document.getElementById('printOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePrint() {
+  document.getElementById('printOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ─── TOGGLE EDIT PANEL
+function toggleEdit(eventId) {
+  const panel = document.getElementById('edit-' + eventId);
+  if (!panel) return;
+  const isOpen = panel.classList.contains('open');
+  // Close any other open panels first
+  document.querySelectorAll('.edit-panel.open').forEach(p => p.classList.remove('open'));
+  if (!isOpen) {
+    panel.classList.add('open');
+    document.getElementById('edit-name-' + eventId)?.focus();
+  }
+}
+
+// ─── SAVE EDIT
+function saveEdit(eventId) {
+  const name = document.getElementById('edit-name-' + eventId)?.value.trim();
+  if (!name) {
+    document.getElementById('edit-name-' + eventId)?.focus();
+    return;
+  }
+  const desc     = document.getElementById('edit-desc-' + eventId)?.value.trim();
+  const dateVal  = document.getElementById('edit-date-' + eventId)?.value;
+  const timeVal  = document.getElementById('edit-time-' + eventId)?.value;
+  const theme    = getSelectedTheme('editTheme-' + eventId);
+  const pin      = document.getElementById('edit-pin-' + eventId)?.value.trim();
+
+  const updates = { name, theme };
+  updates.description = desc || null;
+  updates.pin         = pin  || null;
+  updates.mobileOnly  = document.getElementById('edit-mobile-' + eventId)?.checked || false;
+  if (theme === 'custom') {
+    updates.customColors = {
+      bg:        document.getElementById('ecc-bg-'        + eventId)?.value || '#090b10',
+      surface:   document.getElementById('ecc-surface-'   + eventId)?.value || '#111420',
+      accent:    document.getElementById('ecc-accent-'    + eventId)?.value || '#c6ff00',
+      secondary: document.getElementById('ecc-secondary-' + eventId)?.value || '#ff3e7f',
+      text:      document.getElementById('ecc-text-'      + eventId)?.value || '#f0f0f8',
+      heading:   document.getElementById('ecc-heading-'   + eventId)?.value || '#f0f0f8',
+      body:      document.getElementById('ecc-body-'      + eventId)?.value || '#7f8ea3',
+    };
+  } else {
+    updates.customColors = null;
+  }
+
+  if (dateVal && timeVal) {
+    const ts = new Date(dateVal + 'T' + timeVal).getTime();
+    updates.scheduledAt = isNaN(ts) ? null : ts;
+  } else {
+    updates.scheduledAt = null;
+  }
+
+  const btn = document.querySelector(`#edit-${eventId} .btn-save`);
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+
+  db.ref('events/' + eventId).update(updates)
+    .then(() => {
+      document.getElementById('edit-' + eventId)?.classList.remove('open');
+      loadEvents();
+    })
+    .catch(err => {
+      if (btn) { btn.textContent = 'Save Changes'; btn.disabled = false; }
+      alert('Save failed: ' + err.message);
+    });
+}
+
+// ─── TOGGLE PENDING LIST
+function toggleRequests(eventId) {
+  const list = document.getElementById('reqs-' + eventId);
+  if (!list) return;
+  list.classList.toggle('open');
+  const btn = list.previousElementSibling?.querySelector('.btn-expand')
+    || document.querySelector(`#card-${eventId} .btn-expand`);
+}
+
+// ─── CONFIRM MODAL
+let pendingAction = null;
+
+function confirmDelete(eventId, eventName) {
+  document.getElementById('modalTitle').textContent = 'Delete Event?';
+  document.getElementById('modalBody').innerHTML =
+    `This will permanently delete <strong>${escHtml(eventName)}</strong> and all its requests, history and stats. This cannot be undone.`;
+  document.getElementById('modalConfirmBtn').onclick = () => deleteEvent(eventId);
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+function confirmDeleteAll() {
+  document.getElementById('modalTitle').textContent = 'Delete All Events?';
+  document.getElementById('modalBody').innerHTML =
+    `This will permanently delete <strong>every event</strong> and all requests, history and stats. This cannot be undone.`;
+  document.getElementById('modalConfirmBtn').onclick = deleteAllEvents;
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('show');
+}
+
+document.getElementById('confirmModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirmModal')) closeModal();
+});
+
+// ─── DELETE SINGLE EVENT
+function deleteEvent(eventId) {
+  closeModal();
+  const card = document.getElementById('card-' + eventId);
+  if (card) card.classList.add('removing');
+  db.ref('events/' + eventId).remove().then(() => {
+    if (localStorage.getItem('djCurrentEvent') === eventId) {
+      localStorage.removeItem('djCurrentEvent');
+    }
+    setTimeout(() => { if (card) card.remove(); updateSummary(); }, 320);
+  }).catch(err => alert('Delete failed: ' + err.message));
+}
+
+// ─── DELETE ALL EVENTS
+function deleteAllEvents() {
+  closeModal();
+  db.ref('events').remove().then(() => {
+    localStorage.removeItem('djCurrentEvent');
+    loadEvents();
+  }).catch(err => alert('Delete failed: ' + err.message));
+}
+
+// ─── UPDATE SUMMARY AFTER DELETION
+function updateSummary() {
+  const remaining = document.querySelectorAll('.event-card').length;
+  document.getElementById('totalEvents').textContent = remaining;
+  if (remaining === 0) {
+    document.getElementById('eventList').innerHTML =
+      `<div class="state-msg"><div class="icon">♫</div><p>No events found</p></div>`;
+    document.getElementById('totalRequests').textContent = '0';
+    document.getElementById('totalPlayed').textContent   = '0';
+  }
+}
+
+// ─── COPY URL
+function copyUrl(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ─── PIN VISIBILITY TOGGLE
+function togglePinVisibility(eventId) {
+  const val = document.getElementById('pin-val-' + eventId);
+  const btn = document.getElementById('pin-btn-' + eventId);
+  if (!val) return;
+  const shown = val.style.filter === 'none' || val.style.filter === '';
+  if (shown) {
+    val.style.filter = 'blur(5px)';
+    val.textContent  = '••••';
+    if (btn) btn.textContent = '👁 Show';
+  } else {
+    val.style.filter = 'none';
+    val.textContent  = val.dataset.pin;
+    if (btn) btn.textContent = '🙈 Hide';
+  }
+}
+
+// ─── FORMAT COUNTDOWN
+function formatCountdown(ms) {
+  if (ms <= 0) return 'Starting now';
+  const s    = Math.floor(ms / 1000);
+  const days = Math.floor(s / 86400);
+  const hrs  = Math.floor((s % 86400) / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  if (days > 0) return `${days}d ${String(hrs).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m`;
+  return `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+}
+
+// Tick all visible admin countdown elements
+setInterval(() => {
+  document.querySelectorAll('[id^="acd-"]').forEach(el => {
+    const ts = parseInt(el.dataset.ts || '0');
+    if (!ts) return;
+    const diff = ts - Date.now();
+    if (diff <= 0) { el.remove(); } else { el.textContent = '⏱ ' + formatCountdown(diff); }
+  });
+}, 1000);
+
+// ─── HELPERS
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(s) {
+  return String(s || '').replace(/'/g, "\\'");
+}
+
+function relTime(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+</script>
+</body>
+</html>
