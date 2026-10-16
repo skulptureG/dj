@@ -717,8 +717,8 @@ let eventData  = {};
 
 // ─── COMPUTE BASE URLS
 const base     = window.location.origin + window.location.pathname.replace(/\/manage\.html$/, '/');
-const guestUrl = base + 'index.html?event=' + eventId;
-const boothUrl = base + 'index.html?mode=dj&event=' + eventId;
+const guestUrl = base + 'event.html?event=' + eventId;
+const boothUrl = base + 'event.html?mode=dj&event=' + eventId;
 const manageUrl = window.location.href;
 
 // ─── PIN LOGIC

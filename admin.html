@@ -1913,8 +1913,8 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 
 // ─── COMPUTE BASE URL
-const indexUrl = window.location.origin + window.location.pathname.replace(/\/admin\.html$/, '/index.html');
-document.getElementById('boothLink').href = indexUrl + '?mode=dj';
+const eventUrl = window.location.origin + window.location.pathname.replace(/\/admin(?: \(1\))?\.html$/, '/event.html');
+document.getElementById('boothLink').href = eventUrl + '?mode=dj';
 
 // ─── AUTO-REFRESH: listen for any changes to events node
 // Debounced so rapid Firebase writes don't cause multiple reloads
@@ -2046,7 +2046,7 @@ document.getElementById('newEventName').addEventListener('keydown', e => {
 // ─── OPEN IN BOOTH
 function openInBooth(eventId) {
   localStorage.setItem('djCurrentEvent', eventId);
-  window.open(indexUrl + '?mode=dj&event=' + eventId, '_blank');
+  window.open(eventUrl + '?mode=dj&event=' + eventId, '_blank');
 }
 function loadEvents() {
   db.ref('events').get().then(snap => {
@@ -2089,7 +2089,7 @@ function loadEvents() {
       card.className   = 'event-card';
       card.id          = 'card-' + event.id;
 
-      const baseUrl  = window.location.origin + window.location.pathname.replace(/\/admin\.html$/, '/index.html');
+      const baseUrl  = window.location.origin + window.location.pathname.replace(/\/admin(?: \(1\))?\.html$/, '/event.html');
       const guestUrl = baseUrl + '?event=' + event.id;
       const djUrl    = baseUrl + '?mode=dj';
 
@@ -2165,8 +2165,8 @@ function loadEvents() {
           ${event.pin ? `
           <div class="url-row" style="border-color:rgba(167,139,250,0.25);">
             <span class="url-label" style="color:#a78bfa;">⚙ Manage</span>
-            <span class="url-val">${baseUrl.replace('index.html', '')}manage.html?event=${event.id}</span>
-            <button class="url-copy-btn" onclick="copyUrl('${baseUrl.replace('index.html', '')}manage.html?event=${event.id}', this)">Copy</button>
+            <span class="url-val">${baseUrl.replace('event.html', '')}manage.html?event=${event.id}</span>
+            <button class="url-copy-btn" onclick="copyUrl('${baseUrl.replace('event.html', '')}manage.html?event=${event.id}', this)">Copy</button>
           </div>` : ''}
         </div>
 
