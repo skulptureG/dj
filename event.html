@@ -2320,6 +2320,32 @@
     .panel { padding: 0 16px 40px; }
   }
 
+  /* Event intro on tablets / phones: return to a clean vertical stack */
+  @media (max-width: 1099px) {
+    .event-name-display {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto 24px;
+      padding: 0 4px;
+      text-align: center;
+    }
+    .event-name-display .event-title { font-size: clamp(2rem, 8vw, 3.2rem); }
+    .event-desc-guest {
+      max-width: 680px;
+      margin: 12px auto 0;
+      font-size: clamp(0.95rem, 3.2vw, 1.05rem);
+      line-height: 1.55;
+      text-align: center;
+    }
+    #guestQr { margin-top: 14px !important; }
+  }
+
+  @media (max-width: 600px) {
+    .event-name-display { margin-bottom: 18px; }
+    .event-desc-guest { max-width: 36rem; line-height: 1.5; }
+    #guestQr canvas, #guestQr img { width: 104px !important; height: 104px !important; }
+  }
+
   /* ════════════════════════════════════════════════
      RESPONSIVE — LARGE / 16:9  (≥ 1100px, non-touch)
      Goal: everything on ONE screen, no scrolling
@@ -2341,12 +2367,45 @@
     /* Header row */
     #requestView .header { margin-bottom: 10px; flex-shrink: 0; }
 
-    /* Event name — compact on desktop */
-    .event-name-display { margin-bottom: 10px; margin-top: 0; }
-    .event-name-display .event-title { font-size: clamp(1.6rem, 3vw, 2.4rem); }
-    .event-name-display .event-label { margin-bottom: 2px; }
-    #guestQr { margin-top: 8px !important; }
-    #guestQr canvas, #guestQr img { width: 80px !important; height: 80px !important; }
+    /* Event intro — use the laptop width instead of stacking everything in the centre */
+    .event-name-display {
+      width: min(100%, 1180px);
+      margin: 0 auto 18px;
+      display: grid !important;
+      grid-template-columns: minmax(220px, 0.8fr) minmax(420px, 1.8fr) 120px;
+      grid-template-areas:
+        "label description qr"
+        "title description qr";
+      column-gap: clamp(24px, 4vw, 64px);
+      align-items: center;
+      text-align: left;
+      padding: 8px 0 12px;
+    }
+    .event-name-display .event-label {
+      grid-area: label;
+      margin-bottom: 6px;
+      align-self: end;
+    }
+    .event-name-display .event-title {
+      grid-area: title;
+      font-size: clamp(2rem, 3vw, 3.2rem);
+      align-self: start;
+    }
+    .event-desc-guest {
+      grid-area: description;
+      width: 100%;
+      max-width: 720px;
+      margin: 0;
+      font-size: clamp(0.95rem, 1.15vw, 1.12rem);
+      line-height: 1.65;
+      text-align: left;
+    }
+    #guestQr {
+      grid-area: qr;
+      justify-self: end;
+      margin-top: 0 !important;
+    }
+    #guestQr canvas, #guestQr img { width: 96px !important; height: 96px !important; }
 
     /* Countdown compact */
     #countdownSection { padding: 0 0 12px; }
