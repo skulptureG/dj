@@ -2803,9 +2803,9 @@
           <div class="qr-event-name" id="qrEventName">—</div>
           <div class="qr-code-badge" id="qrCodeBadge">CODE: —</div>
           <div id="qrEventDesc" style="font-size:0.85rem;color:rgba(240,240,248,0.55);font-style:italic;margin-bottom:10px;line-height:1.5;display:none;"></div>
-          <div class="qr-url" id="qrUrl"></div>
+          <a class="qr-url" id="qrUrl" href="#" target="_blank" rel="noopener noreferrer"></a>
           <button class="btn-new-event" onclick="lockBoothWithPin()" id="btnLockBooth" disabled title="No PIN set — add one in Admin to enable locking">🔒 Lock Booth</button>
-          <button class="btn-new-event" onclick="openAdminGate()" style="margin-top:6px;width:100%;">⚙ Admin</button>
+          <button class="btn-new-event" onclick="window.location.href='manage.html?event=' + encodeURIComponent(eventPinId)" style="margin-top:6px;width:100%;">⚙ Manage Event</button>
         </div>
       </div>
 
@@ -2831,7 +2831,7 @@
         <div class="section-label">Request queue</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn-sort" id="sortBtn" onclick="toggleSort()">↓ Oldest First</button>
-          <button class="btn-m3u" onclick="exportM3U()">↓ M3U Playlist</button>
+          
           <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
           <button class="btn-lock" id="lockBtn" onclick="toggleLock()">⛔ Lock Requests</button>
           <button class="btn-clear" onclick="clearAll()">Clear All</button>
@@ -3427,7 +3427,9 @@ async function openDJBooth(eventId) {
 
     document.getElementById('qrEventName').textContent = name;
     document.getElementById('qrCodeBadge').textContent = 'CODE: ' + eventId;
-    document.getElementById('qrUrl').textContent = guestUrl;
+    const qrUrlEl = document.getElementById('qrUrl');
+      qrUrlEl.textContent = guestUrl;
+      qrUrlEl.href = guestUrl;
     document.title = name + ' — DJ Booth';
 
     const descEl = document.getElementById('qrEventDesc');
