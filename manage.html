@@ -938,30 +938,6 @@ function renderManagePanel() {
     <div class="field-group" style="background:var(--surface2);border:1px solid var(--border-bright);border-radius:var(--radius);padding:14px 16px;color:var(--muted);font-family:var(--font-mono);font-size:0.65rem;line-height:1.6;">
       🔒 Your management PIN is checked securely by DJRequest.it and is no longer loaded into this page.
     </div>
-    <div class="field-group" style="background:var(--surface2);border:1px solid var(--border-bright);border-radius:var(--radius);padding:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-        <label class="field-label" style="margin-bottom:0;">🔗 DJ Link</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" id="editLinkEnabled" ${eventData.djLinkEnabled === true ? 'checked' : ''}
-            style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;"
-            onchange="document.getElementById('djLinkStatus').textContent=this.checked?'Visible on request page':'Hidden'">
-          <span style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);">
-            Show on request page
-          </span>
-        </label>
-      </div>
-      <div id="djLinkStatus" style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:.1em;text-transform:uppercase;color:${eventData.djLinkEnabled === true ? 'var(--accent)' : 'var(--muted)'};margin-bottom:10px;">
-        ${eventData.djLinkEnabled === true ? 'Visible on request page' : 'Hidden'}
-      </div>
-      <label class="field-label">URL</label>
-      <input class="field-input" id="editDjLink" type="url"
-        placeholder="https://soundcloud.com/yourname"
-        value="${escHtml(eventData.djLink || '')}" style="margin-bottom:8px;">
-      <label class="field-label">Button Label</label>
-      <input class="field-input" id="editDjLinkLabel" type="text"
-        placeholder="e.g. Listen on SoundCloud / Visit my website"
-        value="${escHtml(eventData.djLinkLabel || '')}">
-    </div>
 
     <div class="divider"></div>
     <div class="section-label">Theme</div>
@@ -1057,14 +1033,9 @@ function saveChanges() {
   btn.disabled    = true;
   btn.textContent = 'Saving…';
 
-  const djLink        = document.getElementById('editDjLink')?.value.trim();
-  const djLinkLabel   = document.getElementById('editDjLinkLabel')?.value.trim();
-  const djLinkEnabled = document.getElementById('editLinkEnabled')?.checked || false;
 
-  const updates = { name, theme, djLinkEnabled };
+  const updates = { name, theme };
   if (desc)         updates.description  = desc;         else updates.description  = null;
-  if (djLink)       updates.djLink       = djLink;       else updates.djLink       = null;
-  if (djLinkLabel)  updates.djLinkLabel  = djLinkLabel;  else updates.djLinkLabel  = null;
 
   if (theme === 'custom') {
     updates.customColors = {
