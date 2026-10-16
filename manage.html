@@ -256,8 +256,11 @@
   .field-input::placeholder { color: var(--muted); font-weight: 400; }
 
   textarea.field-input {
-    resize: none;
-    height: 100px;
+    resize: vertical;
+    min-height: 150px;
+    height: auto;
+    max-height: 420px;
+    overflow-y: hidden;
     line-height: 1.5;
   }
 
@@ -928,7 +931,7 @@ function renderManagePanel() {
 
     <div class="field-group">
       <label class="field-label">Description <span style="opacity:.5;font-size:.9em">(optional)</span></label>
-      <textarea class="field-input" id="editDesc" maxlength="500"
+      <textarea class="field-input" id="editDesc" maxlength="1000" rows="5"
         placeholder="e.g. No dubstep please! / Welcome everyone 🎉">${escHtml(eventData.description || '')}</textarea>
     </div>
 
@@ -995,6 +998,17 @@ function renderManagePanel() {
     </div>`;
 
   main.appendChild(editSection);
+
+  const descBox = document.getElementById('editDesc');
+  if (descBox) {
+    const autoGrowDesc = () => {
+      descBox.style.height = 'auto';
+      descBox.style.height = Math.min(descBox.scrollHeight, 420) + 'px';
+      descBox.style.overflowY = descBox.scrollHeight > 420 ? 'auto' : 'hidden';
+    };
+    descBox.addEventListener('input', autoGrowDesc);
+    requestAnimationFrame(autoGrowDesc);
+  }
 }
 
 function themeSwatchHtml(value, selected) {
