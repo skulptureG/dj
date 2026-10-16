@@ -1664,7 +1664,6 @@
     <div class="header-right">
       <div class="badge"><span class="live-dot" id="connDot"></span>Event Manager</div>
       <button type="button" onclick="logoutAdmin()" style="font-family:var(--font-mono);font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:transparent;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;">Log out</button>
-      <a id="boothLink" target="_blank" style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">↗ DJ Booth</a>
     </div>
   </div>
 
@@ -1929,8 +1928,6 @@ const db = firebase.database();
 
 // ─── COMPUTE BASE URL
 const eventUrl = window.location.origin + window.location.pathname.replace(/\/admin(?: \(1\))?\.html$/, '/event.html');
-document.getElementById('boothLink').href = eventUrl + '?mode=dj';
-
 // ─── AUTO-REFRESH: listen for any changes to events node
 // Debounced so rapid Firebase writes don't cause multiple reloads
 let eventsRefreshTimer = null;
