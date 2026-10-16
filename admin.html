@@ -1674,7 +1674,7 @@
       <input id="newEventName" class="create-input" type="text" placeholder="e.g. Dave's Wedding, Staff Party…" maxlength="60" autocomplete="off">
       <button class="btn-create" id="createBtn" onclick="createNewEvent()">Create →</button>
     </div>
-    <textarea id="newEventDesc" class="create-input create-desc" placeholder="Description (optional) — e.g. No dubstep please! / Welcome to Dave &amp; Sarah's party 🎉" maxlength="500"></textarea>
+    <textarea id="newEventDesc" class="create-input create-desc" placeholder="Description (optional) — e.g. No dubstep please! / Welcome to Dave &amp; Sarah's party 🎉" maxlength="1000" oninput="autoGrowTextarea(this)"></textarea>
     <div class="schedule-toggle-row">
       <label class="schedule-toggle-label">
         <input type="checkbox" id="scheduleCheck" onchange="toggleScheduleInputs()">
@@ -1701,7 +1701,7 @@
         pattern="[0-9]{4}" placeholder="e.g. 1234" autocomplete="off"
         style="letter-spacing:.2em;font-size:1.4rem;text-align:center;max-width:160px;"
         oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
-      <button class="btn-create" type="button" onclick="document.getElementById('newEventPin').value=String(Math.floor(1000+Math.random()*9000))" style="white-space:nowrap;padding:14px 18px;font-size:1rem;">🎲 Random</button>
+      <button class="btn-create" type="button" onclick="setRandomPin('newEventPin')" style="white-space:nowrap;padding:14px 18px;font-size:1rem;">🎲 Random</button>
     </div>
 
     <span class="theme-picker-label">Display Mode</span>
@@ -1943,6 +1943,21 @@ db.ref('.info/connected').on('value', snap => {
 });
 
 // ─── HELPERS
+const visibleSessionPins = new Map();
+function setRandomPin(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.disabled = false; input.readOnly = false;
+  input.value = String(Math.floor(1000 + Math.random() * 9000));
+  input.focus(); input.select();
+}
+function autoGrowTextarea(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 420) + 'px';
+  el.style.overflowY = el.scrollHeight > 420 ? 'auto' : 'hidden';
+}
+
 function genEventId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let id = '';
@@ -2035,6 +2050,8 @@ async function createNewEvent() {
     });
     const pinResult = await pinResponse.json().catch(() => ({}));
     if (!pinResponse.ok || !pinResult.success) throw new Error(pinResult.message || 'Secure PIN registration failed.');
+    await db.ref('events/' + eventId).update({ pinConfigured: true, pin: null });
+    visibleSessionPins.set(eventId, pin);
     document.getElementById('newEventName').value = '';
     document.getElementById('newEventDesc').value = '';
     document.getElementById('newEventPin').value = '';
@@ -2133,13 +2150,15 @@ function loadEvents() {
         </div>
         ${event.description ? `<div class="event-desc">${escHtml(event.description)}</div>` : ''}
         ${event.mobileOnly ? `<div class="mob-only-badge">📱 Mobile Only Mode</div>` : ''}
-        <div class="event-pin-row">
-          <span class="event-pin-label">🔐 Booth PIN:</span>
-          ${event.pin
-            ? `<span class="event-pin-value" id="pin-val-${event.id}" data-pin="${escHtml(event.pin)}" style="filter:blur(5px);cursor:pointer;transition:filter .2s;" onclick="togglePinVisibility('${event.id}')" title="Click to reveal">••••</span>
-               <button class="pin-toggle-btn" id="pin-btn-${event.id}" onclick="togglePinVisibility('${event.id}')">👁 Show</button>`
-            : `<span style="opacity:.45;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:.1em;">Not set</span>`}
-        </div>
+          <div class="event-pin-row">
+            <span class="event-pin-label">🔐 Booth PIN:</span>
+            ${event.pinConfigured || visibleSessionPins.has(event.id)
+              ? (visibleSessionPins.has(event.id)
+                  ? `<span class="event-pin-value" id="pin-val-${event.id}" data-pin="${visibleSessionPins.get(event.id)}" style="filter:blur(5px);cursor:pointer;transition:filter .2s;" onclick="togglePinVisibility('${event.id}')" title="Click to reveal">••••</span>
+                     <button class="pin-toggle-btn" id="pin-btn-${event.id}" onclick="togglePinVisibility('${event.id}')">👁 Show</button>`
+                  : `<span style="font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;color:var(--accent);">Set securely ✓</span>`)
+              : `<span style="opacity:.45;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;">Not set</span>`}
+          </div>
         <div class="event-meta">
           <div class="meta-item"><div class="meta-dot"></div>${pending} pending</div>
           <div class="meta-item"><div class="meta-dot"></div>${played} played</div>
@@ -2173,7 +2192,7 @@ function loadEvents() {
             <span class="url-val">${guestUrl}&display=1</span>
             <button class="url-copy-btn" onclick="copyUrl('${guestUrl}&display=1', this)">Copy</button>
           </div>` : ''}
-          ${event.pin ? `
+          ${event.pinConfigured || visibleSessionPins.has(event.id) ? `
           <div class="url-row" style="border-color:rgba(167,139,250,0.25);">
             <span class="url-label" style="color:#a78bfa;">⚙ Manage</span>
             <span class="url-val">${baseUrl.replace('event.html', '')}manage.html?event=${event.id}</span>
@@ -2186,7 +2205,7 @@ function loadEvents() {
           <label class="edit-field-label">Event Name</label>
           <input class="edit-input" id="edit-name-${event.id}" type="text" value="${escHtml(event.name || '')}" maxlength="60">
           <label class="edit-field-label">Description <span style="opacity:.5;font-size:.9em">(optional)</span></label>
-          <textarea class="edit-input" id="edit-desc-${event.id}" maxlength="500" placeholder="e.g. No dubstep please!">${escHtml(event.description || '')}</textarea>
+          <textarea class="edit-input" id="edit-desc-${event.id}" maxlength="1000" oninput="autoGrowTextarea(this)" placeholder="e.g. No dubstep please!">${escHtml(event.description || '')}</textarea>
           <label class="edit-field-label">Scheduled Date <span style="opacity:.5;font-size:.9em">(optional)</span></label>
           <div class="edit-schedule-row">
             <div class="edit-schedule-group">
@@ -2210,11 +2229,11 @@ function loadEvents() {
           <label class="edit-field-label">Booth PIN <span style="opacity:.5;font-size:.9em">(4 digits, optional)</span></label>
           <div style="display:flex;gap:8px;margin-bottom:10px;">
             <input class="edit-input" id="edit-pin-${event.id}" type="text" inputmode="numeric"
-              maxlength="4" placeholder="e.g. 5678" value="${escHtml(event.pin || '')}"
+              maxlength="4" placeholder="${event.pinConfigured ? 'Enter new PIN to change' : 'e.g. 5678'}" value=""
               style="letter-spacing:.2em;font-size:1.2rem;text-align:center;max-width:130px;"
               oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
             <button class="btn-cancel-edit" type="button" style="font-size:.65rem;padding:8px 12px;"
-              onclick="document.getElementById('edit-pin-${event.id}').value=String(Math.floor(1000+Math.random()*9000))">🎲 New Random</button>
+              onclick="setRandomPin('edit-pin-${event.id}')">🎲 New Random</button>
           </div>
           <label class="edit-field-label">Theme</label>
           <div class="theme-swatches" id="edit-theme-swatches-${event.id}">
@@ -2341,11 +2360,12 @@ function toggleEdit(eventId) {
   if (!isOpen) {
     panel.classList.add('open');
     document.getElementById('edit-name-' + eventId)?.focus();
+    autoGrowTextarea(document.getElementById('edit-desc-' + eventId));
   }
 }
 
 // ─── SAVE EDIT
-function saveEdit(eventId) {
+async function saveEdit(eventId) {
   if (!requireAdminSession()) return;
   const name = document.getElementById('edit-name-' + eventId)?.value.trim();
   if (!name) {
@@ -2360,7 +2380,6 @@ function saveEdit(eventId) {
 
   const updates = { name, theme };
   updates.description = desc || null;
-  updates.pin         = pin  || null;
   updates.mobileOnly  = document.getElementById('edit-mobile-' + eventId)?.checked || false;
   if (theme === 'custom') {
     updates.customColors = {
@@ -2386,15 +2405,28 @@ function saveEdit(eventId) {
   const btn = document.querySelector(`#edit-${eventId} .btn-save`);
   if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
 
-  db.ref('events/' + eventId).update(updates)
-    .then(() => {
-      document.getElementById('edit-' + eventId)?.classList.remove('open');
-      loadEvents();
-    })
-    .catch(err => {
-      if (btn) { btn.textContent = 'Save Changes'; btn.disabled = false; }
-      alert('Save failed: ' + err.message);
-    });
+  try {
+    if (pin && !/^\d{4}$/.test(pin)) throw new Error('Booth PIN must contain exactly 4 digits.');
+    if (pin) {
+      const adminToken = sessionStorage.getItem(ADMIN_SESSION_KEY);
+      const pinResponse = await fetch(`${PIN_API_BASE}/api/admin/event/register-pin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+        body: JSON.stringify({ eventId, pin })
+      });
+      const pinResult = await pinResponse.json().catch(() => ({}));
+      if (!pinResponse.ok || !pinResult.success) throw new Error(pinResult.message || 'Secure PIN update failed.');
+      updates.pinConfigured = true;
+      updates.pin = null;
+      visibleSessionPins.set(eventId, pin);
+    }
+    await db.ref('events/' + eventId).update(updates);
+    document.getElementById('edit-' + eventId)?.classList.remove('open');
+    loadEvents();
+  } catch (err) {
+    if (btn) { btn.textContent = 'Save Changes'; btn.disabled = false; }
+    alert('Save failed: ' + (err?.message || String(err)));
+  }
 }
 
 // ─── TOGGLE PENDING LIST
