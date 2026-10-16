@@ -1663,6 +1663,7 @@
     <div class="logo">DJ<span>:</span>Admin</div>
     <div class="header-right">
       <div class="badge"><span class="live-dot" id="connDot"></span>Event Manager</div>
+      <button type="button" onclick="logoutAdmin()" style="font-family:var(--font-mono);font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:transparent;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;">Log out</button>
       <a id="boothLink" target="_blank" style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--border-bright);padding:6px 12px;border-radius:var(--radius-sm);transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">↗ DJ Booth</a>
     </div>
   </div>
@@ -1836,8 +1837,10 @@
 </div>
 
 <script>
-// ═══ PIN ═══
-const CORRECT_PIN = '2424';
+// ═══ SECURE MASTER ADMIN AUTHENTICATION ═══
+const PIN_API_BASE = 'https://djreqit-pin.grahamthorne.workers.dev';
+const ADMIN_SESSION_KEY = 'djrequest_admin_session';
+let adminAuthorised = false;
 let pinEntry = '';
 
 function pinPress(digit) {
@@ -1846,13 +1849,11 @@ function pinPress(digit) {
   updateDots();
   if (pinEntry.length === 4) checkPin();
 }
-
 function pinBack() {
   pinEntry = pinEntry.slice(0, -1);
   updateDots();
   clearPinError();
 }
-
 function updateDots() {
   for (let i = 0; i < 4; i++) {
     const dot = document.getElementById('d' + i);
@@ -1860,44 +1861,58 @@ function updateDots() {
     dot.classList.remove('error');
   }
 }
-
-function checkPin() {
-  if (pinEntry === CORRECT_PIN) {
-    sessionStorage.setItem('adminUnlocked', '1');
-    document.getElementById('pinOverlay').classList.add('unlocked');
-    setTimeout(() => document.getElementById('pinOverlay').remove(), 450);
-  } else {
-    for (let i = 0; i < 4; i++) {
-      const dot = document.getElementById('d' + i);
-      dot.classList.remove('filled');
-      dot.classList.add('error');
-    }
-    document.getElementById('pinError').classList.add('show');
-    setTimeout(() => {
-      pinEntry = '';
-      updateDots();
-      clearPinError();
-    }, 700);
+function clearPinError() { document.getElementById('pinError').classList.remove('show'); }
+function setPinKeysDisabled(disabled) { document.querySelectorAll('.pin-key').forEach(b => b.disabled = disabled); }
+async function checkPin() {
+  if (pinEntry.length !== 4) return;
+  const errorBox = document.getElementById('pinError');
+  errorBox.textContent = 'Checking PIN…';
+  errorBox.classList.add('show');
+  setPinKeysDisabled(true);
+  try {
+    const response = await fetch(`${PIN_API_BASE}/api/admin/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pinEntry })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.success || result.role !== 'admin' || !result.token) throw new Error(result.message || 'Incorrect PIN');
+    sessionStorage.setItem(ADMIN_SESSION_KEY, result.token);
+    unlockAdmin();
+  } catch (error) {
+    for (let i=0;i<4;i++) { const dot=document.getElementById('d'+i); dot.classList.remove('filled'); dot.classList.add('error'); }
+    errorBox.textContent = error.message || 'Incorrect PIN';
+    setTimeout(() => { pinEntry=''; updateDots(); clearPinError(); errorBox.textContent='Incorrect PIN'; setPinKeysDisabled(false); }, 1200);
   }
 }
-
-function clearPinError() {
-  document.getElementById('pinError').classList.remove('show');
-}
-
-// Physical keyboard support for PIN
-document.addEventListener('keydown', e => {
+function unlockAdmin() {
+  adminAuthorised = true;
   const overlay = document.getElementById('pinOverlay');
-  if (overlay && !overlay.classList.contains('unlocked')) {
-    if (e.key >= '0' && e.key <= '9') pinPress(e.key);
-    if (e.key === 'Backspace') pinBack();
-  }
-});
-
-// Already unlocked this session?
-if (sessionStorage.getItem('adminUnlocked') === '1') {
-  document.getElementById('pinOverlay').remove();
+  if (overlay) { overlay.classList.add('unlocked'); setTimeout(() => overlay.remove(), 450); }
 }
+async function restoreAdminSession() {
+  const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
+  if (!token) return false;
+  try {
+    const response = await fetch(`${PIN_API_BASE}/api/admin/session`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.authenticated || result.role !== 'admin') { sessionStorage.removeItem(ADMIN_SESSION_KEY); return false; }
+    unlockAdmin(); return true;
+  } catch { sessionStorage.removeItem(ADMIN_SESSION_KEY); return false; }
+}
+async function logoutAdmin() {
+  const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  if (token) fetch(`${PIN_API_BASE}/api/admin/logout`, { method:'POST', headers:{'Authorization':`Bearer ${token}`} }).catch(()=>{});
+  window.location.reload();
+}
+function requireAdminSession() {
+  if (!adminAuthorised || !sessionStorage.getItem(ADMIN_SESSION_KEY)) { alert('Your admin session has expired. Please log in again.'); window.location.reload(); return false; }
+  return true;
+}
+document.addEventListener('keydown', e => {
+  const overlay=document.getElementById('pinOverlay');
+  if (overlay && !overlay.classList.contains('unlocked')) { if (e.key >= '0' && e.key <= '9') pinPress(e.key); if (e.key === 'Backspace') pinBack(); }
+});
+restoreAdminSession();
 
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyBOdgG_AE1Rng88eoH5bLue1eY9VMwAsOc",
@@ -1976,6 +1991,7 @@ function toggleScheduleInputs() {
 
 // ─── CREATE NEW EVENT
 function createNewEvent() {
+  if (!requireAdminSession()) return;
   const name = document.getElementById('newEventName').value.trim();
   if (!name) { document.getElementById('newEventName').focus(); return; }
   const desc      = document.getElementById('newEventDesc').value.trim();
@@ -2335,6 +2351,7 @@ function toggleEdit(eventId) {
 
 // ─── SAVE EDIT
 function saveEdit(eventId) {
+  if (!requireAdminSession()) return;
   const name = document.getElementById('edit-name-' + eventId)?.value.trim();
   if (!name) {
     document.getElementById('edit-name-' + eventId)?.focus();
@@ -2423,6 +2440,7 @@ document.getElementById('confirmModal').addEventListener('click', e => {
 
 // ─── DELETE SINGLE EVENT
 function deleteEvent(eventId) {
+  if (!requireAdminSession()) return;
   closeModal();
   const card = document.getElementById('card-' + eventId);
   if (card) card.classList.add('removing');
@@ -2436,6 +2454,7 @@ function deleteEvent(eventId) {
 
 // ─── DELETE ALL EVENTS
 function deleteAllEvents() {
+  if (!requireAdminSession()) return;
   closeModal();
   db.ref('events').remove().then(() => {
     localStorage.removeItem('djCurrentEvent');
