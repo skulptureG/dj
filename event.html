@@ -2497,9 +2497,12 @@
     .stat-card .val { font-size: 2.4rem; }
     .qr-canvas-wrap canvas, .qr-canvas-wrap img { width: 160px !important; height: 160px !important; }
   }
+/* INVALID EVENT */
+#invalidEventView{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:30px;background:var(--bg);text-align:center}#invalidEventView.show{display:flex}.invalid-event-box{max-width:560px;width:100%}.invalid-event-icon{font-size:4rem;margin-bottom:18px}.invalid-event-title{font-family:var(--font-display);font-size:clamp(2.6rem,8vw,4.4rem);color:var(--accent);letter-spacing:.05em}.invalid-event-message{color:var(--muted);line-height:1.65;margin:14px auto 24px;max-width:460px}.invalid-event-home{display:inline-block;padding:14px 22px;border-radius:var(--radius-sm);background:var(--accent);color:#0a0a0f;text-decoration:none;font-family:var(--font-mono);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 </style>
 </head>
 <body>
+<div id="invalidEventView" role="alert" aria-live="assertive"><div class="invalid-event-box"><div class="invalid-event-icon">🎧</div><div class="invalid-event-title" id="invalidEventTitle">Event not found</div><div class="invalid-event-message" id="invalidEventMessage">This event link is invalid, unavailable or has expired. Please check the link supplied by your DJ.</div><a class="invalid-event-home" href="index.html">Return to DJRequest.it</a></div></div>
 
 <!-- ═══ REQUEST VIEW ═══ -->
 <div id="requestView" class="panel hidden">
@@ -2899,6 +2902,17 @@ function genEventId() {
   return id;
 }
 
+function isValidEventCode(code) { return /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/.test(String(code || '').toUpperCase()); }
+let eventValidated = false;
+function showInvalidEvent(title='Event not found', message='This event link is invalid, unavailable or has expired. Please check the link supplied by your DJ.') {
+  eventValidated = false;
+  document.querySelectorAll('#requestView,#djView,#adminView,#mobileOnlyView,#eventPinOverlay').forEach(el => el?.classList.add('hidden'));
+  document.getElementById('invalidEventTitle').textContent = title;
+  document.getElementById('invalidEventMessage').textContent = message;
+  document.getElementById('invalidEventView').classList.add('show');
+  document.title = title + ' — DJRequest.it';
+}
+
 function escapeHtml(s) {
   return String(s || '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -2929,7 +2943,8 @@ function initRefs(eventId) {
 
 // ─── DOM REFS
 const mode         = new URLSearchParams(window.location.search).get('mode');
-const eventParam   = new URLSearchParams(window.location.search).get('event');
+const eventParamRaw = new URLSearchParams(window.location.search).get('event');
+const eventParam = eventParamRaw ? eventParamRaw.trim().toUpperCase() : null;
 const displayMode  = new URLSearchParams(window.location.search).get('display'); // '1' = display screen
 const requestView  = document.getElementById('requestView');
 const djView       = document.getElementById('djView');
@@ -2966,15 +2981,18 @@ if (mode === 'admin') {
 
 } else {
   // ─── GUEST PAGE
-  if (eventParam) {
-    requestView.classList.remove('hidden');
+  if (eventParam && isValidEventCode(eventParam)) {
     initRefs(eventParam);
-    songInput.classList.add('active-field');
 
     // Show event name + description + QR + countdown
     db.ref('events/' + eventParam).get().then(snap => {
       const data = snap.val();
-      if (data && data.name) {
+      const expired = !!(data && data.expiresAt && Number(data.expiresAt) <= Date.now());
+      const inactive = !!(data && data.active === false);
+      if (data && data.name && !expired && !inactive) {
+        eventValidated = true;
+        requestView.classList.remove('hidden');
+        songInput.classList.add('active-field');
         document.title = data.name + ' — Song Requests';
 
         // Apply theme
@@ -3070,8 +3088,14 @@ if (mode === 'admin') {
             startCountdown(data.scheduledAt);
           }
         }
+      } else if (expired) {
+        showInvalidEvent('Event expired', 'This event is no longer accepting song requests.');
+      } else if (inactive) {
+        showInvalidEvent('Event unavailable', 'This event is not currently accepting song requests.');
+      } else {
+        showInvalidEvent();
       }
-    }).catch(() => {});
+    }).catch(() => showInvalidEvent('Unable to load event', 'The event could not be verified. Please check your connection and try the original link again.'));
 
     // Live lock state — only show overlay if explicitly true
     lockedRef.on('value', snap => {
@@ -3100,6 +3124,8 @@ if (mode === 'admin') {
     genreInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); noteInput.focus(); } });
     noteInput.addEventListener('keydown',  e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitRequest(); } });
 
+  } else if (eventParam) {
+    showInvalidEvent('Invalid event code', 'This event code is not in the correct six-character format. Please use the complete link supplied by your DJ.');
   } else {
     // event.html only hosts event views. A request without an event returns to the landing page.
     window.location.replace('index.html');
@@ -3644,6 +3670,7 @@ function toggleFullScreen() {
 let emojiCooldownActive = false;
 
 function sendEmoji(emoji) {
+  if (!eventValidated) return;
   if (emojiCooldownActive) {
     const cd = document.getElementById('emojiCooldown');
     cd.classList.add('show');
@@ -3912,6 +3939,7 @@ function isFuzzyMatch(a, b) {
 }
 
 function submitRequest() {
+  if (!eventValidated || !requestsRef) { showInvalidEvent(); return; }
   const song = songInput.value.trim();
   if (!song) {
     songInput.classList.remove('active-field');
@@ -3958,11 +3986,14 @@ function submitRequest() {
   }
 
   // No duplicate — create new request with votes = 1
+  const guestName = nameInput.value.trim();
+  const guestGenre = genreInput.value.trim();
+  const guestNote = noteInput.value.trim();
   requestsRef.push({
     song,
-    name:  nameInput.value.trim() || 'Anonymous',
-    genre: genreInput.value.trim(),
-    note:  noteInput.value.trim(),
+    name:  guestName || 'Anonymous',
+    genre: guestGenre,
+    note:  guestNote,
     votes: 1,
     time:  Date.now()
   }).catch(() => alert('Could not send request — check your internet connection.'));
@@ -3974,7 +4005,7 @@ function submitRequest() {
   setActiveField('song');
   songInput.focus();
 
-  const m = pickThankYouMessage(song, nameInput.value.trim(), noteInput.value.trim());
+  const m = pickThankYouMessage(song, guestName, guestNote);
   document.getElementById('tyIcon').textContent = m.icon;
   document.getElementById('tyText').textContent = m.text;
   document.getElementById('tySub').textContent  = m.sub;
@@ -4111,7 +4142,7 @@ function renderDJ() {
 
 // ─── VOTE FROM QUEUE OVERLAY (guest)
 function voteFromOverlay(key, btn) {
-  if (!key || !eventParam) return;
+  if (!eventValidated || !key || !eventParam) return;
 
   const votedKeys = JSON.parse(sessionStorage.getItem('votedKeys') || '[]');
   if (votedKeys.includes(key)) return;
@@ -4137,6 +4168,7 @@ let queueAutoCloseTimer = null;
 const QUEUE_TIMEOUT = 30; // seconds
 
 function openQueueView() {
+  if (!eventValidated) return;
   const overlay = document.getElementById('queueOverlay');
   if (!overlay) return;
   overlay.classList.add('open');
