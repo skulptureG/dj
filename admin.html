@@ -1990,15 +1990,21 @@ function toggleScheduleInputs() {
 }
 
 // ─── CREATE NEW EVENT
-function createNewEvent() {
+async function createNewEvent() {
   if (!requireAdminSession()) return;
   const name = document.getElementById('newEventName').value.trim();
   if (!name) { document.getElementById('newEventName').focus(); return; }
-  const desc      = document.getElementById('newEventDesc').value.trim();
-  const theme     = getSelectedTheme('createTheme');
-  const pin       = document.getElementById('newEventPin').value.trim();
+  const desc = document.getElementById('newEventDesc').value.trim();
+  const theme = getSelectedTheme('createTheme');
+  const pin = document.getElementById('newEventPin').value.trim();
   const scheduled = document.getElementById('scheduleCheck').checked;
-
+  if (!/^\d{4}$/.test(pin)) {
+    alert('Please enter a 4-digit Event PIN, or use the Random button.');
+    document.getElementById('newEventPin').focus();
+    return;
+  }
+  const adminToken = sessionStorage.getItem(ADMIN_SESSION_KEY);
+  if (!adminToken) { alert('Your admin session has expired. Please log in again.'); window.location.reload(); return; }
   let scheduledAt = null;
   if (scheduled) {
     const d = document.getElementById('scheduleDate').value;
@@ -2007,52 +2013,44 @@ function createNewEvent() {
     scheduledAt = new Date(d + 'T' + t).getTime();
     if (isNaN(scheduledAt)) { alert('Invalid date or time.'); return; }
   }
-
   const btn = document.getElementById('createBtn');
-  btn.textContent = 'Creating…';
-  btn.disabled = true;
-
+  btn.textContent = 'Creating securely…'; btn.disabled = true;
   const eventId = genEventId();
-  const payload = { name, theme };
+  const payload = { name, theme, active: true, createdAt: Date.now() };
   if (desc) payload.description = desc;
-  if (pin)  payload.pin = pin;
   payload.mobileOnly = document.getElementById('newMobileOnly')?.checked || false;
   if (theme === 'custom') {
     payload.customColors = {
-      bg:        document.getElementById('cc-bg')?.value        || '#090b10',
-      surface:   document.getElementById('cc-surface')?.value   || '#111420',
-      accent:    document.getElementById('cc-accent')?.value    || '#c6ff00',
-      secondary: document.getElementById('cc-secondary')?.value || '#ff3e7f',
-      text:      document.getElementById('cc-text')?.value      || '#f0f0f8',
-      heading:   document.getElementById('cc-heading')?.value   || '#f0f0f8',
-      body:      document.getElementById('cc-body')?.value      || '#7f8ea3',
+      bg: document.getElementById('cc-bg')?.value || '#090b10', surface: document.getElementById('cc-surface')?.value || '#111420',
+      accent: document.getElementById('cc-accent')?.value || '#c6ff00', secondary: document.getElementById('cc-secondary')?.value || '#ff3e7f',
+      text: document.getElementById('cc-text')?.value || '#f0f0f8', heading: document.getElementById('cc-heading')?.value || '#f0f0f8', body: document.getElementById('cc-body')?.value || '#7f8ea3'
     };
   }
   if (scheduledAt) payload.scheduledAt = scheduledAt;
-
-  db.ref('events/' + eventId).update(payload)
-    .then(() => {
-      document.getElementById('newEventName').value = '';
-      document.getElementById('newEventDesc').value = '';
-      document.getElementById('newEventPin').value  = '';
-      document.getElementById('newMobileOnly').checked = false;
-      document.getElementById('scheduleCheck').checked = false;
-      document.getElementById('scheduleFields').classList.add('hidden');
-      // Reset theme swatch to neon
-      document.querySelectorAll('#createThemeSwatches .theme-swatch').forEach(s => s.classList.remove('selected'));
-      document.querySelector('#createThemeSwatches .theme-swatch').classList.add('selected');
-      document.querySelector('input[name="createTheme"]').checked = true;
-      document.getElementById('createCustomColors')?.classList.remove('open');
-      btn.textContent = 'Create →';
-      btn.disabled = false;
-      loadEvents(); // refresh the list immediately
-      openInBooth(eventId);
-    })
-    .catch(err => {
-      btn.textContent = 'Create →';
-      btn.disabled = false;
-      alert('Could not create event: ' + err.message);
+  let firebaseCreated = false;
+  try {
+    await db.ref('events/' + eventId).set(payload);
+    firebaseCreated = true;
+    const pinResponse = await fetch(`${PIN_API_BASE}/api/admin/event/register-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+      body: JSON.stringify({ eventId, pin })
     });
+    const pinResult = await pinResponse.json().catch(() => ({}));
+    if (!pinResponse.ok || !pinResult.success) throw new Error(pinResult.message || 'Secure PIN registration failed.');
+    document.getElementById('newEventName').value = '';
+    document.getElementById('newEventDesc').value = '';
+    document.getElementById('newEventPin').value = '';
+    document.getElementById('newMobileOnly').checked = false;
+    document.getElementById('scheduleCheck').checked = false;
+    document.getElementById('scheduleFields').classList.add('hidden');
+    btn.textContent = 'Create →'; btn.disabled = false;
+    loadEvents(); openInBooth(eventId);
+  } catch (err) {
+    if (firebaseCreated) { try { await db.ref('events/' + eventId).remove(); } catch (rollbackError) { console.error('Event rollback failed:', rollbackError); } }
+    btn.textContent = 'Create →'; btn.disabled = false;
+    alert('Could not create event securely: ' + (err?.message || String(err)));
+  }
 }
 
 document.getElementById('newEventName').addEventListener('keydown', e => {
