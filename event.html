@@ -3505,7 +3505,17 @@ async function openDJBooth(eventId) {
     currentRequests = Object.entries(data)
       .map(([key, val]) => ({ ...val, key }));
     renderDJ();
+    renderCrowdPulse();
   });
+
+  // Live played/rejected history also feeds Crowd Pulse
+  historyRef.on('value', snapshot => {
+    crowdPulseHistory = Object.values(snapshot.val() || {});
+    renderCrowdPulse();
+  });
+
+  // Ensure the widget is visible even before enough data exists
+  renderCrowdPulse();
 
   // Live stats
   statsRef.on('value', snap => {
