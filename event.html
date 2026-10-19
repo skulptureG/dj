@@ -668,6 +668,8 @@
     margin-top: 4px;
   }
 
+  /* CROWD PULSE */
+  .crowd-pulse{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}.crowd-pulse-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.crowd-pulse-title{font-family:var(--font-display);font-size:1.35rem;letter-spacing:.06em}.crowd-pulse-live,.pulse-label,.pulse-foot{font-family:var(--font-mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.crowd-pulse-empty{min-height:165px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted)}.crowd-pulse-empty strong{font-family:var(--font-display);font-size:1.35rem;color:var(--text);margin-bottom:6px}.crowd-pulse-empty span{font-family:var(--font-mono);font-size:.58rem;line-height:1.6}.genre-row{display:grid;grid-template-columns:minmax(72px,1fr) 1.4fr 34px;gap:8px;align-items:center;margin:7px 0;font-family:var(--font-mono);font-size:.58rem}.genre-track{height:7px;background:var(--surface2);border-radius:10px;overflow:hidden}.genre-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:10px}.genre-pct{text-align:right;color:var(--accent)}.activity-wrap{margin-top:15px;padding-top:12px;border-top:1px solid var(--border)}.activity-bars{height:62px;display:flex;align-items:flex-end;gap:3px;border-bottom:1px solid var(--border-bright)}.activity-bar{flex:1;background:var(--accent);border-radius:3px 3px 0 0}.activity-meta{display:flex;justify-content:space-between;margin-top:5px;font-family:var(--font-mono);font-size:.5rem;color:var(--muted);text-transform:uppercase}.pulse-foot{text-align:right;margin-top:9px}
   /* ─── REQUEST CARD ─── */
   .request {
     background: var(--surface);
@@ -2838,6 +2840,7 @@
           <div class="lbl">Rejected</div>
         </div>
       </div>
+      <section class="crowd-pulse"><div class="crowd-pulse-head"><div class="crowd-pulse-title">Crowd Pulse</div><div class="crowd-pulse-live"><span class="live-dot"></span>Live</div></div><div id="crowdPulseBody" class="crowd-pulse-empty"><strong>Not enough data yet</strong><span>Crowd insights will appear as genre-tagged requests come in.</span></div></section>
     </div>
 
     <!-- RIGHT MAIN -->
@@ -2946,6 +2949,7 @@ function relativeTime(ts) {
 // ─── FIREBASE REFS (set once event is known)
 let requestsRef, historyRef, lockedRef, statsRef, eventNameRef;
 let currentRequests = [];
+let crowdPulseHistory = [];
 let qrInstance = null;
 
 function initRefs(eventId) {
@@ -4038,6 +4042,10 @@ function copyRequest(btn) {
     }, 2000);
   });
 }
+
+// ─── CROWD PULSE
+function crowdGenre(v){const g=String(v||'').trim().toLowerCase();if(!g)return '';const m=[['Dance / House',/(house|dance|edm|techno|trance|garage)/],['Pop',/pop/],['Disco / Funk',/(disco|funk)/],['R&B / Soul',/(r&b|rnb|soul|motown)/],['Hip-Hop / Rap',/(hip.?hop|rap|grime|drill)/],['Indie / Rock',/(indie|rock|metal|punk|alternative)/],['Reggae',/(reggae|dancehall|ska)/],['Electronic',/(electronic|ambient|dnb|dubstep)/]];for(const [l,r] of m)if(r.test(g))return l;return g.replace(/\b\w/g,c=>c.toUpperCase()).slice(0,20)}
+function renderCrowdPulse(){const box=document.getElementById('crowdPulseBody');if(!box)return;const all=[...crowdPulseHistory,...currentRequests].filter(r=>r&&r.time),tagged=all.filter(r=>String(r.genre||'').trim());if(all.length<2||tagged.length<2){box.className='crowd-pulse-empty';box.innerHTML='<strong>Not enough data yet</strong><span>Crowd insights will appear as genre-tagged requests come in.</span>';return}const c={};tagged.forEach(r=>{const g=crowdGenre(r.genre);c[g]=(c[g]||0)+(Number(r.votes)||1)});const total=Object.values(c).reduce((a,b)=>a+b,0),top=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,4),times=all.map(r=>Number(r.time)),start=Math.min(...times),span=Math.max(3600000,Date.now()-start),bins=Array(12).fill(0);times.forEach(t=>bins[Math.max(0,Math.min(11,Math.floor((t-start)/span*12)))]++);const mx=Math.max(1,...bins);box.className='';box.innerHTML='<div class="pulse-label">Crowd picks by genre</div>'+top.map(([g,n])=>{const pc=Math.round(n/total*100);return `<div class="genre-row"><div>${escapeHtml(g)}</div><div class="genre-track"><div class="genre-fill" style="width:${pc}%"></div></div><div class="genre-pct">${pc}%</div></div>`}).join('')+`<div class="activity-wrap"><div class="pulse-label">Request activity</div><div class="activity-bars">${bins.map(n=>`<div class="activity-bar" style="height:${n?Math.max(10,Math.round(n/mx*100)):2}%"></div>`).join('')}</div><div class="activity-meta"><span>First</span><span>Now</span></div></div><div class="pulse-foot">${all.length} requests analysed</div>`}
 
 // ─── RENDER DJ QUEUE
 function renderDJ() {

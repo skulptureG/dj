@@ -217,6 +217,8 @@
     border-bottom: 1px solid var(--border);
   }
 
+    /* CROWD INSIGHTS */
+    .insights-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin-bottom:32px}.insight-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}.insight-stat{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px}.insight-stat-val{font-family:var(--font-display);font-size:2rem;color:var(--accent);line-height:1}.insight-stat-lbl{font-family:var(--font-mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:5px}.insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.insights-sub{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}.insights-empty{min-height:150px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--font-mono);font-size:.65rem;line-height:1.7;color:var(--muted)}.manage-genre-row{display:grid;grid-template-columns:minmax(84px,1fr) 1.4fr 34px;align-items:center;gap:8px;margin:9px 0;font-family:var(--font-mono);font-size:.6rem}.manage-genre-track{height:8px;background:var(--bg);border-radius:20px;overflow:hidden}.manage-genre-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:20px}.manage-genre-pct{text-align:right;color:var(--accent)}.manage-activity{display:flex;align-items:flex-end;gap:4px;height:128px;border-bottom:1px solid var(--border-bright)}.manage-activity-bar{flex:1;background:linear-gradient(180deg,var(--accent),rgba(198,255,0,.2));border-radius:3px 3px 0 0}.manage-activity-meta{display:flex;justify-content:space-between;margin-top:7px;font-family:var(--font-mono);font-size:.55rem;color:var(--muted);text-transform:uppercase}.insights-note{margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:.58rem;color:var(--muted);line-height:1.6}@media(max-width:600px){.insight-stats{grid-template-columns:repeat(2,1fr)}.insights-grid{grid-template-columns:1fr}.insights-panel{padding:18px}}
   /* ─── FORM FIELDS ─── */
   .field-group {
     margin-bottom: 18px;
@@ -869,6 +871,12 @@ if (!eventId) {
   });
 }
 
+// ─── CROWD INSIGHTS
+let insightsStarted=false,managePending=[],manageHistory=[];
+function insightGenre(value){const g=String(value||'').trim().toLowerCase();if(!g)return '';const t=[['Dance / House',/(house|dance|edm|club|techno|trance|garage)/],['Pop',/(pop|k-pop)/],['Disco / Funk',/(disco|funk)/],['R&B / Soul',/(r&b|rnb|soul|motown)/],['Hip-Hop / Rap',/(hip.?hop|rap|grime|drill)/],['Indie / Rock',/(indie|rock|metal|punk|alternative)/],['Reggae',/(reggae|dancehall|ska)/],['Country',/(country|americana)/],['Latin',/(latin|salsa|reggaeton)/],['Electronic',/(electronic|ambient|drum.?and.?bass|dnb|dubstep)/]];for(const [l,r] of t)if(r.test(g))return l;return g.replace(/\b\w/g,c=>c.toUpperCase()).slice(0,22)}
+function startManageInsights(){if(insightsStarted)return;insightsStarted=true;db.ref('events/'+eventId+'/requests').on('value',s=>{managePending=Object.values(s.val()||{});renderManageInsights()});db.ref('events/'+eventId+'/history').on('value',s=>{manageHistory=Object.values(s.val()||{});renderManageInsights()})}
+function renderManageInsights(){const el=document.getElementById('manageInsights');if(!el)return;const all=[...manageHistory,...managePending].filter(r=>r&&r.time),played=manageHistory.filter(r=>r.status==='Played').length,rejected=manageHistory.filter(r=>r.status==='Rejected').length;if(all.length<2){el.innerHTML='<div class="insights-empty">Not enough data yet.<br>Crowd insights will appear as requests come in.</div>';return}const counts={};all.filter(r=>String(r.genre||'').trim()).forEach(r=>{const g=insightGenre(r.genre);if(g)counts[g]=(counts[g]||0)+(Number(r.votes)||1)});const ranked=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6),total=Object.values(counts).reduce((a,b)=>a+b,0);const times=all.map(r=>Number(r.time)).filter(Number.isFinite),start=Math.min(...times),span=Math.max(3600000,Date.now()-start),bins=Array(16).fill(0);times.forEach(t=>{const i=Math.max(0,Math.min(15,Math.floor((t-start)/span*16)));bins[i]++});const max=Math.max(1,...bins);el.innerHTML=`<div class="insight-stats"><div class="insight-stat"><div class="insight-stat-val">${all.length}</div><div class="insight-stat-lbl">Total requests</div></div><div class="insight-stat"><div class="insight-stat-val">${managePending.length}</div><div class="insight-stat-lbl">Pending</div></div><div class="insight-stat"><div class="insight-stat-val">${played}</div><div class="insight-stat-lbl">Played</div></div><div class="insight-stat"><div class="insight-stat-val">${rejected}</div><div class="insight-stat-lbl">Rejected</div></div></div><div class="insights-grid"><div><div class="insights-sub">Crowd picks by genre</div>${ranked.length?ranked.map(([g,n])=>{const pc=Math.round(n/total*100);return `<div class="manage-genre-row"><div>${escHtml(g)}</div><div class="manage-genre-track"><div class="manage-genre-fill" style="width:${pc}%"></div></div><div class="manage-genre-pct">${pc}%</div></div>`}).join(''):'<div class="insights-empty">Not enough genre data yet.</div>'}</div><div><div class="insights-sub">Request activity</div><div class="manage-activity">${bins.map(n=>`<div class="manage-activity-bar" style="height:${n?Math.max(8,Math.round(n/max*100)):2}%" title="${n} request${n===1?'':'s'}"></div>`).join('')}</div><div class="manage-activity-meta"><span>First request</span><span>Now</span></div></div></div><div class="insights-note">Genre percentages include pending, played and rejected requests. Repeat votes count towards crowd demand.</div>`}
+
 // ─── RENDER MANAGE PANEL
 function renderManagePanel() {
   if (!eventAuthorised || !eventData || !eventId) return;
@@ -878,6 +886,10 @@ function renderManagePanel() {
 
   const main = document.getElementById('mainContent');
   main.innerHTML = '';
+  const insightsSection=document.createElement('div');
+  insightsSection.innerHTML=`<div class="section-label">Crowd Insights</div><div class="insights-panel" id="manageInsights"><div class="insights-empty">Not enough data yet.<br>Crowd insights will appear as requests come in.</div></div><div class="divider"></div>`;
+  main.appendChild(insightsSection);
+  startManageInsights();
 
   // ── SHARE LINKS ──
   const shareSection = document.createElement('div');
