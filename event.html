@@ -2107,12 +2107,22 @@
 
   .qr-url {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     letter-spacing: 0.06em;
-    color: var(--muted);
+    color: var(--text);
     word-break: break-all;
     margin-bottom: 14px;
+    display: block;
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    text-decoration: none;
+    text-align: center;
+    transition: border-color .15s, color .15s, background .15s, box-shadow .15s;
   }
+  .qr-url:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); box-shadow: 0 0 14px var(--accent-glow); }
 
   .qr-code-badge {
     display: inline-block;
@@ -2851,6 +2861,7 @@
           <button class="btn-sort" id="sortBtn" onclick="toggleSort()">↓ Oldest First</button>
           
           <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+          <button class="btn-m3u" onclick="exportM3U()">↓ Export M3U</button>
           <button class="btn-lock" id="lockBtn" onclick="toggleLock()">⛔ Lock Requests</button>
           <button class="btn-clear" onclick="clearAll()">Clear All</button>
         </div>
