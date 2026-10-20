@@ -670,6 +670,8 @@
 
   /* CROWD PULSE */
   .crowd-pulse{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}.crowd-pulse-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.crowd-pulse-title{font-family:var(--font-display);font-size:1.35rem;letter-spacing:.06em}.crowd-pulse-live,.pulse-label,.pulse-foot{font-family:var(--font-mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.crowd-pulse-empty{min-height:165px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted)}.crowd-pulse-empty strong{font-family:var(--font-display);font-size:1.35rem;color:var(--text);margin-bottom:6px}.crowd-pulse-empty span{font-family:var(--font-mono);font-size:.58rem;line-height:1.6}.genre-row{display:grid;grid-template-columns:minmax(72px,1fr) 1.4fr 34px;gap:8px;align-items:center;margin:7px 0;font-family:var(--font-mono);font-size:.58rem}.genre-track{height:7px;background:var(--surface2);border-radius:10px;overflow:hidden}.genre-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:10px}.genre-pct{text-align:right;color:var(--accent)}.activity-wrap{margin-top:15px;padding-top:12px;border-top:1px solid var(--border)}.activity-bars{height:62px;display:flex;align-items:flex-end;gap:3px;border-bottom:1px solid var(--border-bright)}.activity-bar{flex:1;background:var(--accent);border-radius:3px 3px 0 0}.activity-meta{display:flex;justify-content:space-between;margin-top:5px;font-family:var(--font-mono);font-size:.5rem;color:var(--muted);text-transform:uppercase}.pulse-foot{text-align:right;margin-top:9px}
+  /* COLLAPSIBLE HISTORY DRAWER */
+  .history-drawer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden}.history-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 16px;background:transparent;border:0;color:var(--text);cursor:pointer;text-align:left}.history-toggle:hover{background:var(--surface2)}.history-toggle-left,.history-toggle-counts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.history-toggle-title{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase}.history-count{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.08em;color:var(--muted)}.history-count.played{color:var(--accent)}.history-count.rejected{color:var(--pink)}.history-chevron{color:var(--muted);transition:transform .22s}.history-toggle[aria-expanded="true"] .history-chevron{transform:rotate(180deg)}.history-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s ease}.history-panel.open{grid-template-rows:1fr;border-top:1px solid var(--border)}.history-panel-inner{overflow:hidden}.history-controls{display:flex;gap:8px;padding:14px 16px 8px;flex-wrap:wrap}.history-filter{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:7px 11px;border-radius:6px;border:1px solid var(--border-bright);background:transparent;color:var(--muted);cursor:pointer}.history-filter.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}.history-list{max-height:420px;overflow-y:auto;padding:8px 16px 16px}.history-item{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:14px 16px;margin-bottom:9px}.history-item.rejected{border-left-color:var(--pink)}.history-item-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:7px}.history-status,.history-time,.history-meta{font-family:var(--font-mono);font-size:.59rem;color:var(--muted)}.history-status{letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}.history-item.rejected .history-status{color:var(--pink)}.history-song{font-family:var(--font-display);font-size:1.45rem;letter-spacing:.035em}.history-meta{margin-top:6px;display:flex;gap:8px;flex-wrap:wrap}.history-note{font-size:.78rem;color:var(--pink);font-style:italic;margin-top:8px}.history-actions{display:flex;justify-content:flex-end;margin-top:10px}.btn-restore{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;padding:7px 10px;border-radius:6px;border:1px solid var(--border-bright);background:transparent;color:var(--muted);cursor:pointer}.btn-restore:hover{border-color:var(--accent);color:var(--accent)}.history-empty{padding:34px 16px;text-align:center;font-family:var(--font-mono);font-size:.65rem;text-transform:uppercase;color:var(--muted)}.history-drawer.pulse-played{animation:historyPulsePlayed .55s}.history-drawer.pulse-rejected{animation:historyPulseRejected .55s}@keyframes historyPulsePlayed{50%{border-color:var(--accent);box-shadow:0 0 18px var(--accent-glow)}}@keyframes historyPulseRejected{50%{border-color:var(--pink);box-shadow:0 0 18px var(--pink-dim)}}@media(max-width:768px){.history-list{max-height:55vh}.history-song{font-size:1.25rem}}
   /* ─── REQUEST CARD ─── */
   .request {
     background: var(--surface);
@@ -2866,6 +2868,7 @@
           <button class="btn-clear" onclick="clearAll()">Clear All</button>
         </div>
       </div>
+      <section class="history-drawer" id="historyDrawer"><button class="history-toggle" id="historyToggle" type="button" aria-expanded="false" aria-controls="historyPanel" onclick="toggleHistoryDrawer()"><span class="history-toggle-left"><span class="history-toggle-title">◷ History</span><span class="history-count" id="historyTotal">0</span></span><span class="history-toggle-counts"><span class="history-count played" id="historyPlayedCount">✓ 0 Played</span><span class="history-count rejected" id="historyRejectedCount">✕ 0 Rejected</span><span class="history-chevron">▼</span></span></button><div class="history-panel" id="historyPanel"><div class="history-panel-inner"><div class="history-controls"><button class="history-filter active" onclick="setHistoryFilter('all',this)">All</button><button class="history-filter" onclick="setHistoryFilter('Played',this)">✓ Played</button><button class="history-filter" onclick="setHistoryFilter('Rejected',this)">✕ Rejected</button></div><div class="history-list" id="historyList"><div class="history-empty">No history yet</div></div></div></div></section>
       <div id="requestList"></div>
     </div>
   </div><!-- /dj-body -->
@@ -2961,6 +2964,9 @@ function relativeTime(ts) {
 let requestsRef, historyRef, lockedRef, statsRef, eventNameRef;
 let currentRequests = [];
 let crowdPulseHistory = [];
+let currentHistory = [];
+let historyFilter = 'all';
+let historyOpen = false;
 let qrInstance = null;
 
 function initRefs(eventId) {
@@ -3524,8 +3530,10 @@ async function openDJBooth(eventId) {
 
   // Live played/rejected history also feeds Crowd Pulse
   historyRef.on('value', snapshot => {
-    crowdPulseHistory = Object.values(snapshot.val() || {});
+    currentHistory = Object.entries(snapshot.val() || {}).map(([key,val])=>({...val,key})).filter(r=>isValidRequestRecord(r)&&(r.status==='Played'||r.status==='Rejected'));
+    crowdPulseHistory = currentHistory;
     renderCrowdPulse();
+    renderHistoryDrawer();
   });
 
   // Ensure the widget is visible even before enough data exists
@@ -4090,6 +4098,14 @@ function copyRequest(btn) {
   });
 }
 
+// ─── COLLAPSIBLE HISTORY DRAWER
+function toggleHistoryDrawer(){historyOpen=!historyOpen;document.getElementById('historyToggle')?.setAttribute('aria-expanded',String(historyOpen));document.getElementById('historyPanel')?.classList.toggle('open',historyOpen);if(historyOpen)renderHistoryDrawer()}
+function setHistoryFilter(filter,btn){historyFilter=filter;document.querySelectorAll('.history-filter').forEach(b=>b.classList.toggle('active',b===btn));renderHistoryDrawer()}
+function formatHistoryTime(ts){return ts?new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Time unavailable'}
+function renderHistoryDrawer(){const list=document.getElementById('historyList');if(!list)return;const played=currentHistory.filter(r=>r.status==='Played').length,rejected=currentHistory.filter(r=>r.status==='Rejected').length;document.getElementById('historyTotal').textContent=currentHistory.length;document.getElementById('historyPlayedCount').textContent=`✓ ${played} Played`;document.getElementById('historyRejectedCount').textContent=`✕ ${rejected} Rejected`;const rows=currentHistory.filter(r=>historyFilter==='all'||r.status===historyFilter).sort((a,b)=>(Number(b.resolvedAt)||Number(b.time)||0)-(Number(a.resolvedAt)||Number(a.time)||0));if(!rows.length){list.innerHTML=`<div class="history-empty">${currentHistory.length?'No '+historyFilter.toLowerCase()+' songs':'No history yet'}</div>`;return}list.innerHTML=rows.map(r=>`<article class="history-item ${r.status==='Rejected'?'rejected':''}"><div class="history-item-head"><span class="history-status">${r.status==='Played'?'✓ Played':'✕ Rejected'}</span><span class="history-time">${formatHistoryTime(r.resolvedAt)}</span></div><div class="history-song">${escapeHtml(r.song)}</div><div class="history-meta"><span>${escapeHtml(r.name||'Anonymous')}</span>${r.genre?`<span>· ${escapeHtml(r.genre)}</span>`:''}<span>· Requested ${relativeTime(Number(r.time))}</span>${Number(r.votes)>1?`<span>· ♥ ${Number(r.votes)} votes</span>`:''}</div>${r.note?`<div class="history-note">${escapeHtml(r.note)}</div>`:''}<div class="history-actions"><button class="btn-restore" onclick="restoreHistoryItem('${r.key}')">↩ Return to Queue</button></div></article>`).join('')}
+async function restoreHistoryItem(key){const item=currentHistory.find(r=>r.key===key);if(!item)return;const duplicate=currentRequests.find(r=>isFuzzyMatch(r.song,item.song));try{if(duplicate){await requestsRef.child(duplicate.key).transaction(record=>{if(!isValidRequestRecord(record))return;return{...record,votes:(Number(record.votes)||1)+(Number(item.votes)||1)}})}else{const restored={...item};delete restored.key;delete restored.status;delete restored.resolvedAt;restored.time=Date.now();restored.restoredAt=Date.now();restored.votes=Number(restored.votes)||1;await requestsRef.push(restored)}await historyRef.child(key).remove();await statsRef.child(item.status==='Played'?'played':'rejected').transaction(n=>Math.max(0,(Number(n)||0)-1))}catch(err){alert('Could not return this song to the queue: '+err.message)}}
+function pulseHistory(status){const d=document.getElementById('historyDrawer');if(!d)return;const c=status==='Played'?'pulse-played':'pulse-rejected';d.classList.remove('pulse-played','pulse-rejected');void d.offsetWidth;d.classList.add(c);setTimeout(()=>d.classList.remove(c),650)}
+
 // ─── CROWD PULSE
 function crowdGenre(v){const g=String(v||'').trim().toLowerCase();if(!g)return '';const m=[['Dance / House',/(house|dance|edm|techno|trance|garage)/],['Pop',/pop/],['Disco / Funk',/(disco|funk)/],['R&B / Soul',/(r&b|rnb|soul|motown)/],['Hip-Hop / Rap',/(hip.?hop|rap|grime|drill)/],['Indie / Rock',/(indie|rock|metal|punk|alternative)/],['Reggae',/(reggae|dancehall|ska)/],['Electronic',/(electronic|ambient|dnb|dubstep)/]];for(const [l,r] of m)if(r.test(g))return l;return g.replace(/\b\w/g,c=>c.toUpperCase()).slice(0,20)}
 function renderCrowdPulse(){const box=document.getElementById('crowdPulseBody');if(!box)return;const all=[...crowdPulseHistory,...currentRequests].filter(r=>r&&r.time),tagged=all.filter(r=>String(r.genre||'').trim());if(all.length<2||tagged.length<2){box.className='crowd-pulse-empty';box.innerHTML='<strong>Not enough data yet</strong><span>Crowd insights will appear as genre-tagged requests come in.</span>';return}const c={};tagged.forEach(r=>{const g=crowdGenre(r.genre);c[g]=(c[g]||0)+(Number(r.votes)||1)});const total=Object.values(c).reduce((a,b)=>a+b,0),top=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,4),times=all.map(r=>Number(r.time)),start=Math.min(...times),span=Math.max(3600000,Date.now()-start),bins=Array(12).fill(0);times.forEach(t=>bins[Math.max(0,Math.min(11,Math.floor((t-start)/span*12)))]++);const mx=Math.max(1,...bins);box.className='';box.innerHTML='<div class="pulse-label">Crowd picks by genre</div>'+top.map(([g,n])=>{const pc=Math.round(n/total*100);return `<div class="genre-row"><div>${escapeHtml(g)}</div><div class="genre-track"><div class="genre-fill" style="width:${pc}%"></div></div><div class="genre-pct">${pc}%</div></div>`}).join('')+`<div class="activity-wrap"><div class="pulse-label">Request activity</div><div class="activity-bars">${bins.map(n=>`<div class="activity-bar" style="height:${n?Math.max(10,Math.round(n/mx*100)):2}%"></div>`).join('')}</div><div class="activity-meta"><span>First</span><span>Now</span></div></div><div class="pulse-foot">${all.length} requests analysed</div>`}
@@ -4284,6 +4300,7 @@ function markPlayed(key) {
   if (!r) return;
   currentRequests = currentRequests.filter(item => item.key !== key);
   historyRef.push({ ...r, status: 'Played', resolvedAt: Date.now() });
+  pulseHistory('Played');
   statsRef.child('played').transaction(n => (n || 0) + 1);
   removeRequest(key);
 }
@@ -4293,6 +4310,7 @@ function markRejected(key) {
   if (!r) return;
   currentRequests = currentRequests.filter(item => item.key !== key);
   historyRef.push({ ...r, status: 'Rejected', resolvedAt: Date.now() });
+  pulseHistory('Rejected');
   statsRef.child('rejected').transaction(n => (n || 0) + 1);
   removeRequest(key);
 }
