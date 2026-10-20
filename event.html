@@ -3146,7 +3146,9 @@ if (mode === 'admin') {
     // Keep currentRequests live on guest page for duplicate detection
     db.ref('events/' + eventParam + '/requests').on('value', snap => {
       const data = snap.val() || {};
-      currentRequests = Object.entries(data).map(([key, val]) => ({ ...val, key }));
+      currentRequests = Object.entries(data)
+        .map(([key, val]) => ({ ...val, key }))
+        .filter(isValidRequestRecord);
     });
 
     // Initialise track search
@@ -3514,7 +3516,8 @@ async function openDJBooth(eventId) {
   requestsRef.on('value', snapshot => {
     const data = snapshot.val() || {};
     currentRequests = Object.entries(data)
-      .map(([key, val]) => ({ ...val, key }));
+      .map(([key, val]) => ({ ...val, key }))
+      .filter(isValidRequestRecord);
     renderDJ();
     renderCrowdPulse();
   });
@@ -3915,6 +3918,53 @@ function isFuzzyMatch(a, b) {
   return false;
 }
 
+function isValidRequestRecord(r) {
+  return !!(r && typeof r.song === 'string' && r.song.trim() && Number.isFinite(Number(r.time)));
+}
+
+function buildRequestPayload(song) {
+  return {
+    song,
+    name: nameInput.value.trim() || 'Anonymous',
+    genre: genreInput.value.trim(),
+    note: noteInput.value.trim(),
+    votes: 1,
+    time: Date.now()
+  };
+}
+
+function clearRequestForm() {
+  songInput.value = '';
+  nameInput.value = '';
+  genreInput.value = '';
+  noteInput.value = '';
+  setActiveField('song');
+  songInput.focus();
+}
+
+function showVoteAdded(existing, votes) {
+  const notice = document.getElementById('duplicateNotice');
+  notice.textContent = `"${existing.song}" is already in the queue — your +1 vote has been added! (${votes} people want this)`;
+  notice.classList.add('show');
+  setTimeout(() => notice.classList.remove('show'), 5000);
+  document.getElementById('tyIcon').textContent = '👍';
+  document.getElementById('tyText').textContent = 'Vote added!';
+  document.getElementById('tySub').textContent = `${existing.song} just got more popular`;
+  thankYou.classList.add('show');
+  setTimeout(() => thankYou.classList.remove('show'), 2800);
+  clearRequestForm();
+}
+
+function showNewRequestThanks(payload) {
+  const m = pickThankYouMessage(payload.song, payload.name === 'Anonymous' ? '' : payload.name, payload.note);
+  document.getElementById('tyIcon').textContent = m.icon;
+  document.getElementById('tyText').textContent = m.text;
+  document.getElementById('tySub').textContent = m.sub;
+  thankYou.classList.add('show');
+  setTimeout(() => thankYou.classList.remove('show'), 3200);
+  clearRequestForm();
+}
+
 function submitRequest() {
   if (!eventValidated || !requestsRef) { showInvalidEvent(); return; }
   const song = songInput.value.trim();
@@ -3922,72 +3972,48 @@ function submitRequest() {
     songInput.classList.remove('active-field');
     void songInput.offsetWidth;
     songInput.style.borderColor = 'var(--pink)';
-    songInput.style.boxShadow   = '0 0 0 3px var(--pink-dim)';
+    songInput.style.boxShadow = '0 0 0 3px var(--pink-dim)';
     setTimeout(() => {
       songInput.style.borderColor = '';
-      songInput.style.boxShadow   = '';
+      songInput.style.boxShadow = '';
       songInput.classList.add('active-field');
     }, 600);
     songInput.focus();
     return;
   }
 
-  // Check for existing duplicate in the live queue
-  const existing = currentRequests?.find(r => isFuzzyMatch(r.song, song));
+  const payload = buildRequestPayload(song);
+  const existing = currentRequests.find(r => isValidRequestRecord(r) && isFuzzyMatch(r.song, song));
 
-  if (existing) {
-    // Increment vote on the existing request
-    db.ref('events/' + eventParam + '/requests/' + existing.key + '/votes')
-      .transaction(v => (v || 1) + 1);
-
-    // Show duplicate notice
-    const notice = document.getElementById('duplicateNotice');
-    const votes  = (existing.votes || 1) + 1;
-    notice.textContent = `"${existing.song}" is already in the queue — your +1 vote has been added! (${votes} people want this)`;
-    notice.classList.add('show');
-    setTimeout(() => notice.classList.remove('show'), 5000);
-
-    // Show a different thank-you
-    document.getElementById('tyIcon').textContent = '👍';
-    document.getElementById('tyText').textContent = 'Vote added!';
-    document.getElementById('tySub').textContent  = `${existing.song} just got more popular`;
-    thankYou.classList.add('show');
-    setTimeout(() => thankYou.classList.remove('show'), 2800);
-
-    songInput.value  = '';
-    nameInput.value  = '';
-    genreInput.value = '';
-    noteInput.value  = '';
-    setActiveField('song');
+  if (!existing) {
+    requestsRef.push(payload)
+      .then(() => showNewRequestThanks(payload))
+      .catch(() => alert('Could not send request — check your internet connection.'));
     return;
   }
 
-  // No duplicate — create new request with votes = 1
-  const guestName = nameInput.value.trim();
-  const guestGenre = genreInput.value.trim();
-  const guestNote = noteInput.value.trim();
-  requestsRef.push({
-    song,
-    name:  guestName || 'Anonymous',
-    genre: guestGenre,
-    note:  guestNote,
-    votes: 1,
-    time:  Date.now()
-  }).catch(() => alert('Could not send request — check your internet connection.'));
-
-  songInput.value  = '';
-  nameInput.value  = '';
-  genreInput.value = '';
-  noteInput.value  = '';
-  setActiveField('song');
-  songInput.focus();
-
-  const m = pickThankYouMessage(song, guestName, guestNote);
-  document.getElementById('tyIcon').textContent = m.icon;
-  document.getElementById('tyText').textContent = m.text;
-  document.getElementById('tySub').textContent  = m.sub;
-  thankYou.classList.add('show');
-  setTimeout(() => thankYou.classList.remove('show'), 3200);
+  // Transact on the entire request, never the nested votes field. If the DJ has
+  // already removed it, returning undefined prevents a votes-only ghost record.
+  const existingRef = requestsRef.child(existing.key);
+  existingRef.transaction(record => {
+    if (!isValidRequestRecord(record)) return; // abort: request was removed/resolved
+    return { ...record, votes: (Number(record.votes) || 1) + 1 };
+  }, (error, committed, snapshot) => {
+    if (error) {
+      alert('Could not add your vote — please try again.');
+      return;
+    }
+    if (committed && isValidRequestRecord(snapshot.val())) {
+      const updated = snapshot.val();
+      showVoteAdded({ ...existing, song: updated.song }, Number(updated.votes) || 2);
+      return;
+    }
+    // The apparent duplicate was played/rejected during submission. Add a fresh
+    // request instead, because it is no longer present in the live queue.
+    requestsRef.push(payload)
+      .then(() => showNewRequestThanks(payload))
+      .catch(() => alert('Could not send request — check your internet connection.'));
+  }, false);
 }
 
 // ─── FIELD SWITCHING
@@ -4124,24 +4150,24 @@ function renderDJ() {
 // ─── VOTE FROM QUEUE OVERLAY (guest)
 function voteFromOverlay(key, btn) {
   if (!eventValidated || !key || !eventParam) return;
-
   const votedKeys = JSON.parse(sessionStorage.getItem('votedKeys') || '[]');
   if (votedKeys.includes(key)) return;
 
-  db.ref('events/' + eventParam + '/requests/' + key + '/votes')
-    .transaction(v => (v || 1) + 1)
-    .then(() => {
-      votedKeys.push(key);
-      sessionStorage.setItem('votedKeys', JSON.stringify(votedKeys));
-      btn.textContent = '✓ Voted';
-      btn.classList.add('voted');
-
-      // Update vote count display
-      const countEl = btn.closest('.queue-card')?.querySelector('.queue-vote-count');
-      // It'll update automatically on the next Firebase push
-    });
-
-  resetQueueTimer(); // don't auto-close while they're voting
+  requestsRef.child(key).transaction(record => {
+    if (!isValidRequestRecord(record)) return;
+    return { ...record, votes: (Number(record.votes) || 1) + 1 };
+  }, (error, committed) => {
+    if (error || !committed) {
+      btn.textContent = 'No longer queued';
+      btn.disabled = true;
+      return;
+    }
+    votedKeys.push(key);
+    sessionStorage.setItem('votedKeys', JSON.stringify(votedKeys));
+    btn.textContent = '✓ Voted';
+    btn.classList.add('voted');
+  }, false);
+  resetQueueTimer();
 }
 
 // ─── QUEUE OVERLAY (guest — view current requests)
@@ -4255,14 +4281,18 @@ function removeRequest(key) {
 // ─── MARK PLAYED / REJECTED
 function markPlayed(key) {
   const r = currentRequests.find(r => r.key === key);
-  if (r) historyRef.push({ ...r, status: 'Played', resolvedAt: Date.now() });
+  if (!r) return;
+  currentRequests = currentRequests.filter(item => item.key !== key);
+  historyRef.push({ ...r, status: 'Played', resolvedAt: Date.now() });
   statsRef.child('played').transaction(n => (n || 0) + 1);
   removeRequest(key);
 }
 
 function markRejected(key) {
   const r = currentRequests.find(r => r.key === key);
-  if (r) historyRef.push({ ...r, status: 'Rejected', resolvedAt: Date.now() });
+  if (!r) return;
+  currentRequests = currentRequests.filter(item => item.key !== key);
+  historyRef.push({ ...r, status: 'Rejected', resolvedAt: Date.now() });
   statsRef.child('rejected').transaction(n => (n || 0) + 1);
   removeRequest(key);
 }
