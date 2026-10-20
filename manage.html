@@ -54,7 +54,7 @@
   .panel {
     position: relative;
     z-index: 1;
-    max-width: 680px;
+    max-width: 1180px;
     margin: 0 auto;
     padding: 0 24px 60px;
   }
@@ -219,6 +219,16 @@
 
     /* CROWD INSIGHTS */
     .insights-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin-bottom:32px}.insight-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}.insight-stat{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px}.insight-stat-val{font-family:var(--font-display);font-size:2rem;color:var(--accent);line-height:1}.insight-stat-lbl{font-family:var(--font-mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:5px}.insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.insights-sub{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}.insights-empty{min-height:150px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--font-mono);font-size:.65rem;line-height:1.7;color:var(--muted)}.manage-genre-row{display:grid;grid-template-columns:minmax(84px,1fr) 1.4fr 34px;align-items:center;gap:8px;margin:9px 0;font-family:var(--font-mono);font-size:.6rem}.manage-genre-track{height:8px;background:var(--bg);border-radius:20px;overflow:hidden}.manage-genre-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:20px}.manage-genre-pct{text-align:right;color:var(--accent)}.manage-activity{display:flex;align-items:flex-end;gap:4px;height:128px;border-bottom:1px solid var(--border-bright)}.manage-activity-bar{flex:1;background:linear-gradient(180deg,var(--accent),rgba(198,255,0,.2));border-radius:3px 3px 0 0}.manage-activity-meta{display:flex;justify-content:space-between;margin-top:7px;font-family:var(--font-mono);font-size:.55rem;color:var(--muted);text-transform:uppercase}.insights-note{margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:.58rem;color:var(--muted);line-height:1.6}@media(max-width:600px){.insight-stats{grid-template-columns:repeat(2,1fr)}.insights-grid{grid-template-columns:1fr}.insights-panel{padding:18px}}
+
+  /* EVENT ACCESS */
+  .access-panel{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:var(--radius);padding:24px;margin-bottom:32px}.access-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:18px}.access-plan{font-family:var(--font-display);font-size:2rem;letter-spacing:.05em}.access-status{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--border-bright);border-radius:99px;padding:6px 10px;color:var(--muted);white-space:nowrap}.access-status.active,.access-status.ready{color:var(--accent);border-color:var(--accent);background:var(--accent-dim)}.access-status.expired{color:var(--pink);border-color:var(--pink);background:var(--pink-dim)}.access-status.vip{color:#ffd166;border-color:#ffd166}.access-copy{color:var(--muted);line-height:1.65;font-size:.9rem;margin-bottom:18px}.btn-activate{width:100%;padding:17px;border:0;border-radius:var(--radius-sm);background:var(--accent);color:#090b10;font-family:var(--font-display);font-size:1.45rem;letter-spacing:.08em;cursor:pointer;box-shadow:0 0 28px var(--accent-glow)}.countdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0}.count-unit{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 6px;text-align:center}.count-value{font-family:var(--font-display);font-size:2.2rem;color:var(--accent);line-height:1}.count-label{font-family:var(--font-mono);font-size:.48rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:5px}.access-progress{height:8px;background:var(--bg);border-radius:10px;overflow:hidden}.access-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--pink))}.access-meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}.access-meta span{display:block;font-family:var(--font-mono);font-size:.52rem;text-transform:uppercase;color:var(--muted);margin-bottom:4px}.access-meta strong{font-size:.78rem}.vip-infinity{font-family:var(--font-display);font-size:5rem;line-height:1;color:#ffd166;text-align:center}.vip-copy{text-align:center;font-family:var(--font-mono);font-size:.62rem;line-height:1.7;color:var(--muted)}.access-warning{background:var(--pink-dim);border:1px solid rgba(255,62,127,.35);border-radius:9px;padding:12px;font-size:.78rem;line-height:1.5}.activation-modal{position:fixed;inset:0;z-index:800;background:rgba(9,11,16,.93);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:24px}.activation-modal.open{display:flex}.activation-box{width:100%;max-width:470px;background:var(--surface);border:1px solid var(--border-bright);border-radius:18px;padding:28px}.activation-title{font-family:var(--font-display);font-size:2.3rem;color:var(--pink);margin:8px 0}.activation-text{color:var(--muted);line-height:1.65}.activation-list{margin:16px 0 20px;padding-left:20px;line-height:1.8;font-size:.84rem}.activation-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:10px}.activation-actions button{padding:13px;border-radius:9px;border:1px solid var(--border-bright);background:transparent;color:var(--muted);font-family:var(--font-mono);font-size:.62rem;text-transform:uppercase;cursor:pointer}.activation-actions .confirm{background:var(--pink);border-color:var(--pink);color:#fff}@media(max-width:600px){.count-value{font-size:1.6rem}.access-meta{grid-template-columns:1fr}.activation-actions{grid-template-columns:1fr}}
+  /* RESPONSIVE MANAGE DASHBOARD */
+  #mainContent.manage-dashboard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;align-items:start}
+  .manage-access-section{grid-column:1;grid-row:1}.manage-share-section{grid-column:2;grid-row:1}.manage-insights-section{grid-column:1/-1;grid-row:2}.manage-edit-section{grid-column:1/-1;grid-row:3}
+  .manage-access-section .access-panel,.manage-share-section .share-panel{margin-bottom:0}
+  .manage-access-section>.divider,.manage-share-section>.divider{margin:28px 0}
+  @media(max-width:760px){.panel{max-width:680px}#mainContent.manage-dashboard{display:block}.manage-access-section .access-panel,.manage-share-section .share-panel{margin-bottom:32px}}
+
   /* ─── FORM FIELDS ─── */
   .field-group {
     margin-bottom: 18px;
@@ -700,6 +710,8 @@
   </div>
 </div>
 
+
+<div id="activationModal" class="activation-modal" role="dialog" aria-modal="true"><div class="activation-box"><div style="font-size:2.4rem">⚠️</div><div class="activation-title">Activate Event?</div><div class="activation-text" id="activationText"></div><ul class="activation-list"><li>The countdown starts immediately.</li><li>Activation cannot be undone or reset.</li><li>The event expires automatically when the countdown reaches zero.</li></ul><div class="activation-actions"><button onclick="closeActivationModal()">Cancel</button><button class="confirm" id="confirmActivationBtn" onclick="confirmActivation()">Yes, Activate Now</button></div></div></div>
 <!-- MAIN PANEL -->
 <div class="panel">
   <div class="header">
@@ -862,15 +874,7 @@ if (!eventId) {
         '<div class="no-event">Event not found.<br>This event may have been deleted by the admin.</div>';
       return;
     }
-    const expired = !!(data.expiresAt && Number(data.expiresAt) <= Date.now());
-    const inactive = data.active === false;
-    if (expired || inactive) {
-      document.getElementById('pinOverlay').remove();
-      document.getElementById('mainContent').innerHTML =
-        `<div class="no-event">${expired ? 'Event expired.' : 'Event unavailable.'}<br>This event cannot currently be managed.</div>`;
-      return;
-    }
-    eventData = data;
+eventData = data;
     document.getElementById('pinEventLabel').textContent =
       `"${data.name || 'Your Event'}" — Enter PIN`;
     document.title = `Manage — ${data.name || 'Event'}`;
@@ -881,6 +885,17 @@ if (!eventId) {
       '<div class="no-event">Could not load event.<br>Check your internet connection.</div>';
   });
 }
+
+
+// ─── EVENT ACCESS / ACTIVATION
+let accessTimer=null;
+function accessState(){const a=eventData.access||{};return{type:a.type||eventData.accessType||(eventData.vip===true?'vip':'legacy'),days:Number(a.planDays||eventData.planDays||0),paid:a.paymentStatus==='paid'||eventData.paymentStatus==='paid'||a.paid===true,activated:a.activated===true||Number(a.activatedAt||eventData.activatedAt||0)>0,started:Number(a.activatedAt||eventData.activatedAt||0),ends:Number(a.expiresAt||eventData.expiresAt||0)}}
+function accessDate(ms){return ms?new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}
+function renderAccessWidget(){const el=document.getElementById('eventAccessWidget');if(!el)return;clearInterval(accessTimer);const a=accessState();if(a.type==='vip'){el.innerHTML='<div class="access-head"><div class="access-plan">VIP Event</div><div class="access-status vip">★ Always Active</div></div><div class="vip-infinity">∞</div><div class="vip-copy">THIS EVENT DOES NOT EXPIRE<br>NO ACTIVATION OR COUNTDOWN REQUIRED</div>';return}if(![7,15,45].includes(a.days)){el.innerHTML='<div class="access-head"><div class="access-plan">Event Access</div><div class="access-status">Legacy Event</div></div><div class="access-copy">This event predates paid activation and remains available.</div><div class="access-warning">A 7, 15 or 45-day entitlement must be assigned by Stripe/Cloudflare before activation becomes available.</div>';return}if(!a.paid){el.innerHTML=`<div class="access-head"><div class="access-plan">${a.days} Day Pass</div><div class="access-status">Payment Required</div></div><div class="access-copy">Payment has not yet been confirmed. The countdown has not started.</div>`;return}if(!a.activated){el.innerHTML=`<div class="access-head"><div class="access-plan">${a.days} Day Pass</div><div class="access-status ready">Ready to Activate</div></div><div class="access-copy"><strong style="color:var(--text)">✓ Payment confirmed.</strong><br>Your countdown has not started. Activate only when you are ready.</div><button class="btn-activate" onclick="openActivationModal()">Activate Event →</button>`;return}const tick=()=>{const left=Math.max(0,a.ends-Date.now()),expired=left<=0,d=Math.floor(left/86400000),h=Math.floor(left%86400000/3600000),m=Math.floor(left%3600000/60000),sec=Math.floor(left%60000/1000),pc=Math.max(0,Math.min(100,left/(a.days*86400000)*100));el.innerHTML=`<div class="access-head"><div class="access-plan">${a.days} Day Pass</div><div class="access-status ${expired?'expired':'active'}">${expired?'Expired':'● Active'}</div></div>${expired?'<div class="vip-infinity" style="font-size:3rem;color:var(--pink)">Expired</div>':`<div class="countdown-grid">${[[d,'Days'],[h,'Hours'],[m,'Minutes'],[sec,'Seconds']].map(([v,l])=>`<div class="count-unit"><div class="count-value">${String(v).padStart(2,'0')}</div><div class="count-label">${l}</div></div>`).join('')}</div><div class="access-progress"><div class="access-progress-fill" style="width:${pc}%"></div></div>`}<div class="access-meta"><div><span>Activated</span><strong>${accessDate(a.started)}</strong></div><div><span>Expires</span><strong>${accessDate(a.ends)}</strong></div></div>`;if(expired)clearInterval(accessTimer)};tick();accessTimer=setInterval(tick,1000)}
+function openActivationModal(){const a=accessState();if(!a.paid||a.activated||![7,15,45].includes(a.days))return;document.getElementById('activationText').innerHTML=`You are about to activate your <strong style="color:var(--text)">${a.days} Day Event Pass</strong>. Only continue if you are ready for the paid period to begin.`;document.getElementById('activationModal').classList.add('open')}
+function closeActivationModal(){document.getElementById('activationModal').classList.remove('open')}
+async function confirmActivation(){const a=accessState(),b=document.getElementById('confirmActivationBtn');if(!a.paid||a.activated||![7,15,45].includes(a.days))return;b.disabled=true;b.textContent='Activating…';try{const started=Date.now(),ends=started+a.days*86400000;await db.ref('events/'+eventId).update({active:true,'access/activated':true,'access/activatedAt':started,'access/expiresAt':ends,activatedAt:started,expiresAt:ends});eventData={...eventData,active:true,activatedAt:started,expiresAt:ends,access:{...(eventData.access||{}),activated:true,activatedAt:started,expiresAt:ends}};closeActivationModal();renderAccessWidget()}catch(e){alert('Activation failed: '+e.message)}finally{b.disabled=false;b.textContent='Yes, Activate Now'}}
+document.getElementById('activationModal').addEventListener('click',e=>{if(e.target.id==='activationModal')closeActivationModal()});
 
 // ─── CROWD INSIGHTS
 let insightsStarted=false,managePending=[],manageHistory=[];
@@ -897,13 +912,21 @@ function renderManagePanel() {
 
   const main = document.getElementById('mainContent');
   main.innerHTML = '';
+  main.classList.add('manage-dashboard');
+  const accessSection=document.createElement('div');
+  accessSection.className='manage-access-section';
+  accessSection.innerHTML=`<div class="section-label">Event Access</div><div class="access-panel" id="eventAccessWidget"></div><div class="divider"></div>`;
+  main.appendChild(accessSection);
+  renderAccessWidget();
   const insightsSection=document.createElement('div');
+  insightsSection.className='manage-insights-section';
   insightsSection.innerHTML=`<div class="section-label">Crowd Insights</div><div class="insights-panel" id="manageInsights"><div class="insights-empty">Not enough data yet.<br>Crowd insights will appear as requests come in.</div></div><div class="divider"></div>`;
   main.appendChild(insightsSection);
   startManageInsights();
 
   // ── SHARE LINKS ──
   const shareSection = document.createElement('div');
+  shareSection.className='manage-share-section';
   shareSection.innerHTML = `
     <div class="section-label">Share Links</div>
     <div class="share-panel">
@@ -938,6 +961,7 @@ function renderManagePanel() {
 
   // ── EDIT FORM ──
   const editSection = document.createElement('div');
+  editSection.className='manage-edit-section';
   editSection.innerHTML = `
     <div class="section-label">Edit Your Event</div>
 
