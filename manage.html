@@ -54,7 +54,7 @@
   .panel {
     position: relative;
     z-index: 1;
-    max-width: 680px;
+    max-width: 1180px;
     margin: 0 auto;
     padding: 0 24px 60px;
   }
@@ -222,6 +222,12 @@
 
   /* EVENT ACCESS */
   .access-panel{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:var(--radius);padding:24px;margin-bottom:32px}.access-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:18px}.access-plan{font-family:var(--font-display);font-size:2rem;letter-spacing:.05em}.access-status{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--border-bright);border-radius:99px;padding:6px 10px;color:var(--muted);white-space:nowrap}.access-status.active,.access-status.ready{color:var(--accent);border-color:var(--accent);background:var(--accent-dim)}.access-status.expired{color:var(--pink);border-color:var(--pink);background:var(--pink-dim)}.access-status.vip{color:#ffd166;border-color:#ffd166}.access-copy{color:var(--muted);line-height:1.65;font-size:.9rem;margin-bottom:18px}.btn-activate{width:100%;padding:17px;border:0;border-radius:var(--radius-sm);background:var(--accent);color:#090b10;font-family:var(--font-display);font-size:1.45rem;letter-spacing:.08em;cursor:pointer;box-shadow:0 0 28px var(--accent-glow)}.countdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0}.count-unit{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 6px;text-align:center}.count-value{font-family:var(--font-display);font-size:2.2rem;color:var(--accent);line-height:1}.count-label{font-family:var(--font-mono);font-size:.48rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:5px}.access-progress{height:8px;background:var(--bg);border-radius:10px;overflow:hidden}.access-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--pink))}.access-meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}.access-meta span{display:block;font-family:var(--font-mono);font-size:.52rem;text-transform:uppercase;color:var(--muted);margin-bottom:4px}.access-meta strong{font-size:.78rem}.vip-infinity{font-family:var(--font-display);font-size:5rem;line-height:1;color:#ffd166;text-align:center}.vip-copy{text-align:center;font-family:var(--font-mono);font-size:.62rem;line-height:1.7;color:var(--muted)}.access-warning{background:var(--pink-dim);border:1px solid rgba(255,62,127,.35);border-radius:9px;padding:12px;font-size:.78rem;line-height:1.5}.activation-modal{position:fixed;inset:0;z-index:800;background:rgba(9,11,16,.93);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:24px}.activation-modal.open{display:flex}.activation-box{width:100%;max-width:470px;background:var(--surface);border:1px solid var(--border-bright);border-radius:18px;padding:28px}.activation-title{font-family:var(--font-display);font-size:2.3rem;color:var(--pink);margin:8px 0}.activation-text{color:var(--muted);line-height:1.65}.activation-list{margin:16px 0 20px;padding-left:20px;line-height:1.8;font-size:.84rem}.activation-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:10px}.activation-actions button{padding:13px;border-radius:9px;border:1px solid var(--border-bright);background:transparent;color:var(--muted);font-family:var(--font-mono);font-size:.62rem;text-transform:uppercase;cursor:pointer}.activation-actions .confirm{background:var(--pink);border-color:var(--pink);color:#fff}@media(max-width:600px){.count-value{font-size:1.6rem}.access-meta{grid-template-columns:1fr}.activation-actions{grid-template-columns:1fr}}
+  /* RESPONSIVE MANAGE DASHBOARD */
+  #mainContent.manage-dashboard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;align-items:start}
+  .manage-access-section{grid-column:1;grid-row:1}.manage-share-section{grid-column:2;grid-row:1}.manage-insights-section{grid-column:1/-1;grid-row:2}.manage-edit-section{grid-column:1/-1;grid-row:3}
+  .manage-access-section .access-panel,.manage-share-section .share-panel{margin-bottom:0}
+  @media(max-width:760px){.panel{max-width:680px}#mainContent.manage-dashboard{display:block}.manage-access-section .access-panel,.manage-share-section .share-panel{margin-bottom:32px}}
+
   /* ─── FORM FIELDS ─── */
   .field-group {
     margin-bottom: 18px;
@@ -894,17 +900,21 @@ function renderManagePanel() {
 
   const main = document.getElementById('mainContent');
   main.innerHTML = '';
+  main.classList.add('manage-dashboard');
   const accessSection=document.createElement('div');
+  accessSection.className='manage-access-section';
   accessSection.innerHTML=`<div class="section-label">Event Access</div><div class="access-panel" id="eventAccessWidget"></div><div class="divider"></div>`;
   main.appendChild(accessSection);
   renderAccessWidget();
   const insightsSection=document.createElement('div');
+  insightsSection.className='manage-insights-section';
   insightsSection.innerHTML=`<div class="section-label">Crowd Insights</div><div class="insights-panel" id="manageInsights"><div class="insights-empty">Not enough data yet.<br>Crowd insights will appear as requests come in.</div></div><div class="divider"></div>`;
   main.appendChild(insightsSection);
   startManageInsights();
 
   // ── SHARE LINKS ──
   const shareSection = document.createElement('div');
+  shareSection.className='manage-share-section';
   shareSection.innerHTML = `
     <div class="section-label">Share Links</div>
     <div class="share-panel">
@@ -944,6 +954,7 @@ function renderManagePanel() {
 
   // ── EDIT FORM ──
   const editSection = document.createElement('div');
+  editSection.className='manage-edit-section';
   editSection.innerHTML = `
     <div class="section-label">Edit Your Event</div>
 
